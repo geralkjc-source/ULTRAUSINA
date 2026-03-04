@@ -307,22 +307,33 @@ export const fetchCloudQualityReports = async (scriptUrl: string): Promise<Quali
         timestamp: sheetTimestamp || Date.now(),
         category: (() => {
           const cat = (qr.categoria || qr.category || 'DFP2');
-          if (cat === 'COLUNAS D') return 'COLUNAS_D';
-          if (cat === 'HUMIDADE E PLY') return 'HUMIDADE_PLY';
+          if (cat === 'COLUNAS D' || cat === 'COLUNAS_D') return 'COLUNAS_D';
+          if (cat === 'HUMIDADE E PLY' || cat === 'HUMIDADE_PLY' || cat === 'HUMIDADE') return 'HUMIDADE_PLY';
           
-          // Se for DFP2, tenta identificar se é C ou D
-          if (cat.includes('DFP2') || cat.includes('DFP 2')) {
+          // Detecção por campos se a categoria for genérica (DFP2)
+          if (cat.includes('DFP2') || cat.includes('DFP 2') || cat === 'DFP2') {
+            // Se tiver campos de Colunas D, assume Colunas D
+            if (
+              (qr.colunas_d_cr !== undefined && qr.colunas_d_cr !== null && qr.colunas_d_cr !== '') ||
+              (qr.colunas_d_yield !== undefined && qr.colunas_d_yield !== null && qr.colunas_d_yield !== '')
+            ) return 'COLUNAS_D';
+
+            // Se tiver campos de Humidade, assume Humidade
+            if (
+              (qr.humidade_fundo !== undefined && qr.humidade_fundo !== null && qr.humidade_fundo !== '') ||
+              (qr.hum_fundo !== undefined && qr.hum_fundo !== null && qr.hum_fundo !== '') ||
+              (qr.ply !== undefined && qr.ply !== null && qr.ply !== '')
+            ) return 'HUMIDADE_PLY';
+
+            // Diferenciação DFP2 C vs D
             if (
               (qr.dfp2_c_cr !== undefined && qr.dfp2_c_cr !== null && qr.dfp2_c_cr !== '') ||
-              (qr.dfp2_c_yield !== undefined && qr.dfp2_c_yield !== null && qr.dfp2_c_yield !== '') ||
-              (qr.dfp2_c_reject_ash !== undefined && qr.dfp2_c_reject_ash !== null && qr.dfp2_c_reject_ash !== '') ||
-              (qr.dfp2_c_conc_ash !== undefined && qr.dfp2_c_conc_ash !== null && qr.dfp2_c_conc_ash !== '')
+              (qr.dfp2_c_yield !== undefined && qr.dfp2_c_yield !== null && qr.dfp2_c_yield !== '')
             ) return 'DFP2_C';
+            
             if (
               (qr.dfp2_d_cr !== undefined && qr.dfp2_d_cr !== null && qr.dfp2_d_cr !== '') ||
-              (qr.dfp2_d_yield !== undefined && qr.dfp2_d_yield !== null && qr.dfp2_d_yield !== '') ||
-              (qr.dfp2_d_reject_ash !== undefined && qr.dfp2_d_reject_ash !== null && qr.dfp2_d_reject_ash !== '') ||
-              (qr.dfp2_d_conc_ash !== undefined && qr.dfp2_d_conc_ash !== null && qr.dfp2_d_conc_ash !== '')
+              (qr.dfp2_d_yield !== undefined && qr.dfp2_d_yield !== null && qr.dfp2_d_yield !== '')
             ) return 'DFP2_D';
           }
           
@@ -343,7 +354,15 @@ export const fetchCloudQualityReports = async (scriptUrl: string): Promise<Quali
       ];
 
       fields.forEach(field => {
-        const val = qr[field] || qr[field === 'humidade_fundo' ? 'hum_fundo' : field === 'humidade_oversize' ? 'hum_oversize' : field === 'humidade_concentrado' ? 'hum_conc' : ''];
+        let val = qr[field];
+        
+        // Fallback para nomes alternativos de colunas (legado ou variações de header)
+        if (val === undefined || val === null || val === '') {
+          if (field === 'humidade_fundo') val = qr['hum_fundo'];
+          else if (field === 'humidade_oversize') val = qr['hum_oversize'];
+          else if (field === 'humidade_concentrado') val = qr['hum_conc'];
+        }
+
         if (val !== undefined && val !== null && val !== '') {
           report[field] = typeof val === 'number' ? val : sanitize(val);
         }

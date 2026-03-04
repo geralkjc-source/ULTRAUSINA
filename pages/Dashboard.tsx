@@ -286,6 +286,8 @@ const Dashboard: React.FC<DashboardProps> = ({ reports, pendingItems, qualityRep
               .filter(qr => {
                 if (section.id === 'DFP2_C') return (qr.category === 'DFP2_C') || (qr.category === 'DFP2' && qr.dfp2_c_cr !== undefined);
                 if (section.id === 'DFP2_D') return (qr.category === 'DFP2_D') || (qr.category === 'DFP2' && qr.dfp2_d_cr !== undefined);
+                if (section.id === 'COLUNAS_D') return (qr.category === 'COLUNAS_D') || (qr.category === 'DFP2' && qr.colunas_d_cr !== undefined);
+                if (section.id === 'HUMIDADE_PLY') return (qr.category === 'HUMIDADE_PLY') || (qr.category === 'DFP2' && qr.humidade_fundo !== undefined);
                 return qr.category === section.id;
               })
               .sort((a, b) => b.timestamp - a.timestamp)[0];

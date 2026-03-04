@@ -207,7 +207,7 @@ function doPost(e) {
       data.qualityReports.forEach(function(qr) {
         if (!isIdExists(sheet, qr.id)) {
           sheet.appendRow([
-            qr.id, qr.data, qr.hora, qr.operador, qr.turma, qr.turno, qr.ply,
+            qr.id, qr.data, qr.hora, qr.categoria || qr.category || "DFP2", qr.operador, qr.turma, qr.turno, qr.ply,
             qr.dfp2_c_cr, qr.dfp2_c_yield, qr.dfp2_c_reject_ash, qr.dfp2_c_conc_ash,
             qr.dfp2_d_cr, qr.dfp2_d_yield, qr.dfp2_d_reject_ash, qr.dfp2_d_conc_ash,
             qr.colunas_d_cr, qr.colunas_d_yield, qr.colunas_d_reject_ash, qr.colunas_d_conc_ash,
@@ -292,7 +292,7 @@ function getOrCreateSheet(ss, name) {
     var headers = {
       "Checklists": ["ID", "Data", "Hora", "Área", "Operador", "Turma", "Turno", "Itens Falha", "Observações"],
       "Pendencias": ["ID", "Tag", "Área", "Disciplina", "Descrição", "Prioridade", "Status", "Operador Origem", "Turma Origem", "Turno Origem", "Operador Resolução", "Turma Resolução", "Data Criação", "Data Resolução"],
-      "Qualidade": ["ID", "Data", "Hora", "Operador", "Turma", "Turno", "PLY", "DFP2_C_CR", "DFP2_C_YIELD", "DFP2_C_REJECT_ASH", "DFP2_C_CONC_ASH", "DFP2_D_CR", "DFP2_D_YIELD", "DFP2_D_REJECT_ASH", "DFP2_D_CONC_ASH", "COLUNAS_D_CR", "COLUNAS_D_YIELD", "COLUNAS_D_REJECT_ASH", "COLUNAS_D_CONC_ASH", "HUM_FUNDO", "HUM_OVERSIZE", "HUM_CONC", "OBS"],
+      "Qualidade": ["ID", "Data", "Hora", "Categoria", "Operador", "Turma", "Turno", "PLY", "DFP2_C_CR", "DFP2_C_YIELD", "DFP2_C_REJECT_ASH", "DFP2_C_CONC_ASH", "DFP2_D_CR", "DFP2_D_YIELD", "DFP2_D_REJECT_ASH", "DFP2_D_CONC_ASH", "COLUNAS_D_CR", "COLUNAS_D_YIELD", "COLUNAS_D_REJECT_ASH", "COLUNAS_D_CONC_ASH", "HUM_FUNDO", "HUM_OVERSIZE", "HUM_CONC", "OBS"],
       "Performance": ["ID", "Data", "Hora", "Tipo", "Colaborador", "Matrícula", "Equipe", "Função", "Autor", "Autor Matrícula", "Descrição"]
     };
     sheet.appendRow(headers[name]);
