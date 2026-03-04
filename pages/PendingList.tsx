@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { 
   Search, 
   CheckCircle2, 
@@ -21,7 +21,8 @@ import {
   ShieldAlert,
   ArrowDownToLine,
   ExternalLink,
-  ClipboardList
+  ClipboardList,
+  AlertCircle
 } from 'lucide-react';
 import { PendingItem, Area, Turma, Discipline } from '../types';
 import { formatSummaryForWhatsApp, copyToClipboard } from '../services/whatsappShare';
@@ -40,6 +41,7 @@ interface PendingListProps {
 
 const PendingList: React.FC<PendingListProps> = ({ pendingItems = [], onResolve, onRefresh, isRefreshing }) => {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   
   const queryArea = searchParams.get('area');
   const queryStatus = searchParams.get('status');
@@ -177,6 +179,12 @@ const PendingList: React.FC<PendingListProps> = ({ pendingItems = [], onResolve,
         <div>
           <h1 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Painel de Pendências</h1>
         </div>
+        <button 
+          onClick={() => navigate('/manual-pending')}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-2xl font-black uppercase text-[10px] tracking-widest flex items-center gap-2 shadow-lg shadow-blue-600/20 transition-all active:scale-95"
+        >
+          <AlertCircle size={16} /> Registrar Pendência Manual
+        </button>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">

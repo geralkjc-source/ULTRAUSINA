@@ -16,8 +16,6 @@ import { Turma, Turno, QualityReport, QualityCategory } from '../types';
 import { getCurrentShiftInfo } from '../services/shiftService';
 import { fetchEmployees, Employee } from '../services/employeeService';
 import { formatQualityReportForWhatsApp, copyToClipboard } from '../services/whatsappShare';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 
 interface DFPResultsProps {
   onSaveQualityReport: (report: QualityReport) => void;
@@ -117,94 +115,6 @@ const DFPResults: React.FC<DFPResultsProps> = ({ onSaveQualityReport, qualityRep
     setShowSuggestions(false);
   };
 
-  const generatePDF = (category: QualityCategory) => {
-    const doc = new jsPDF({ orientation: 'landscape' });
-    const timestamp = new Date().toLocaleString('pt-BR', { hour12: false });
-    const pageWidth = doc.internal.pageSize.getWidth();
-
-    // Header Background
-    doc.setFillColor(15, 23, 42);
-    doc.rect(0, 0, pageWidth, 35, 'F');
-    
-    // Header Text
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(20);
-    doc.setFont('helvetica', 'bold');
-    doc.text('RELATÓRIO DE QUALIDADE E YIELD', pageWidth / 2, 18, { align: 'center' });
-    
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`CATEGORIA: ${category.replace('_', ' ')}`, pageWidth / 2, 26, { align: 'center' });
-
-    // Meta Info Section
-    doc.setTextColor(30, 41, 59);
-    doc.setFontSize(10);
-    
-    doc.setFont('helvetica', 'bold');
-    doc.text('OPERADOR:', 15, 45);
-    doc.setFont('helvetica', 'normal');
-    doc.text(formData.operator.toUpperCase(), 45, 45);
-    
-    doc.setFont('helvetica', 'bold');
-    doc.text('DATA:', 15, 52);
-    doc.setFont('helvetica', 'normal');
-    doc.text(formData.timestamp, 45, 52);
-
-    doc.setFont('helvetica', 'bold');
-    doc.text('GERADO EM:', pageWidth / 2, 52);
-    doc.setFont('helvetica', 'normal');
-    doc.text(timestamp, pageWidth / 2 + 30, 52);
-
-    let body: any[] = [];
-
-    if (category === 'DFP2') {
-      body = [
-        [{ content: 'DFP 2 - PLANTA C', colSpan: 3, styles: { fillColor: [241, 245, 249], fontStyle: 'bold', halign: 'center', textColor: [30, 41, 59] } }],
-        ['Yield (%)', formData.dfp2_c_yield, verificarDFP2({yield: formData.dfp2_c_yield, rejectAsh: formData.dfp2_c_reject_ash, concAsh: formData.dfp2_c_conc_ash}).join(' | ')],
-        ['CR (%)', formData.dfp2_c_cr, ''],
-        ['Reject Ash (%)', formData.dfp2_c_reject_ash, ''],
-        ['Conc Ash (%)', formData.dfp2_c_conc_ash, ''],
-        [{ content: 'DFP 2 - PLANTA D', colSpan: 3, styles: { fillColor: [241, 245, 249], fontStyle: 'bold', halign: 'center', textColor: [30, 41, 59] } }],
-        ['Yield (%)', formData.dfp2_d_yield, verificarDFP2({yield: formData.dfp2_d_yield, rejectAsh: formData.dfp2_d_reject_ash, concAsh: formData.dfp2_d_conc_ash}).join(' | ')],
-        ['CR (%)', formData.dfp2_d_cr, ''],
-        ['Reject Ash (%)', formData.dfp2_d_reject_ash, ''],
-        ['Conc Ash (%)', formData.dfp2_d_conc_ash, ''],
-      ];
-    } else if (category === 'COLUNAS_D') {
-      body = [
-        [{ content: 'COLUNAS D', colSpan: 3, styles: { fillColor: [241, 245, 249], fontStyle: 'bold', halign: 'center', textColor: [30, 41, 59] } }],
-        ['Product Ash (%)', formData.colunas_d_conc_ash, verificarColunaD({productAsh: formData.colunas_d_conc_ash, yield: formData.colunas_d_yield, tailAsh: formData.colunas_d_reject_ash}).join(' | ')],
-        ['Yield (%)', formData.colunas_d_yield, ''],
-        ['CR (%)', formData.colunas_d_cr, ''],
-        ['Tail Ash (%)', formData.colunas_d_reject_ash, ''],
-      ];
-    } else if (category === 'HUMIDADE_PLY') {
-      body = [
-        [{ content: 'HUMIDADE E PLY', colSpan: 3, styles: { fillColor: [241, 245, 249], fontStyle: 'bold', halign: 'center', textColor: [30, 41, 59] } }],
-        ['PLY', formData.ply, ''],
-        ['Humidade Fundo (%)', formData.humidade_fundo, verificarHumidade(formData.humidade_fundo).join(' | ')],
-        ['Humidade Oversize (%)', formData.humidade_oversize, verificarHumidade(formData.humidade_oversize).join(' | ')],
-        ['Humidade Concentrado (%)', formData.humidade_concentrado, verificarHumidade(formData.humidade_concentrado).join(' | ')],
-      ];
-    }
-
-    autoTable(doc, {
-      startY: 60,
-      head: [['PARÂMETRO', 'VALOR', 'STATUS / ALERTAS DE QUALIDADE']],
-      body: body,
-      theme: 'grid',
-      headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' },
-      styles: { fontSize: 9, cellPadding: 4, lineColor: [226, 232, 240] },
-      columnStyles: { 
-        0: { fontStyle: 'bold', cellWidth: 80 },
-        1: { halign: 'center', cellWidth: 40 },
-        2: { fontSize: 8, textColor: [71, 85, 105] }
-      }
-    });
-
-    doc.save(`Relatorio_Qualidade_${category}_${Date.now()}.pdf`);
-  };
-
   const handleSubmit = (e: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!selectedCategory) return;
@@ -267,8 +177,7 @@ const DFPResults: React.FC<DFPResultsProps> = ({ onSaveQualityReport, qualityRep
     }
 
     reportsToSave.forEach(report => onSaveQualityReport(report));
-    generatePDF(selectedCategory);
-
+    
     const text = reportsToSave.map(formatQualityReportForWhatsApp).join('\n\n');
     copyToClipboard(text).then(success => {
       if (success) {

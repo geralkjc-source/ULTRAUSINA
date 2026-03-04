@@ -351,7 +351,7 @@ const Dashboard: React.FC<DashboardProps> = ({ reports, pendingItems, qualityRep
         <div className={`p-6 rounded-[2.5rem] border-4 transition-all flex flex-col justify-between ${
           unsyncedCount > 0 
             ? 'bg-amber-50 border-amber-200 shadow-xl shadow-amber-200/20' 
-            : 'bg-emerald-50 border-emerald-200 shadow-xl shadow-emerald-200/20'
+            : 'bg-emerald-50 border-emerald-200 shadow-xl shadow-amber-200/20'
         }`}>
           <div className="flex justify-between items-start mb-4">
             <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${

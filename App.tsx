@@ -57,7 +57,6 @@ const Sidebar = ({ isOpen, toggle, unsyncedCount }: { isOpen: boolean; toggle: (
   const location = useLocation();
   const menuItems = [
     { path: '/', label: 'Dashboard', icon: <LayoutDashboard size={20} /> },
-    { path: '/calendar', label: 'Escala 2026', icon: <Calendar size={20} /> },
     { path: '/charts', label: 'Supervisório', icon: <PieChart size={20} /> },
     { path: '/pending', label: 'Pendências', icon: <AlertCircle size={20} /> },
     { path: '/history', label: 'Histórico', icon: <FileSpreadsheet size={20} /> },
@@ -67,7 +66,6 @@ const Sidebar = ({ isOpen, toggle, unsyncedCount }: { isOpen: boolean; toggle: (
       icon: <Cloud size={20} />, 
       badge: unsyncedCount > 0 ? unsyncedCount : null 
     },
-    { path: '/dfp', label: 'Qualidade e Yield', icon: <PieChart size={20} /> },
     { path: '/forms', label: 'Formulários Operacionais', icon: <FileSpreadsheet size={20} /> },
     { path: '/performance-history', label: 'Histórico de Performance', icon: <Award size={20} /> },
   ];
