@@ -32,7 +32,7 @@ async function startServer() {
 
   // API routes
   app.get("/api/health", (req, res) => {
-    res.json({ status: "ok", version: "3.2" });
+    res.json({ status: "ok", version: "4.0" });
   });
 
   // Reports Endpoints
@@ -172,10 +172,10 @@ async function startServer() {
         writeJSON(OPERATIONAL_EVENTS_FILE, events);
       }
 
-      res.json({ success: true, message: "Sincronismo v3.2 Concluído no Backend." });
+      res.json({ success: true, message: "Sincronismo v4.0 Concluído no Backend." });
     } catch (error) {
       console.error("Sync Error:", error);
-      res.status(500).json({ success: false, message: "Erro no sincronismo v3.2." });
+      res.status(500).json({ success: false, message: "Erro no sincronismo v4.0." });
     }
   });
 

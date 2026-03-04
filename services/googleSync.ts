@@ -68,18 +68,18 @@ export const testScriptConnection = async (url: string): Promise<{success: boole
     if (!response) return { success: false, message: "Script Inacessível (CORS/Rede)." };
     
     const text = await response.text();
-    const isV32 = text.includes("v3.2") || text.includes("v3");
+    const isV4 = text.includes("v4") || text.includes("v3.2") || text.includes("v3");
     
     // Teste 2: Verificar se as ações de leitura estão respondendo (opcional mas útil)
     const testAction = await fetch(`${url}?action=getStats&t=${Date.now()}`).catch(() => null);
     const actionsOk = testAction && testAction.ok;
 
-    if (isV32 && actionsOk) {
-      return { success: true, message: "Protocolo Vulcan v3.2 Totalmente Ativo!" };
-    } else if (isV32) {
-      return { success: true, message: "Script v3.2 Detectado (Ações Limitadas)." };
+    if (isV4 && actionsOk) {
+      return { success: true, message: "Protocolo Vulcan v4.0 Totalmente Ativo!" };
+    } else if (isV4) {
+      return { success: true, message: "Script v4.0 Detectado (Ações Limitadas)." };
     } else {
-      return { success: false, message: "Script v3.2 Requerido.", details: "O script atual parece ser uma versão antiga." };
+      return { success: false, message: "Script v4.0 Requerido.", details: "O script atual parece ser uma versão antiga ou incompatível." };
     }
   } catch (error) { 
     return { success: false, message: "Falha de conexão.", details: "Verifique se o script está publicado como 'Qualquer pessoa'." }; 

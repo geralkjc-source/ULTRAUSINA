@@ -252,7 +252,7 @@ const App: React.FC = () => {
           pending: unsyncedPending,
           qualityReports: unsyncedQualityReports,
           operationalEvents: unsyncedOperational,
-          version: "3.2"
+          version: "4.0"
         });
         
         // Marca como sincronizado localmente IMEDIATAMENTE após sucesso no backend
