@@ -245,7 +245,7 @@ const App: React.FC = () => {
       const unsyncedQualityReports = qualityReportsToSync.filter(qr => !qr.synced);
       const unsyncedOperational = operationalToSync.filter(oe => !oe.synced);
 
-      // 1. Sincroniza com o Backend v3.2 (Express)
+      // 1. Sincroniza com o Backend v4.0 (Express)
       if (unsyncedReports.length > 0 || unsyncedPending.length > 0 || unsyncedQualityReports.length > 0 || unsyncedOperational.length > 0) {
         await backendService.sync({
           reports: unsyncedReports,

@@ -101,6 +101,23 @@ async function startServer() {
     }
   });
 
+  app.put("/api/pending-items/:id", (req, res) => {
+    try {
+      const items = readJSON(PENDING_ITEMS_FILE);
+      const { id } = req.params;
+      const index = items.findIndex((item: any) => item.id === id);
+      if (index !== -1) {
+        items[index] = { ...items[index], ...req.body };
+        writeJSON(PENDING_ITEMS_FILE, items);
+        res.json(items[index]);
+      } else {
+        res.status(404).json({ error: "Item not found" });
+      }
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update pending item" });
+    }
+  });
+
   // Operational Events Endpoints
   app.get("/api/operational-events", (req, res) => {
     try {
@@ -123,17 +140,20 @@ async function startServer() {
     }
   });
 
-  // Sync Endpoint (v3.2)
+  // Sync Endpoint (v4.0)
   app.post("/api/sync", (req, res) => {
+    console.log(`[${new Date().toISOString()}] Sync Request Received`);
     try {
-      const { reports: incomingReports, pending: incomingPending, qualityReports: incomingQuality, operationalEvents: incomingOperational, mes_referencia } = req.body;
+      const { reports: incomingReports, pending: incomingPending, qualityReports: incomingQuality, operationalEvents: incomingOperational } = req.body;
       
+      let syncCount = 0;
+
       // 1. Sync Reports
       if (incomingReports && Array.isArray(incomingReports)) {
         const reports = readJSON(REPORTS_FILE);
         incomingReports.forEach((r: any) => {
           const index = reports.findIndex((existing: any) => existing.id === r.id);
-          if (index === -1) reports.push(r);
+          if (index === -1) { reports.push(r); syncCount++; }
           else reports[index] = { ...reports[index], ...r };
         });
         writeJSON(REPORTS_FILE, reports);
@@ -144,7 +164,7 @@ async function startServer() {
         const pending = readJSON(PENDING_ITEMS_FILE);
         incomingPending.forEach((p: any) => {
           const index = pending.findIndex((existing: any) => existing.id === p.id);
-          if (index === -1) pending.push(p);
+          if (index === -1) { pending.push(p); syncCount++; }
           else pending[index] = { ...pending[index], ...p };
         });
         writeJSON(PENDING_ITEMS_FILE, pending);
@@ -155,7 +175,7 @@ async function startServer() {
         const quality = readJSON(QUALITY_REPORTS_FILE);
         incomingQuality.forEach((qr: any) => {
           const index = quality.findIndex((existing: any) => existing.id === qr.id);
-          if (index === -1) quality.push(qr);
+          if (index === -1) { quality.push(qr); syncCount++; }
           else quality[index] = { ...quality[index], ...qr };
         });
         writeJSON(QUALITY_REPORTS_FILE, quality);
@@ -166,13 +186,14 @@ async function startServer() {
         const events = readJSON(OPERATIONAL_EVENTS_FILE);
         incomingOperational.forEach((oe: any) => {
           const index = events.findIndex((existing: any) => existing.id === oe.id);
-          if (index === -1) events.push(oe);
+          if (index === -1) { events.push(oe); syncCount++; }
           else events[index] = { ...events[index], ...oe };
         });
         writeJSON(OPERATIONAL_EVENTS_FILE, events);
       }
 
-      res.json({ success: true, message: "Sincronismo v4.0 Concluído no Backend." });
+      console.log(`[${new Date().toISOString()}] Sync Success: ${syncCount} new items`);
+      res.json({ success: true, message: `Sincronismo v4.0 Concluído (${syncCount} novos itens).` });
     } catch (error) {
       console.error("Sync Error:", error);
       res.status(500).json({ success: false, message: "Erro no sincronismo v4.0." });

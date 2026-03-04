@@ -91,14 +91,19 @@ const SyncDashboard: React.FC<SyncDashboardProps> = ({ reports, pendingItems, qu
     try {
       // 1. Sincroniza com Backend Express
       addLog("Sincronizando com Backend Express...");
-      await backendService.sync({
-        reports: unsyncedReports,
-        pending: unsyncedPending,
-        qualityReports: unsyncedQualityReports,
-        operationalEvents: unsyncedOperational,
-        version: "4.0"
-      });
-      addLog("Backend Express: OK.");
+      try {
+        await backendService.sync({
+          reports: unsyncedReports,
+          pending: unsyncedPending,
+          qualityReports: unsyncedQualityReports,
+          operationalEvents: unsyncedOperational,
+          version: "4.0"
+        });
+        addLog("Backend Express: OK.");
+      } catch (backendError: any) {
+        addLog(`Erro Backend: ${backendError.message || 'Falha na conexão'}`);
+        throw backendError;
+      }
 
       // 2. Sincroniza com Google Sheets
       addLog("Sincronizando com Google Sheets...");
@@ -114,10 +119,10 @@ const SyncDashboard: React.FC<SyncDashboardProps> = ({ reports, pendingItems, qu
         if (onRefreshCloud) onRefreshCloud();
         addLog("Sincronismo v4.0 Concluído.");
       } else {
-        addLog("Falha no Google Sheets v4.0.");
+        addLog(`Falha Google Sheets: ${result.message}`);
       }
-    } catch (error) {
-      addLog("Erro crítico no sincronismo v4.0.");
+    } catch (error: any) {
+      addLog(`Erro crítico: ${error.message || 'Erro desconhecido'}`);
       console.error(error);
     }
     setIsSyncing(false);
