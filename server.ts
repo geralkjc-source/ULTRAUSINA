@@ -27,7 +27,16 @@ async function startServer() {
   app.use(express.json({ limit: '50mb' }));
 
   // Helper to read/write JSON files
-  const readJSON = (file: string) => JSON.parse(fs.readFileSync(file, "utf8"));
+  const readJSON = (file: string) => {
+    try {
+      const content = fs.readFileSync(file, "utf8");
+      if (!content || content.trim() === "") return [];
+      return JSON.parse(content);
+    } catch (e) {
+      console.error(`Error reading ${file}:`, e);
+      return [];
+    }
+  };
   const writeJSON = (file: string, data: any) => fs.writeFileSync(file, JSON.stringify(data, null, 2));
 
   // API routes
@@ -142,61 +151,87 @@ async function startServer() {
 
   // Sync Endpoint (v4.0)
   app.post("/api/sync", (req, res) => {
-    console.log(`[${new Date().toISOString()}] Sync Request Received`);
+    const requestId = Math.random().toString(36).substring(7);
+    console.log(`[${new Date().toISOString()}] [${requestId}] Sync Request Received`);
     try {
       const { reports: incomingReports, pending: incomingPending, qualityReports: incomingQuality, operationalEvents: incomingOperational } = req.body;
       
+      if (!incomingReports && !incomingPending && !incomingQuality && !incomingOperational) {
+        console.warn(`[${new Date().toISOString()}] [${requestId}] Empty sync request`);
+        return res.json({ success: true, message: "Nada para sincronizar." });
+      }
+
       let syncCount = 0;
 
       // 1. Sync Reports
       if (incomingReports && Array.isArray(incomingReports)) {
-        const reports = readJSON(REPORTS_FILE);
-        incomingReports.forEach((r: any) => {
-          const index = reports.findIndex((existing: any) => existing.id === r.id);
-          if (index === -1) { reports.push(r); syncCount++; }
-          else reports[index] = { ...reports[index], ...r };
-        });
-        writeJSON(REPORTS_FILE, reports);
+        try {
+          const reports = readJSON(REPORTS_FILE);
+          incomingReports.forEach((r: any) => {
+            const index = reports.findIndex((existing: any) => existing.id === r.id);
+            if (index === -1) { reports.push(r); syncCount++; }
+            else reports[index] = { ...reports[index], ...r };
+          });
+          writeJSON(REPORTS_FILE, reports);
+        } catch (e) {
+          console.error(`[${requestId}] Error syncing reports:`, e);
+          throw new Error("Erro ao salvar relatórios");
+        }
       }
 
       // 2. Sync Pending Items
       if (incomingPending && Array.isArray(incomingPending)) {
-        const pending = readJSON(PENDING_ITEMS_FILE);
-        incomingPending.forEach((p: any) => {
-          const index = pending.findIndex((existing: any) => existing.id === p.id);
-          if (index === -1) { pending.push(p); syncCount++; }
-          else pending[index] = { ...pending[index], ...p };
-        });
-        writeJSON(PENDING_ITEMS_FILE, pending);
+        try {
+          const pending = readJSON(PENDING_ITEMS_FILE);
+          incomingPending.forEach((p: any) => {
+            const index = pending.findIndex((existing: any) => existing.id === p.id);
+            if (index === -1) { pending.push(p); syncCount++; }
+            else pending[index] = { ...pending[index], ...p };
+          });
+          writeJSON(PENDING_ITEMS_FILE, pending);
+        } catch (e) {
+          console.error(`[${requestId}] Error syncing pending items:`, e);
+          throw new Error("Erro ao salvar pendências");
+        }
       }
 
       // 3. Sync Quality Reports
       if (incomingQuality && Array.isArray(incomingQuality)) {
-        const quality = readJSON(QUALITY_REPORTS_FILE);
-        incomingQuality.forEach((qr: any) => {
-          const index = quality.findIndex((existing: any) => existing.id === qr.id);
-          if (index === -1) { quality.push(qr); syncCount++; }
-          else quality[index] = { ...quality[index], ...qr };
-        });
-        writeJSON(QUALITY_REPORTS_FILE, quality);
+        try {
+          const quality = readJSON(QUALITY_REPORTS_FILE);
+          incomingQuality.forEach((qr: any) => {
+            const index = quality.findIndex((existing: any) => existing.id === qr.id);
+            if (index === -1) { quality.push(qr); syncCount++; }
+            else quality[index] = { ...quality[index], ...qr };
+          });
+          writeJSON(QUALITY_REPORTS_FILE, quality);
+        } catch (e) {
+          console.error(`[${requestId}] Error syncing quality reports:`, e);
+          throw new Error("Erro ao salvar qualidade");
+        }
       }
 
       // 4. Sync Operational Events
       if (incomingOperational && Array.isArray(incomingOperational)) {
-        const events = readJSON(OPERATIONAL_EVENTS_FILE);
-        incomingOperational.forEach((oe: any) => {
-          const index = events.findIndex((existing: any) => existing.id === oe.id);
-          if (index === -1) { events.push(oe); syncCount++; }
-          else events[index] = { ...events[index], ...oe };
-        });
-        writeJSON(OPERATIONAL_EVENTS_FILE, events);
+        try {
+          const events = readJSON(OPERATIONAL_EVENTS_FILE);
+          incomingOperational.forEach((oe: any) => {
+            const index = events.findIndex((existing: any) => existing.id === oe.id);
+            if (index === -1) { events.push(oe); syncCount++; }
+            else events[index] = { ...events[index], ...oe };
+          });
+          writeJSON(OPERATIONAL_EVENTS_FILE, events);
+        } catch (e) {
+          console.error(`[${requestId}] Error syncing operational events:`, e);
+          throw new Error("Erro ao salvar eventos operacionais");
+        }
       }
 
-      console.log(`[${new Date().toISOString()}] Sync Success: ${syncCount} new items`);
+      console.log(`[${new Date().toISOString()}] [${requestId}] Sync Success: ${syncCount} new items`);
       res.json({ success: true, message: `Sincronismo v4.0 Concluído (${syncCount} novos itens).` });
-    } catch (error) {
-      console.error("Sync Error:", error);
-      res.status(500).json({ success: false, message: "Erro no sincronismo v4.0." });
+    } catch (error: any) {
+      console.error(`[${requestId}] Sync Error:`, error);
+      res.status(500).json({ success: false, message: error.message || "Erro interno no sincronismo v4.0." });
     }
   });
 

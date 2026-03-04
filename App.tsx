@@ -164,16 +164,6 @@ const App: React.FC = () => {
 
   // Carregamento Inicial
   useEffect(() => {
-    // Migração de URL do Google Script (v3.2)
-    const currentUrl = localStorage.getItem('google_apps_script_url');
-    const previousUrls = [
-      'https://script.google.com/macros/s/AKfycbxtvbBGbkqymcbFIKjKRXfy_GFW7b9pb_FaH6smuAUrosTbs3l02FYe753qx_1Lg19oZA/exec',
-      'https://script.google.com/macros/s/AKfycbyvYthvTERVFx9Vy4M3iVVbQj7vxzX-HaDkrM6M_DhCvddyWZevMr5omoquK5Z8PxnP/exec'
-    ];
-    if (!currentUrl || previousUrls.includes(currentUrl)) {
-      localStorage.setItem('google_apps_script_url', DEFAULT_SCRIPT_URL);
-    }
-
     const loadInitialData = async () => {
       try {
         // Tenta carregar do backend primeiro
@@ -210,14 +200,18 @@ const App: React.FC = () => {
       } catch (e) {
         console.error("Initial Load Error", e);
         // Fallback para localStorage
-        const savedReports = localStorage.getItem('ultrafino_reports');
-        const savedPending = localStorage.getItem('ultrafino_pending');
-        const savedQuality = localStorage.getItem('ultrafino_quality');
-        const savedOperational = localStorage.getItem('ultrafino_operational');
-        if (savedReports) setReports(JSON.parse(savedReports));
-        if (savedPending) setPendingItems(JSON.parse(savedPending));
-        if (savedQuality) setQualityReports(JSON.parse(savedQuality));
-        if (savedOperational) setOperationalEvents(JSON.parse(savedOperational));
+        try {
+          const savedReports = localStorage.getItem('ultrafino_reports');
+          const savedPending = localStorage.getItem('ultrafino_pending');
+          const savedQuality = localStorage.getItem('ultrafino_quality');
+          const savedOperational = localStorage.getItem('ultrafino_operational');
+          if (savedReports) setReports(JSON.parse(savedReports));
+          if (savedPending) setPendingItems(JSON.parse(savedPending));
+          if (savedQuality) setQualityReports(JSON.parse(savedQuality));
+          if (savedOperational) setOperationalEvents(JSON.parse(savedOperational));
+        } catch (lsError) {
+          console.error("LocalStorage Fallback Error", lsError);
+        }
       }
     };
     loadInitialData();
@@ -264,10 +258,10 @@ const App: React.FC = () => {
 
       // 2. Busca dados atualizados do Backend
       const [bReports, bPending, bQuality, bOperational] = await Promise.all([
-        backendService.getReports(),
-        backendService.getPendingItems(),
-        backendService.getQualityReports(),
-        backendService.getOperationalEvents()
+        backendService.getReports().catch(() => []),
+        backendService.getPendingItems().catch(() => []),
+        backendService.getQualityReports().catch(() => []),
+        backendService.getOperationalEvents().catch(() => [])
       ]);
 
       // 3. Sincroniza com Google Sheets (Opcional/Legado)
@@ -316,10 +310,14 @@ const App: React.FC = () => {
       setQualityReports(finalQuality);
       setOperationalEvents(finalOperational);
       
-      localStorage.setItem('ultrafino_reports', JSON.stringify(finalReports));
-      localStorage.setItem('ultrafino_pending', JSON.stringify(finalPending));
-      localStorage.setItem('ultrafino_quality', JSON.stringify(finalQuality));
-      localStorage.setItem('ultrafino_operational', JSON.stringify(finalOperational));
+      try {
+        localStorage.setItem('ultrafino_reports', JSON.stringify(finalReports));
+        localStorage.setItem('ultrafino_pending', JSON.stringify(finalPending));
+        localStorage.setItem('ultrafino_quality', JSON.stringify(finalQuality));
+        localStorage.setItem('ultrafino_operational', JSON.stringify(finalOperational));
+      } catch (lsError) {
+        console.warn("LocalStorage Quota Exceeded", lsError);
+      }
       setLastSyncSource('cloud');
     } catch (error) {
       console.error("Sync Error", error);

@@ -65,13 +65,23 @@ export const backendService = {
   },
 
   async sync(payload: any): Promise<{ success: boolean; message: string }> {
-    const response = await fetch(`${API_BASE}/sync`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    if (!response.ok) throw new Error('Failed to sync data');
-    return response.json();
+    try {
+      const response = await fetch(`${API_BASE}/sync`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: response.statusText }));
+        throw new Error(errorData.message || `Erro do Servidor: ${response.status}`);
+      }
+      
+      return response.json();
+    } catch (error: any) {
+      console.error('Sync service error:', error);
+      throw error;
+    }
   },
 
   // Operational Events
