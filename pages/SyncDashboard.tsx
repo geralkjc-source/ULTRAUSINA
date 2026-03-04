@@ -135,6 +135,29 @@ const SyncDashboard: React.FC<SyncDashboardProps> = ({ reports, pendingItems, qu
     setIsSyncing(false);
   };
 
+  const handleForceCloudRefresh = async () => {
+    if (!window.confirm("Isso irá apagar seus dados locais e baixar tudo novamente da nuvem. Deseja continuar?")) return;
+    
+    setIsSyncing(true);
+    setLogs([]);
+    addLog("Iniciando Limpeza de Cache e Refresh Total...");
+    
+    try {
+      localStorage.removeItem('ultrafino_reports');
+      localStorage.removeItem('ultrafino_pending');
+      localStorage.removeItem('ultrafino_quality');
+      localStorage.removeItem('ultrafino_operational');
+      addLog("Cache Local Limpo.");
+      
+      if (onRefreshCloud) await onRefreshCloud();
+      addLog("Dados da Nuvem Recarregados.");
+    } catch (error: any) {
+      addLog(`Erro no Refresh: ${error.message}`);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   const appsScriptCode = `/**
  * PLATAFORMA ULTRAFINO USINA 2 - SCRIPT DE SINCRONIZAÇÃO v4.0 (ESTÁVEL)
  * 
@@ -325,11 +348,20 @@ function fetchSheetData(ss, sheetName) {
           <h1 className="text-3xl font-black text-slate-900 tracking-tighter uppercase">VULCAN CLOUD v4.0</h1>
           <p className="text-slate-500 font-bold uppercase text-[10px] tracking-widest mt-1">Sincronismo Fiel de Data/Hora</p>
         </div>
-        {!isAdmin && (
-          <button onClick={() => setshowConfig(!showConfig)} className="flex items-center gap-2 px-6 py-3 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase shadow-xl hover:scale-105 transition-all">
-            <Settings2 size={16} /> {showConfig ? 'Fechar Painel' : 'Configurar Script v4.0'}
+        <div className="flex gap-2">
+          {!isAdmin && (
+            <button onClick={() => setshowConfig(!showConfig)} className="flex items-center gap-2 px-6 py-3 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase shadow-xl hover:scale-105 transition-all">
+              <Settings2 size={16} /> {showConfig ? 'Fechar Painel' : 'Configurar Script v4.0'}
+            </button>
+          )}
+          <button 
+            onClick={handleForceCloudRefresh}
+            disabled={isSyncing}
+            className="flex items-center gap-2 px-6 py-3 bg-amber-500 text-white rounded-2xl font-black text-[10px] uppercase shadow-xl hover:scale-105 transition-all disabled:opacity-50"
+          >
+            <RefreshCw size={16} className={isSyncing ? 'animate-spin' : ''} /> Forçar Refresh Nuvem
           </button>
-        )}
+        </div>
       </div>
 
       {!showConfig ? (

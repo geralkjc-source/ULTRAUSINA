@@ -366,9 +366,9 @@ export const fetchCloudQualityReports = async (scriptUrl: string): Promise<Quali
     for (const cat in grouped) {
       const reports = grouped[cat].sort((a, b) => a.timestamp - b.timestamp);
 
-      // Initial state
+      // Initial state - Stable ID based on category to prevent duplicates in merge
       let state: any = {
-        id: `qr-${cat}-${Date.now()}`,
+        id: `qr-stable-${cat}`, 
         timestamp: 0,
         category: cat,
         area: 'DFP 2',
@@ -380,15 +380,18 @@ export const fetchCloudQualityReports = async (scriptUrl: string): Promise<Quali
       };
 
       for (const report of reports) {
-        state.timestamp = Math.max(state.timestamp, report.timestamp);
-        state.area = report.area || state.area;
-        state.operator = report.operator || state.operator;
-        state.turma = report.turma || state.turma;
-        state.turno = report.turno || state.turno;
+        // Only update if the new report is newer or equal
+        if (report.timestamp >= state.timestamp) {
+          state.timestamp = report.timestamp;
+          state.area = report.area || state.area;
+          state.operator = report.operator || state.operator;
+          state.turma = report.turma || state.turma;
+          state.turno = report.turno || state.turno;
+        }
         
-        // Generic merge
+        // Merge fields (latest value for each field across all rows of this category)
         Object.keys(report).forEach(key => {
-          if (report[key] !== undefined && key !== 'timestamp' && key !== 'category' && key !== 'id') {
+          if (report[key] !== undefined && report[key] !== null && report[key] !== '' && key !== 'timestamp' && key !== 'category' && key !== 'id') {
             state[key] = report[key];
           }
         });
