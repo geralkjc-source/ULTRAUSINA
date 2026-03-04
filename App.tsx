@@ -224,7 +224,7 @@ const App: React.FC = () => {
 
   /**
    * Omni-Sync Function
-   * Sincroniza dados locais com a nuvem e busca novidades.
+   * Sincroniza dados locais com a nuvem e busca novidades sem apagar o estado atual se a busca falhar.
    */
   const refreshDataFromCloud = useCallback(async (manualReports?: Report[], manualPending?: PendingItem[], manualQualityReports?: QualityReport[], manualOperational?: OperationalEvent[]) => {
     setIsGlobalSyncing(true);
@@ -241,45 +241,50 @@ const App: React.FC = () => {
 
       // 1. Sincroniza com o Backend v4.0 (Express)
       if (unsyncedReports.length > 0 || unsyncedPending.length > 0 || unsyncedQualityReports.length > 0 || unsyncedOperational.length > 0) {
-        await backendService.sync({
-          reports: unsyncedReports,
-          pending: unsyncedPending,
-          qualityReports: unsyncedQualityReports,
-          operationalEvents: unsyncedOperational,
-          version: "4.0"
-        });
-        
-        // Marca como sincronizado localmente IMEDIATAMENTE após sucesso no backend
-        setReports(prev => prev.map(r => unsyncedReports.some(ur => ur.id === r.id) ? { ...r, synced: true } : r));
-        setPendingItems(prev => prev.map(p => unsyncedPending.some(up => up.id === p.id) ? { ...p, synced: true } : p));
-        setQualityReports(prev => prev.map(qr => unsyncedQualityReports.some(uqr => uqr.id === qr.id) ? { ...qr, synced: true } : qr));
-        setOperationalEvents(prev => prev.map(oe => unsyncedOperational.some(uoe => uoe.id === oe.id) ? { ...oe, synced: true } : oe));
+        try {
+          await backendService.sync({
+            reports: unsyncedReports,
+            pending: unsyncedPending,
+            qualityReports: unsyncedQualityReports,
+            operationalEvents: unsyncedOperational,
+            version: "4.0"
+          });
+          
+          // Marca como sincronizado localmente IMEDIATAMENTE após sucesso no backend
+          setReports(prev => prev.map(r => unsyncedReports.some(ur => ur.id === r.id) ? { ...r, synced: true } : r));
+          setPendingItems(prev => prev.map(p => unsyncedPending.some(up => up.id === p.id) ? { ...p, synced: true } : p));
+          setQualityReports(prev => prev.map(qr => unsyncedQualityReports.some(uqr => uqr.id === qr.id) ? { ...qr, synced: true } : qr));
+          setOperationalEvents(prev => prev.map(oe => unsyncedOperational.some(uoe => uoe.id === oe.id) ? { ...oe, synced: true } : oe));
+        } catch (backendSyncError) {
+          console.error("Backend Sync Error", backendSyncError);
+          // Não interrompe, tenta o Google Sheets mesmo se o backend falhar
+        }
       }
 
-      // 2. Busca dados atualizados do Backend
+      // 2. Busca dados atualizados do Backend (se falhar, retorna null para não sobrescrever com vazio)
       const [bReports, bPending, bQuality, bOperational] = await Promise.all([
-        backendService.getReports().catch(() => []),
-        backendService.getPendingItems().catch(() => []),
-        backendService.getQualityReports().catch(() => []),
-        backendService.getOperationalEvents().catch(() => [])
+        backendService.getReports().catch(() => null),
+        backendService.getPendingItems().catch(() => null),
+        backendService.getQualityReports().catch(() => null),
+        backendService.getOperationalEvents().catch(() => null)
       ]);
 
       // 3. Sincroniza com Google Sheets (Opcional/Legado)
       const scriptUrl = localStorage.getItem('google_apps_script_url') || DEFAULT_SCRIPT_URL;
-      let cloudReports: Report[] = [];
-      let cloudPending: PendingItem[] = [];
-      let cloudQuality: QualityReport[] = [];
-      let cloudOperational: OperationalEvent[] = [];
+      let cloudReports: Report[] | null = null;
+      let cloudPending: PendingItem[] | null = null;
+      let cloudQuality: QualityReport[] | null = null;
+      let cloudOperational: OperationalEvent[] | null = null;
       
       if (scriptUrl) {
         await syncToGoogleSheets(scriptUrl, unsyncedReports, unsyncedPending, unsyncedQualityReports, unsyncedOperational).catch(() => null);
         
         // Busca TODOS os históricos da nuvem
         const [cReports, cPending, cQuality, cOperational] = await Promise.all([
-          fetchCloudReports(scriptUrl).catch(() => []),
-          fetchCloudItems(scriptUrl).catch(() => []),
-          fetchCloudQualityReports(scriptUrl).catch(() => []),
-          fetchCloudOperationalEvents(scriptUrl).catch(() => [])
+          fetchCloudReports(scriptUrl).catch(() => null),
+          fetchCloudItems(scriptUrl).catch(() => null),
+          fetchCloudQualityReports(scriptUrl).catch(() => null),
+          fetchCloudOperationalEvents(scriptUrl).catch(() => null)
         ]);
         
         cloudReports = cReports;
@@ -288,37 +293,41 @@ const App: React.FC = () => {
         cloudOperational = cOperational;
       }
 
-      // Mesclagem e Ordenação
-      const mergeData = <T extends { id: string; timestamp: number }>(local: T[], cloud: T[]) => {
+      // Mesclagem e Ordenação - Preserva dados se as fontes falharem
+      const mergeData = <T extends { id: string; timestamp: number }>(current: T[], local: T[] | null, cloud: T[] | null) => {
         const map = new Map<string, T>();
-        [...cloud, ...local].forEach(item => {
+        // Ordem de prioridade: Cloud > Local > Current
+        [...(current || []), ...(local || []), ...(cloud || [])].forEach(item => {
+          if (!item || !item.id) return;
           const existing = map.get(item.id);
-          if (!existing || item.timestamp > existing.timestamp) {
+          if (!existing || item.timestamp >= existing.timestamp) {
             map.set(item.id, item);
           }
         });
         return Array.from(map.values());
       };
 
-      const finalReports = mergeData(bReports, cloudReports).map(r => ({ ...r, synced: true })).sort((a, b) => b.timestamp - a.timestamp);
-      const finalPending = mergeData(bPending, cloudPending).map(p => ({ ...p, synced: true })).sort((a, b) => b.timestamp - a.timestamp);
-      const finalQuality = mergeData(bQuality, cloudQuality).map(qr => ({ ...qr, synced: true })).sort((a, b) => b.timestamp - a.timestamp);
-      const finalOperational = mergeData(bOperational, cloudOperational).map(oe => ({ ...oe, synced: true })).sort((a, b) => b.timestamp - a.timestamp);
+      const finalReports = mergeData(reports, bReports, cloudReports).map(r => ({ ...r, synced: true })).sort((a, b) => b.timestamp - a.timestamp);
+      const finalPending = mergeData(pendingItems, bPending, cloudPending).map(p => ({ ...p, synced: true })).sort((a, b) => b.timestamp - a.timestamp);
+      const finalQuality = mergeData(qualityReports, bQuality, cloudQuality).map(qr => ({ ...qr, synced: true })).sort((a, b) => b.timestamp - a.timestamp);
+      const finalOperational = mergeData(operationalEvents, bOperational, cloudOperational).map(oe => ({ ...oe, synced: true })).sort((a, b) => b.timestamp - a.timestamp);
 
-      setReports(finalReports);
-      setPendingItems(finalPending);
-      setQualityReports(finalQuality);
-      setOperationalEvents(finalOperational);
+      // Só atualiza se houver dados ou se pelo menos uma fonte respondeu com sucesso
+      if (finalReports.length > 0) setReports(finalReports);
+      if (finalPending.length > 0) setPendingItems(finalPending);
+      if (finalQuality.length > 0) setQualityReports(finalQuality);
+      if (finalOperational.length > 0) setOperationalEvents(finalOperational);
       
       try {
-        localStorage.setItem('ultrafino_reports', JSON.stringify(finalReports));
-        localStorage.setItem('ultrafino_pending', JSON.stringify(finalPending));
-        localStorage.setItem('ultrafino_quality', JSON.stringify(finalQuality));
-        localStorage.setItem('ultrafino_operational', JSON.stringify(finalOperational));
+        if (finalReports.length > 0) localStorage.setItem('ultrafino_reports', JSON.stringify(finalReports));
+        if (finalPending.length > 0) localStorage.setItem('ultrafino_pending', JSON.stringify(finalPending));
+        if (finalQuality.length > 0) localStorage.setItem('ultrafino_quality', JSON.stringify(finalQuality));
+        if (finalOperational.length > 0) localStorage.setItem('ultrafino_operational', JSON.stringify(finalOperational));
       } catch (lsError) {
         console.warn("LocalStorage Quota Exceeded", lsError);
       }
-      setLastSyncSource('cloud');
+      
+      setLastSyncSource((cloudReports || bReports) ? 'cloud' : 'local');
     } catch (error) {
       console.error("Sync Error", error);
       setLastSyncSource('local');

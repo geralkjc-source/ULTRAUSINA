@@ -72,6 +72,10 @@ export const backendService = {
         body: JSON.stringify(payload),
       });
       
+      if (response.status === 405 || response.status === 404) {
+        throw new Error('BACKEND_UNAVAILABLE');
+      }
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ message: response.statusText }));
         throw new Error(errorData.message || `Erro do Servidor: ${response.status}`);
@@ -79,6 +83,7 @@ export const backendService = {
       
       return response.json();
     } catch (error: any) {
+      if (error.message === 'BACKEND_UNAVAILABLE') throw error;
       console.error('Sync service error:', error);
       throw error;
     }

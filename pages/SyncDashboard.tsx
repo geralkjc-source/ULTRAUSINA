@@ -91,6 +91,7 @@ const SyncDashboard: React.FC<SyncDashboardProps> = ({ reports, pendingItems, qu
     try {
       // 1. Sincroniza com Backend Express
       addLog("Sincronizando com Backend Express...");
+      let backendOk = false;
       try {
         await backendService.sync({
           reports: unsyncedReports,
@@ -100,9 +101,15 @@ const SyncDashboard: React.FC<SyncDashboardProps> = ({ reports, pendingItems, qu
           version: "4.0"
         });
         addLog("Backend Express: OK.");
+        backendOk = true;
       } catch (backendError: any) {
-        addLog(`Erro Backend: ${backendError.message || 'Falha na conexão'}`);
-        throw backendError;
+        if (backendError.message === 'BACKEND_UNAVAILABLE') {
+          addLog("Aviso: Backend Express não disponível neste ambiente (Modo Cloud Direto).");
+        } else {
+          addLog(`Erro Backend: ${backendError.message || 'Falha na conexão'}`);
+          // Se for um erro real (não apenas indisponibilidade), podemos optar por parar ou continuar
+          // Para Vulcan v4.0, vamos tentar continuar com Google Sheets se o backend falhar
+        }
       }
 
       // 2. Sincroniza com Google Sheets
