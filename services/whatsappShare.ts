@@ -1,6 +1,7 @@
 
 import { Report, ChecklistItem, PendingItem, QualityReport, QualityCategory, Area } from '../types';
 import { CHECKLIST_TEMPLATES } from '../constants';
+import { getCurrentShiftRange } from './shiftService';
 
 /**
  * Formata um relatório de qualidade para WhatsApp.
@@ -80,7 +81,16 @@ export const formatSummaryForWhatsApp = (items: PendingItem[], note?: string): s
  * Formata um resumo de turno com trabalhos realizados e pendências remanescentes.
  */
 export const formatShiftSummaryForWhatsApp = (items: PendingItem[], shiftInfo: { turma: string, turno: string }): string => {
-  const resolvedItems = items.filter(i => i.status === 'resolvido');
+  const shiftRange = getCurrentShiftRange();
+  
+  // Filtra itens resolvidos neste turno (com base no resolvedAt)
+  const resolvedItems = items.filter(i => 
+    i.status === 'resolvido' && 
+    i.resolvedAt && 
+    i.resolvedAt >= shiftRange.start && 
+    i.resolvedAt <= shiftRange.end
+  );
+  
   const openItems = items.filter(i => i.status === 'aberto');
   const dateStr = new Date().toLocaleDateString('pt-BR');
 

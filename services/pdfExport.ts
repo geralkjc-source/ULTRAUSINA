@@ -46,9 +46,9 @@ export const exportShiftReportPDF = (items: PendingItem[], meta: PDFMeta) => {
   // Apenas as resolvidas que ocorreram DENTRO do horário do turno vigente
   const resolvidasNoTurno = items.filter(i => 
     i.status === 'resolvido' && 
-    i.resolvedByTurma === meta.turma &&
     i.resolvedAt && 
-    i.resolvedAt >= shiftRange.start
+    i.resolvedAt >= shiftRange.start && 
+    i.resolvedAt <= shiftRange.end
   );
   
   // Cards de Resumo
@@ -83,7 +83,9 @@ export const exportShiftReportPDF = (items: PendingItem[], meta: PDFMeta) => {
     item.area,
     item.tag || 'N/A',
     item.discipline,
-    item.description.toUpperCase(),
+    (item.comments && item.comments.length > 0) 
+      ? item.comments[item.comments.length - 1].text.replace('RESOLVIDO: ', '').toUpperCase() 
+      : item.description.toUpperCase(),
     item.resolvedBy?.toUpperCase() || '-',
     item.resolvedAt ? new Date(item.resolvedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '-'
   ]);
@@ -175,7 +177,9 @@ export const exportAuditPDF = (items: PendingItem[]) => {
     item.area,
     item.tag || 'S/T',
     item.discipline,
-    item.description.toUpperCase(),
+    (item.comments && item.comments.length > 0) 
+      ? item.comments[item.comments.length - 1].text.replace('RESOLVIDO: ', '').toUpperCase() 
+      : item.description.toUpperCase(),
     `T-${item.turma}\n${item.operator}`,
     item.resolvedAt ? new Date(item.resolvedAt).toLocaleDateString('pt-BR') : '-',
     `T-${item.resolvedByTurma}\n${item.resolvedBy}`

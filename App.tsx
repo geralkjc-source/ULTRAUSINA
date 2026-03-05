@@ -357,7 +357,7 @@ const App: React.FC = () => {
     refreshDataFromCloud(updatedReports, pendingItems);
   };
 
-  const resolvePending = (id: string, operatorName: string, resolvedTurma: Turma) => {
+  const resolvePending = (id: string, operatorName: string, resolvedTurma: Turma, resolutionDescription: string) => {
     const updated = pendingItems.map(p => 
       p.id === id ? { 
         ...p, 
@@ -365,7 +365,8 @@ const App: React.FC = () => {
         resolvedBy: operatorName, 
         resolvedByTurma: resolvedTurma,
         resolvedAt: Date.now(), 
-        synced: false
+        synced: false,
+        comments: [...(p.comments || []), { id: Date.now().toString(), text: `RESOLVIDO: ${resolutionDescription}`, author: operatorName, timestamp: Date.now() }]
       } : p
     );
     setPendingItems(updated);

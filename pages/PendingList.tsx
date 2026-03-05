@@ -54,6 +54,7 @@ const PendingList: React.FC<PendingListProps> = ({ pendingItems = [], onResolve,
   
   const [resolvingId, setResolvingId] = useState<string | null>(null);
   const [resolverName, setResolverName] = useState('');
+  const [resolutionDescription, setResolutionDescription] = useState('');
   const [copyFeedback, setCopyFeedback] = useState(false);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [showResolverSuggestions, setShowResolverSuggestions] = useState(false);
@@ -151,6 +152,12 @@ const PendingList: React.FC<PendingListProps> = ({ pendingItems = [], onResolve,
                 onFocus={() => setShowResolverSuggestions(true)}
                 className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-2xl font-black text-center uppercase outline-none focus:border-emerald-500 transition-all shadow-inner" 
               />
+              <textarea
+                placeholder="DESCRIÇÃO TÉCNICA DO QUE FOI FEITO..."
+                value={resolutionDescription || ''}
+                onChange={(e) => setResolutionDescription(e.target.value)}
+                className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-2xl font-black text-center uppercase outline-none focus:border-emerald-500 transition-all shadow-inner min-h-[100px]"
+              />
               {showResolverSuggestions && resolverName && filteredEmployees.length > 0 && (
                 <div className="absolute z-[120] w-full bg-white border-2 border-slate-100 rounded-2xl shadow-xl mt-1 max-h-48 overflow-y-auto">
                   {filteredEmployees.map(emp => (
@@ -171,8 +178,8 @@ const PendingList: React.FC<PendingListProps> = ({ pendingItems = [], onResolve,
               )}
             </div>
             <div className="flex gap-3">
-              <button onClick={() => setResolvingId(null)} className="flex-1 py-5 border-2 border-slate-100 rounded-2xl font-black uppercase text-slate-400 text-[10px] tracking-widest">Cancelar</button>
-              <button onClick={() => { if(resolvingId && resolverName.trim()){ onResolve(resolvingId, resolverName.toUpperCase(), getCurrentShiftInfo().turma); setResolvingId(null); setResolverName(''); } }} disabled={!resolverName.trim()} className="flex-1 bg-emerald-600 text-white py-5 rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl">Confirmar</button>
+              <button onClick={() => { setResolvingId(null); setResolutionDescription(''); }} className="flex-1 py-5 border-2 border-slate-100 rounded-2xl font-black uppercase text-slate-400 text-[10px] tracking-widest">Cancelar</button>
+              <button onClick={() => { if(resolvingId && resolverName.trim()){ onResolve(resolvingId, resolverName.toUpperCase(), getCurrentShiftInfo().turma, resolutionDescription); setResolvingId(null); setResolverName(''); setResolutionDescription(''); } }} disabled={!resolverName.trim()} className="flex-1 bg-emerald-600 text-white py-5 rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl">Confirmar</button>
             </div>
           </div>
         </div>
@@ -194,7 +201,7 @@ const PendingList: React.FC<PendingListProps> = ({ pendingItems = [], onResolve,
         <button onClick={handleCopySummary} className={`flex items-center justify-center gap-2 py-4 rounded-2xl font-black text-[10px] uppercase shadow-lg border-2 transition-all active:scale-95 ${copyFeedback ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-white text-slate-900 border-slate-100 hover:border-blue-500'}`}>
           <Copy size={18} /> Copiar Resumo e Partilhar
         </button>
-        <button onClick={() => exportShiftReportPDF(filteredItems, { teamLeader: 'EQUIPE VULCAN', turma: getCurrentShiftInfo().turma, turno: getCurrentShiftInfo().turno })} className="flex items-center justify-center gap-2 py-4 bg-red-600 text-white rounded-2xl font-black text-[10px] uppercase shadow-lg border-2 border-transparent hover:bg-red-700 transition-all active:scale-95">
+        <button onClick={() => exportShiftReportPDF(pendingItems, { teamLeader: 'EQUIPE VULCAN', turma: getCurrentShiftInfo().turma, turno: getCurrentShiftInfo().turno })} className="flex items-center justify-center gap-2 py-4 bg-red-600 text-white rounded-2xl font-black text-[10px] uppercase shadow-lg border-2 border-transparent hover:bg-red-700 transition-all active:scale-95">
           <FileText size={18} /> PDF Turno
         </button>
         <button onClick={() => exportAuditPDF(pendingItems)} className="flex items-center justify-center gap-2 py-4 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase shadow-lg border-2 border-transparent hover:bg-slate-800 transition-all active:scale-95">
