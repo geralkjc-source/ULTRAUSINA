@@ -1,5 +1,5 @@
 
-import { Report, ChecklistItem, PendingItem, QualityReport, QualityCategory } from '../types';
+import { Report, ChecklistItem, PendingItem, QualityReport, QualityCategory, Area } from '../types';
 import { CHECKLIST_TEMPLATES } from '../constants';
 
 /**
@@ -161,6 +161,7 @@ export const formatReportForWhatsApp = (report: Report, itemsWithMaybeSections?:
   }
 
   let hideDueToNoFeed = false;
+  let activeSubcellHide = false;
   let hideM1 = false;
   let hideM2 = false;
   let hideM3 = false;
@@ -176,26 +177,33 @@ export const formatReportForWhatsApp = (report: Report, itemsWithMaybeSections?:
       
       if (hideDueToNoFeed && sectionLower.includes('equipamentos hbf')) hideDueToNoFeed = false;
       
-      if (sectionName.includes('SUBCÉLULA M1')) hideM1 = !selectedLines.includes('M1');
-      if (sectionName.includes('SUBCÉLULA M2')) hideM2 = !selectedLines.includes('M2');
-      if (sectionName.includes('SUBCÉLULA M3')) hideM3 = !selectedLines.includes('M3');
-      if (sectionName.includes('SUBCÉLULA M4')) hideM4 = !selectedLines.includes('M4');
+      if (sectionName.includes('SUBCÉLULA M1')) { hideM1 = !selectedLines.includes('M1'); activeSubcellHide = hideM1; }
+      if (sectionName.includes('SUBCÉLULA M2')) { hideM2 = !selectedLines.includes('M2'); activeSubcellHide = hideM2; }
+      if (sectionName.includes('SUBCÉLULA M3')) { hideM3 = !selectedLines.includes('M3'); activeSubcellHide = hideM3; }
+      if (sectionName.includes('SUBCÉLULA M4')) { hideM4 = !selectedLines.includes('M4'); activeSubcellHide = hideM4; }
       
       if (sectionName.includes('NÍVEIS DO TANK DE REAGENTE')) {
         hideM1 = hideM2 = hideM3 = hideM4 = false;
+        activeSubcellHide = false;
+      }
+
+      const noLinesSelected = report.area === Area.DFP2 && selectedLines.length === 0;
+      const isReagentSection = sectionLower === 'colector' || sectionLower === 'frother';
+
+      if ((hideDueToNoFeed || noLinesSelected) && isReagentSection) return;
+
+      if (activeSubcellHide) {
+        const isInternalSection = sectionName === 'COLECTOR' || sectionName === 'FROTHER' || sectionName.includes('SUBCÉLULA');
+        if (isInternalSection) return;
       }
 
       const isHiddenColumnSection = hideDueToNoFeed && sectionLower.includes('flotation columns');
-      const isHiddenMSection = (hideM1 && sectionName.includes('M1')) || 
-                               (hideM2 && sectionName.includes('M2')) || 
-                               (hideM3 && sectionName.includes('M3')) || 
-                               (hideM4 && sectionName.includes('M4'));
-
-      if (!isHiddenColumnSection && !isHiddenMSection) {
+      
+      if (!isHiddenColumnSection) {
         message += `\n*${sectionName}*\n`;
       }
     } else {
-      if (hideM1 || hideM2 || hideM3 || hideM4) return;
+      if (activeSubcellHide) return;
 
       const labelLower = item.label.toLowerCase();
       
@@ -207,6 +215,10 @@ export const formatReportForWhatsApp = (report: Report, itemsWithMaybeSections?:
         hideDueToNoFeed = !isFeeding;
         return;
       }
+
+      const noLinesSelected = report.area === Area.DFP2 && selectedLines.length === 0;
+      const isReagentItem = labelLower.includes('vazão') || labelLower.includes('sp (l/min)') || labelLower.includes('sp(l/min)');
+      if ((hideDueToNoFeed || noLinesSelected) && isReagentItem) return;
 
       if (hideDueToNoFeed) {
         const isActuallyColumnItem = labelLower.includes('coluna') || 
@@ -232,35 +244,38 @@ export const formatReportForWhatsApp = (report: Report, itemsWithMaybeSections?:
       if (isMeasurement || isTextInput) {
         let suffix = "";
         
-        // Lógica de Diferença de 3% para Nível vs Setpoint e Parâmetros de Reagentes (Regra v1.5)
-        const isSetpoint = labelLower.includes('setpoint (%)') || labelLower.includes('set point') || labelLower.includes('actual (%)') || labelLower.includes('atual');
-        const isNivel = labelLower.includes('nível (%)');
+        // Lógica de Diferença: 3% para Nível vs Setpoint e 10% para Reagentes (Vazão vs SP)
+        const isSetpoint = labelLower.includes('setpoint (%)') || labelLower.includes('set point') || labelLower.includes('actual (%)') || labelLower.includes('atual') || labelLower.includes('sp (l/min)') || labelLower.includes('sp(l/min)');
+        const isNivelOrVazao = labelLower.includes('nível (%)') || labelLower.includes('vazão');
+        const isReagent = labelLower.includes('vazão') || labelLower.includes('sp (l/min)') || labelLower.includes('sp(l/min)');
 
-        if (isNivel || labelLower.includes('set point')) {
+        if (isNivelOrVazao || labelLower.includes('set point')) {
           const nextItem = itemsToFormat[index + 1];
           const nextLabelLower = nextItem?.label.toLowerCase() || "";
-          const isNextTarget = nextLabelLower.includes('setpoint (%)') || nextLabelLower.includes('actual (%)') || nextLabelLower.includes('atual');
+          const isNextTarget = nextLabelLower.includes('setpoint (%)') || nextLabelLower.includes('actual (%)') || nextLabelLower.includes('atual') || nextLabelLower.includes('sp (l/min)') || nextLabelLower.includes('sp(l/min)');
           
           if (nextItem && isNextTarget) {
             const val1 = parseFloat(item.observation || "0");
             const val2 = parseFloat(nextItem.observation || "0");
             if (item.observation && nextItem.observation) {
                const diff = Math.abs(val1 - val2);
-               // Para reagentes, o limite pode ser mais sensível, mas mantemos 3% como padrão de conformidade
-               suffix = diff < 3 ? " 🟢" : " 🔴";
+               // Se for reagente, tolerância de 10% do SP. Se for nível, tolerância de 3 unidades.
+               const tolerance = isReagent ? (val2 * 0.1) : 3;
+               suffix = diff <= tolerance ? " 🟢" : " 🔴";
             }
           }
-        } else if (labelLower.includes('setpoint (%)') || labelLower.includes('actual (%)') || labelLower.includes('atual')) {
+        } else if (isSetpoint) {
            const prevItem = itemsToFormat[index - 1];
            const prevLabelLower = prevItem?.label.toLowerCase() || "";
-           const isPrevSource = prevLabelLower.includes('nível (%)') || prevLabelLower.includes('set point');
+           const isPrevSource = prevLabelLower.includes('nível (%)') || prevLabelLower.includes('set point') || prevLabelLower.includes('vazão');
 
            if (prevItem && isPrevSource) {
               const valTarget = parseFloat(item.observation || "0");
               const valSource = parseFloat(prevItem.observation || "0");
               if (item.observation && prevItem.observation) {
                 const diff = Math.abs(valSource - valTarget);
-                suffix = diff < 3 ? " 🟢" : " 🔴";
+                const tolerance = isReagent ? (valTarget * 0.1) : 3;
+                suffix = diff <= tolerance ? " 🟢" : " 🔴";
               }
            }
         }
@@ -278,9 +293,9 @@ export const formatReportForWhatsApp = (report: Report, itemsWithMaybeSections?:
         } else if (obsLower === 'turva') {
           statusEmoji = '🟡';
         } else if (obsLower === 'aberta' || obsLower === 'aberto') {
-          statusEmoji = (labelLower.includes('diluicao') || labelLower.includes('corse')) ? '⚠️' : '🔵';
+          statusEmoji = (labelLower.includes('diluicao')) ? '⚠️' : (labelLower.includes('corse') ? '🟢' : '🔵');
         } else if (obsLower === 'fechada' || obsLower === 'fechado') {
-          statusEmoji = (labelLower.includes('diluicao') || labelLower.includes('corse')) ? '🟢' : '⚪';
+          statusEmoji = (labelLower.includes('diluicao')) ? '⚠️' : (labelLower.includes('corse') ? '🔴' : '⚪');
         } else {
           switch (item.status) {
             case 'ok': statusEmoji = '🟢'; break;

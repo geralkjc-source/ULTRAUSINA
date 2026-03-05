@@ -153,6 +153,22 @@ const ChecklistArea: React.FC<ChecklistAreaProps> = ({ onSaveReport }) => {
       return;
     }
 
+    // Validação de Limite de Reagentes (0-4 L/min)
+    const reagentItems = items.filter(item => {
+      const labelLower = item.label.toLowerCase();
+      const isReagent = labelLower.includes('vazão') || labelLower.includes('sp (l/min)') || labelLower.includes('sp(l/min)');
+      return isReagent && item.observation && item.observation.trim() !== '';
+    });
+
+    for (const item of reagentItems) {
+      const val = parseFloat(item.observation || "0");
+      if (val > 4) {
+        setValidationError(`O valor de ${item.label} não pode ser superior a 4 L/min.`);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+    }
+
     setIsSubmitting(true);
     const filteredItems = items.filter(item => !item.label.startsWith('SECTION:'));
     
@@ -258,8 +274,8 @@ const ChecklistArea: React.FC<ChecklistAreaProps> = ({ onSaveReport }) => {
     if (labelLower.includes('corse seeding')) {
        return (
         <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
-          <button type="button" onClick={() => updateItemStatus(item.id, 'ok', 'ABERTO')} className={`px-6 py-2 rounded-lg text-[9px] font-black uppercase transition-all ${item.observation === 'ABERTO' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-500'}`}>ABERTO</button>
-          <button type="button" onClick={() => updateItemStatus(item.id, 'fail', 'FECHADO')} className={`px-6 py-2 rounded-lg text-[9px] font-black uppercase transition-all ${item.observation === 'FECHADO' ? 'bg-red-600 text-white shadow-lg' : 'text-slate-500'}`}>FECHADO</button>
+          <button type="button" onClick={() => updateItemStatus(item.id, 'ok', 'ABERTO')} className={`px-6 py-2 rounded-lg text-[9px] font-black uppercase transition-all ${item.observation === 'ABERTO' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-500 hover:text-emerald-600'}`}>ABERTO</button>
+          <button type="button" onClick={() => updateItemStatus(item.id, 'fail', 'FECHADO')} className={`px-6 py-2 rounded-lg text-[9px] font-black uppercase transition-all ${item.observation === 'FECHADO' ? 'bg-red-600 text-white shadow-lg' : 'text-slate-500 hover:text-red-600'}`}>FECHADO</button>
         </div>
       );
     }
@@ -332,6 +348,16 @@ const ChecklistArea: React.FC<ChecklistAreaProps> = ({ onSaveReport }) => {
           <input type={isMeasurement && !labelLower.includes('ply') ? "number" : "text"} placeholder={isMeasurement ? "Vlr..." : "Preencher..."} value={item.observation || ''} onChange={(e) => updateItemObservation(item.id, e.target.value)} className="w-full px-4 py-2.5 border-2 border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none font-black text-[11px] uppercase transition-all text-blue-600" />
         </div>
        );
+    }
+
+    const isColumnItem = /^\d[CD]-FC-\d{3}$/.test(item.label);
+    if (isColumnItem) {
+      return (
+        <div className="flex bg-slate-100 p-1 rounded-lg border border-slate-200 shadow-inner">
+          <button type="button" onClick={() => updateItemStatus(item.id, 'ok', 'EM ALIMENTAÇÃO')} className={`px-4 py-2 rounded-md text-[10px] font-black uppercase transition-all ${item.observation === 'EM ALIMENTAÇÃO' ? 'bg-emerald-500 text-white shadow-md' : 'text-slate-500 hover:text-slate-700'}`}>EM ALIMENTAÇÃO</button>
+          <button type="button" onClick={() => updateItemStatus(item.id, 'fail', 'SEM ALIMENTAÇÃO')} className={`px-4 py-2 rounded-md text-[10px] font-black uppercase transition-all ${item.observation === 'SEM ALIMENTAÇÃO' ? 'bg-red-500 text-white shadow-md' : 'text-slate-500 hover:text-slate-700'}`}>SEM ALIMENTAÇÃO</button>
+        </div>
+      );
     }
 
     return (
@@ -481,46 +507,68 @@ const ChecklistArea: React.FC<ChecklistAreaProps> = ({ onSaveReport }) => {
         </div>
 
         <div className="bg-white rounded-[3rem] border-2 border-slate-100 shadow-sm overflow-hidden divide-y divide-slate-50">
-          {items.map((item, idx) => {
-            const isHeader = item.label.startsWith('SECTION:');
-            const labelLower = item.label.toLowerCase();
+          {(() => {
+            let activeSubcellSkip = false;
+            let currentColumn: ChecklistItem | null = null;
+            return items.map((item, idx) => {
+              const isHeader = item.label.startsWith('SECTION:');
+              const labelLower = item.label.toLowerCase();
+              const isColumnItem = /^\d[CD]-FC-\d{3}$/.test(item.label);
 
-            if (item.label === 'ALIMENTANDO COLUNAS?') {
-              skipDueToNoFeed = !isColumnsFeeding;
-            } else if (isHeader) {
-              const sectionName = item.label.replace('SECTION:', '').trim();
-              if (labelLower.includes('equipamentos hbf')) {
-                skipDueToNoFeed = false;
+              if (isColumnItem) {
+                currentColumn = item;
+              }
+
+              if (item.label.startsWith('- ')) {
+                if (currentColumn && currentColumn.observation === 'SEM ALIMENTAÇÃO') {
+                  return null;
+                }
+              }
+
+              if (item.label === 'ALIMENTANDO COLUNAS?') {
+                skipDueToNoFeed = !isColumnsFeeding;
+              } else if (isHeader) {
+                const sectionName = item.label.replace('SECTION:', '').trim();
+                if (labelLower.includes('equipamentos hbf')) {
+                  skipDueToNoFeed = false;
+                }
+                
+                if (sectionName.includes('SUBCÉLULA M1')) { skipM1 = !selectedLines.includes('M1'); activeSubcellSkip = skipM1; }
+                if (sectionName.includes('SUBCÉLULA M2')) { skipM2 = !selectedLines.includes('M2'); activeSubcellSkip = skipM2; }
+                if (sectionName.includes('SUBCÉLULA M3')) { skipM3 = !selectedLines.includes('M3'); activeSubcellSkip = skipM3; }
+                if (sectionName.includes('SUBCÉLULA M4')) { skipM4 = !selectedLines.includes('M4'); activeSubcellSkip = skipM4; }
+                
+                if (sectionName.includes('NÍVEIS DO TANK DE REAGENTE')) {
+                  skipM1 = skipM2 = skipM3 = skipM4 = false;
+                  activeSubcellSkip = false;
+                }
+              }
+
+              // Se não estiver alimentando colunas ou nenhuma linha selecionada, oculta dados de reagentes
+              const isReagentSection = labelLower === 'section:colector' || labelLower === 'section:frother';
+              const isReagentItem = labelLower.includes('vazão') || labelLower.includes('sp (l/min)') || labelLower.includes('sp(l/min)');
+              const noLinesSelected = currentArea === Area.DFP2 && selectedLines.length === 0;
+
+              if (skipDueToNoFeed || noLinesSelected) {
+                if (isReagentSection || isReagentItem) return null;
+              }
+
+              if (skipDueToNoFeed && item.label !== 'ALIMENTANDO COLUNAS?') {
+                const isActuallyColumnItem = labelLower.includes('coluna') || labelLower.includes('-fc-') || labelLower.includes('frother') || labelLower.includes('colector') || labelLower.includes('feed rate colunas') || labelLower.includes('ar (kpa)') || labelLower.includes('nível (%)') || labelLower.includes('setpoint (%)') || labelLower.includes('vazão') || labelLower.includes('sp (l/min)') || labelLower.includes('sp(l/min)');
+                if (isActuallyColumnItem) return null;
+              }
+
+              if (activeSubcellSkip) {
+                if (isHeader) {
+                  const sectionName = item.label.replace('SECTION:', '').trim();
+                  const isInternalSection = sectionName === 'COLECTOR' || sectionName === 'FROTHER' || sectionName.includes('SUBCÉLULA');
+                  if (isInternalSection) return null;
+                } else {
+                  return null;
+                }
               }
               
-              if (sectionName.includes('SUBCÉLULA M1')) skipM1 = !selectedLines.includes('M1');
-              if (sectionName.includes('SUBCÉLULA M2')) skipM2 = !selectedLines.includes('M2');
-              if (sectionName.includes('SUBCÉLULA M3')) skipM3 = !selectedLines.includes('M3');
-              if (sectionName.includes('SUBCÉLULA M4')) skipM4 = !selectedLines.includes('M4');
-              
-              if (sectionName.includes('NÍVEIS DO TANK DE REAGENTE')) {
-                skipM1 = skipM2 = skipM3 = skipM4 = false;
-              }
-            }
-
-            if (skipDueToNoFeed && item.label !== 'ALIMENTANDO COLUNAS?') {
-              const isActuallyColumnItem = labelLower.includes('coluna') || labelLower.includes('-fc-') || labelLower.includes('frother') || labelLower.includes('colector') || labelLower.includes('feed rate colunas') || labelLower.includes('ar (kpa)') || labelLower.includes('nível (%)') || labelLower.includes('setpoint (%)') || labelLower.includes('vazão') || labelLower.includes('sp (l/min)') || labelLower.includes('sp(l/min)');
-              if (isActuallyColumnItem) return null;
-            }
-
-            if ((skipM1 || skipM2 || skipM3 || skipM4) && !isHeader) {
-              return null;
-            }
-            
-            if (isHeader) {
-              const sectionName = item.label.replace('SECTION:', '').trim();
-              if (sectionName.includes('SUBCÉLULA M1') && skipM1) return null;
-              if (sectionName.includes('SUBCÉLULA M2') && skipM2) return null;
-              if (sectionName.includes('SUBCÉLULA M3') && skipM3) return null;
-              if (sectionName.includes('SUBCÉLULA M4') && skipM4) return null;
-            }
-
-            const isFailOrWarning = item.status === 'fail' || item.status === 'warning';
+              const isFailOrWarning = item.status === 'fail' || item.status === 'warning';
             const isNoFeedButNeedsObs = item.label === 'ALIMENTANDO COLUNAS?' && item.status === 'fail';
             
             const isAuxiliaryItem = labelLower.includes('retorno do tanque 104') || 
@@ -574,8 +622,9 @@ const ChecklistArea: React.FC<ChecklistAreaProps> = ({ onSaveReport }) => {
                 )}
               </div>
             );
-          })}
-        </div>
+          });
+        })()}
+      </div>
 
         <div className="bg-white p-8 rounded-[2.5rem] border-2 border-slate-100 shadow-sm space-y-4">
            <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2"><StickyNoteIcon size={14} className="text-blue-500" /> Observações Gerais / Passagem de Turno</label>

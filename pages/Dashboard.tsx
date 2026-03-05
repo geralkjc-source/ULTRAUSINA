@@ -151,18 +151,32 @@ const Dashboard: React.FC<DashboardProps> = ({ reports, pendingItems, qualityRep
       const ta = report.colunas_d_reject_ash || 0;
       const cr = report.colunas_d_cr || 0;
       const vals = `💎 PRODUCT ASH ${pa}% | 📈 YIELD ${yld}% | 📉 TAIL ASH ${ta}% | CR ${cr}%`;
-      if (pa > 11 || yld < 55 || ta < 45) return { color: 'bg-red-500', label: 'Fora de Spec', values: vals };
-      return { color: 'bg-emerald-500', label: 'Normal', values: vals };
+      
+      let color = 'bg-emerald-500';
+      let label = 'Normal';
+      
+      if (yld < 35) {
+        color = 'bg-red-500';
+        label = 'Crítico (Yield < 35)';
+      } else if (yld >= 35 && yld <= 39) {
+        color = 'bg-amber-500';
+        label = 'Atenção (Yield 35-39)';
+      } else if (yld >= 40) {
+        color = 'bg-emerald-500';
+        label = 'Normal (Yield >= 40)';
+      }
+      
+      return { color, label, values: vals };
     }
 
     if (report.category === 'HUMIDADE_PLY') {
       const tm = report.humidade_fundo || 0;
       const ply = report.ply || 'N/A';
       const vals = `🏷️ PLY: ${ply} | 💧 HUMIDADE FUNDO: ${tm}%`;
-      if (tm > 14.0) return { color: 'bg-red-500', label: 'Muito Alta', values: vals };
-      if (tm > 13.5) return { color: 'bg-amber-500', label: 'Acima Target', values: vals };
-      if (tm < 12.0) return { color: 'bg-blue-500', label: 'Muito Seco', values: vals };
-      return { color: 'bg-emerald-500', label: 'Normal', values: vals };
+      
+      if (tm >= 14) return { color: 'bg-red-500', label: 'Muito Alta (>= 14)', values: vals };
+      if (tm <= 13) return { color: 'bg-emerald-500', label: 'Normal (<= 13)', values: vals };
+      return { color: 'bg-amber-500', label: 'Atenção (13-14)', values: vals };
     }
 
     return { color: 'bg-slate-100', label: 'Desconhecido', values: '-' };
