@@ -244,9 +244,19 @@ const OperationalForms: React.FC<OperationalFormsProps> = ({ onAddManualPending,
   const handlePraiseSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    const eventDate = praiseData.dataElogio ? new Date(praiseData.dataElogio) : new Date();
+    // Se for a data de hoje, usamos o horário atual. Se for outra data, mantemos 12:00.
+    const todayStr = new Date().toISOString().split('T')[0];
+    if (praiseData.dataElogio === todayStr) {
+      const now = new Date();
+      eventDate.setHours(now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds());
+    } else if (praiseData.dataElogio) {
+      eventDate.setHours(12, 0, 0, 0);
+    }
+
     const event: OperationalEvent = {
       id: `elogio-${Date.now()}`,
-      timestamp: Date.now(),
+      timestamp: eventDate.getTime(),
       type: 'elogio',
       collaboratorName: praiseData.elogioNome,
       collaboratorMatricula: praiseData.elogioMatricula,
@@ -268,9 +278,13 @@ const OperationalForms: React.FC<OperationalFormsProps> = ({ onAddManualPending,
   const handleFailureSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    const eventDate = failureData.dataOcorrencia 
+      ? new Date(`${failureData.dataOcorrencia}T${failureData.horaOcorrencia || '12:00'}`) 
+      : new Date();
+
     const event: OperationalEvent = {
       id: `falha-${Date.now()}`,
-      timestamp: Date.now(),
+      timestamp: eventDate.getTime(),
       type: 'falha',
       collaboratorName: failureData.colaboradorNome,
       collaboratorMatricula: failureData.colaboradorMatricula,

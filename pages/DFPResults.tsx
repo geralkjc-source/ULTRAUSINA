@@ -119,10 +119,20 @@ const DFPResults: React.FC<DFPResultsProps> = ({ onSaveQualityReport, qualityRep
     if (e) e.preventDefault();
     if (!selectedCategory) return;
     
-    const now = Date.now();
+    const reportDate = formData.timestamp ? new Date(formData.timestamp) : new Date();
+    // Se for a data de hoje, usamos o horário atual. Se for outra data, mantemos 12:00 para evitar problemas de fuso.
+    const todayStr = new Date().toISOString().split('T')[0];
+    if (formData.timestamp === todayStr) {
+      const now = new Date();
+      reportDate.setHours(now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds());
+    } else if (formData.timestamp) {
+      reportDate.setHours(12, 0, 0, 0);
+    }
+    const timestamp = reportDate.getTime();
+
     const baseReport = {
-      id: `qual-${now}`,
-      timestamp: now,
+      id: `qual-${Date.now()}`,
+      timestamp: timestamp,
       operator: formData.operator,
       turma: detectedScale.turma,
       turno: detectedScale.turno,
@@ -137,7 +147,7 @@ const DFPResults: React.FC<DFPResultsProps> = ({ onSaveQualityReport, qualityRep
       if (formData.dfp2_c_yield || formData.dfp2_c_cr || formData.dfp2_c_reject_ash || formData.dfp2_c_conc_ash) {
         reportsToSave.push({
           ...baseReport,
-          id: `qual-c-${now}`,
+          id: `qual-c-${Date.now()}`,
           category: 'DFP2_C',
           dfp2_c_yield: parseValue(formData.dfp2_c_yield),
           dfp2_c_cr: parseValue(formData.dfp2_c_cr),
@@ -148,7 +158,7 @@ const DFPResults: React.FC<DFPResultsProps> = ({ onSaveQualityReport, qualityRep
       if (formData.dfp2_d_yield || formData.dfp2_d_cr || formData.dfp2_d_reject_ash || formData.dfp2_d_conc_ash) {
         reportsToSave.push({
           ...baseReport,
-          id: `qual-d-${now}`,
+          id: `qual-d-${Date.now() + 1}`,
           category: 'DFP2_D',
           dfp2_d_yield: parseValue(formData.dfp2_d_yield),
           dfp2_d_cr: parseValue(formData.dfp2_d_cr),

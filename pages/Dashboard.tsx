@@ -57,16 +57,19 @@ const Dashboard: React.FC<DashboardProps> = ({ reports, pendingItems, qualityRep
   const AreaCard = ({ area, icon, description }: { area: Area, icon: React.ReactNode, description: string }) => {
     const stats = getAreaStats(area);
     const isCritical = stats.hasFailures;
+    const isVeryCritical = area === Area.DFP2 && pendingItems.filter(p => p.area === Area.DFP2 && p.status === 'aberto').length >= 50;
 
     return (
-      <div className="bg-white rounded-[2rem] border-2 border-slate-100 shadow-sm hover:border-blue-500 hover:shadow-xl transition-all flex flex-col h-full overflow-hidden group">
+      <div className={`rounded-[2rem] border-2 shadow-sm hover:shadow-xl transition-all flex flex-col h-full overflow-hidden group ${
+        isVeryCritical ? 'bg-red-50 border-red-200 hover:border-red-500' : 'bg-white border-slate-100 hover:border-blue-500'
+      }`}>
         {/* Parte Superior: Direciona para o Checklist */}
         <button 
           onClick={() => navigate(`/checklist/${encodeURIComponent(area)}`)}
           className="p-6 text-left flex-grow w-full focus:outline-none"
         >
           <div className={`w-14 h-14 rounded-xl flex items-center justify-center mb-6 transition-colors ${
-            isCritical ? 'bg-amber-50 text-amber-600' : 'bg-blue-50 text-blue-600'
+            isVeryCritical ? 'bg-red-600 text-white' : isCritical ? 'bg-amber-50 text-amber-600' : 'bg-blue-50 text-blue-600'
           } group-hover:bg-blue-600 group-hover:text-white`}>
             {icon}
           </div>
@@ -78,16 +81,16 @@ const Dashboard: React.FC<DashboardProps> = ({ reports, pendingItems, qualityRep
         {/* Parte Inferior: Direciona para Pendências Filtradas */}
         <button 
           onClick={() => navigate(`/pending?area=${encodeURIComponent(area)}`)}
-          className={`px-6 py-4 border-t border-slate-50 flex items-center justify-between transition-colors ${
-            isCritical ? 'bg-amber-50/50 hover:bg-amber-100/80' : 'hover:bg-slate-50'
+          className={`px-6 py-4 border-t flex items-center justify-between transition-colors ${
+            isVeryCritical ? 'bg-red-100/50 hover:bg-red-200/80 border-red-200' : isCritical ? 'bg-amber-50/50 hover:bg-amber-100/80 border-slate-50' : 'hover:bg-slate-50 border-slate-50'
           }`}
         >
           <div className="flex flex-col">
             <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Status Atual</span>
             <div className="flex items-center gap-1.5">
-              {isCritical && <AlertCircle size={10} className="text-amber-600 animate-pulse" />}
-              <span className={`text-[10px] font-black uppercase ${isCritical ? 'text-amber-600' : 'text-emerald-600'}`}>
-                {stats.status}
+              {isCritical && <AlertCircle size={10} className={isVeryCritical ? 'text-red-600 animate-bounce' : 'text-amber-600 animate-pulse'} />}
+              <span className={`text-[10px] font-black uppercase ${isVeryCritical ? 'text-red-700' : isCritical ? 'text-amber-600' : 'text-emerald-600'}`}>
+                {isVeryCritical ? 'CRÍTICO: ' : ''}{stats.status}
               </span>
             </div>
           </div>
@@ -260,17 +263,25 @@ const Dashboard: React.FC<DashboardProps> = ({ reports, pendingItems, qualityRep
             <h3 className="text-lg font-black uppercase tracking-tighter">Semáforo de Qualidade</h3>
             <p className="text-slate-400 text-[8px] font-bold uppercase tracking-widest mt-1">Status de Produção e Qualidade em Tempo Real</p>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
             {latestQuality?.ply && (
-              <div className="px-3 py-1.5 bg-blue-600 rounded-xl text-[9px] font-black uppercase tracking-widest text-white border border-blue-500 shadow-lg shadow-blue-600/20">
+              <div className="px-3 py-1.5 bg-blue-600/20 text-blue-400 rounded-xl text-[9px] font-black uppercase tracking-widest border border-blue-500/30 mr-2">
                 PLY: {latestQuality.ply}
               </div>
             )}
             <button 
-              onClick={() => navigate('/dfp')}
-              className="px-6 py-2 bg-white text-slate-900 rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-blue-500 hover:text-white transition-all active:scale-95 shadow-lg"
+              onClick={onRefreshCloud}
+              disabled={isRefreshing}
+              className="p-2 bg-slate-800 hover:bg-slate-700 rounded-xl transition-all active:scale-95 disabled:opacity-50"
+              title="Sincronizar agora"
             >
-              Atualizar
+              <RefreshCw size={16} className={isRefreshing ? 'animate-spin text-blue-400' : 'text-slate-400'} />
+            </button>
+            <button 
+              onClick={() => navigate('/dfp')}
+              className="px-6 py-2 bg-blue-600 text-white rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-blue-700 transition-all active:scale-95 shadow-lg shadow-blue-600/20"
+            >
+              Novo Registro
             </button>
           </div>
         </div>
@@ -284,6 +295,7 @@ const Dashboard: React.FC<DashboardProps> = ({ reports, pendingItems, qualityRep
           ].map(section => {
             const latestForSection = [...qualityReports]
               .filter(qr => {
+                if (qr.timestamp <= 0) return false;
                 if (section.id === 'DFP2_C') return (qr.category === 'DFP2_C') || (qr.category === 'DFP2' && qr.dfp2_c_cr !== undefined);
                 if (section.id === 'DFP2_D') return (qr.category === 'DFP2_D') || (qr.category === 'DFP2' && qr.dfp2_d_cr !== undefined);
                 if (section.id === 'COLUNAS_D') return (qr.category === 'COLUNAS_D') || (qr.category === 'DFP2' && qr.colunas_d_cr !== undefined);
@@ -312,7 +324,9 @@ const Dashboard: React.FC<DashboardProps> = ({ reports, pendingItems, qualityRep
                     </span>
                   ))}
                   <span className="text-slate-500 text-[8px] block mt-0.5 w-full">
-                    Último: {reportToProcess ? new Date(reportToProcess.timestamp).toLocaleTimeString('pt-BR', { hour12: false }) : '--:--'}
+                    Último: {reportToProcess && reportToProcess.timestamp > 0 
+                      ? new Date(reportToProcess.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) 
+                      : '--:--'}
                   </span>
                 </div>
               </div>

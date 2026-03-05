@@ -25,9 +25,9 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { PendingItem, Area, Turma, Discipline } from '../types';
-import { formatSummaryForWhatsApp, copyToClipboard } from '../services/whatsappShare';
+import { formatShiftSummaryForWhatsApp, copyToClipboard, shareToWhatsApp } from '../services/whatsappShare';
 import { getCurrentShiftInfo } from '../services/shiftService';
-import { exportShiftReport, exportToExcel } from '../services/excelExport';
+import { exportToExcel } from '../services/excelExport';
 import { exportShiftReportPDF, exportAuditPDF } from '../services/pdfExport';
 import { fetchEmployees, Employee } from '../services/employeeService';
 
@@ -89,23 +89,26 @@ const PendingList: React.FC<PendingListProps> = ({ pendingItems = [], onResolve,
   };
 
   const handleCopySummary = async () => {
-    const text = formatSummaryForWhatsApp(filteredItems, "Resumo de Pendências Vulcan.");
-    const success = await copyToClipboard(text);
-    if (success) {
-      setCopyFeedback(true);
-      setTimeout(() => setCopyFeedback(false), 2000);
-    }
-  };
-
-  const handleGenerateTLReport = async () => {
     const shiftInfo = getCurrentShiftInfo();
-    const tlItems = pendingItems.filter(item => item.turma === shiftInfo.turma && item.status === 'aberto');
-    const text = formatSummaryForWhatsApp(tlItems, `Relatório de Pendências - Turma ${shiftInfo.turma} - Turno ${shiftInfo.turno}`);
+    
+    // Trabalho realizado: Itens resolvidos pela turma atual no turno atual (ou hoje)
+    // Para simplificar e ser preciso: Itens resolvidos hoje pela turma logada
+    const today = new Date().setHours(0, 0, 0, 0);
+    const workDone = pendingItems.filter(item => 
+      item.status === 'resolvido' && 
+      item.resolvedAt && item.resolvedAt >= today &&
+      item.resolvedByTurma === shiftInfo.turma
+    );
+
+    // Pendências remanescentes: Todos os itens que continuam abertos
+    const remaining = pendingItems.filter(item => item.status === 'aberto');
+
+    const text = formatShiftSummaryForWhatsApp([...workDone, ...remaining], { turma: shiftInfo.turma, turno: shiftInfo.turno });
     const success = await copyToClipboard(text);
     if (success) {
       setCopyFeedback(true);
       setTimeout(() => setCopyFeedback(false), 2000);
-      alert(`Relatório da Turma ${shiftInfo.turma} copiado!`);
+      shareToWhatsApp(text);
     }
   };
 
@@ -187,24 +190,15 @@ const PendingList: React.FC<PendingListProps> = ({ pendingItems = [], onResolve,
         </button>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-        <button onClick={handleCopySummary} className={`flex items-center justify-center gap-2 py-4 rounded-2xl font-black text-[9px] uppercase shadow-lg border-2 transition-all active:scale-95 ${copyFeedback ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-white text-slate-900 border-slate-100 hover:border-blue-500'}`}>
-          <Copy size={16} /> Copiar Resumo
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <button onClick={handleCopySummary} className={`flex items-center justify-center gap-2 py-4 rounded-2xl font-black text-[10px] uppercase shadow-lg border-2 transition-all active:scale-95 ${copyFeedback ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-white text-slate-900 border-slate-100 hover:border-blue-500'}`}>
+          <Copy size={18} /> Copiar Resumo e Partilhar
         </button>
-        <button onClick={handleGenerateTLReport} className="flex items-center justify-center gap-2 py-4 bg-indigo-600 text-white rounded-2xl font-black text-[9px] uppercase shadow-lg border-2 border-transparent hover:bg-indigo-700 transition-all active:scale-95">
-          <ClipboardList size={16} /> Relatório TL (Turno)
+        <button onClick={() => exportShiftReportPDF(filteredItems, { teamLeader: 'EQUIPE VULCAN', turma: getCurrentShiftInfo().turma, turno: getCurrentShiftInfo().turno })} className="flex items-center justify-center gap-2 py-4 bg-red-600 text-white rounded-2xl font-black text-[10px] uppercase shadow-lg border-2 border-transparent hover:bg-red-700 transition-all active:scale-95">
+          <FileText size={18} /> PDF Turno
         </button>
-        <button onClick={() => exportToExcel(filteredItems, 'Relatorio_Turno')} className="flex items-center justify-center gap-2 py-4 bg-emerald-600 text-white rounded-2xl font-black text-[9px] uppercase shadow-lg border-2 border-transparent hover:bg-emerald-700 transition-all active:scale-95">
-          <FileSpreadsheet size={16} /> Planilha Turno
-        </button>
-        <button onClick={() => exportShiftReportPDF(filteredItems, { teamLeader: 'EQUIPE VULCAN', turma: getCurrentShiftInfo().turma, turno: getCurrentShiftInfo().turno })} className="flex items-center justify-center gap-2 py-4 bg-red-600 text-white rounded-2xl font-black text-[9px] uppercase shadow-lg border-2 border-transparent hover:bg-red-700 transition-all active:scale-95">
-          <FileText size={16} /> PDF Turno
-        </button>
-        <button onClick={() => exportAuditPDF(pendingItems)} className="flex items-center justify-center gap-2 py-4 bg-slate-900 text-white rounded-2xl font-black text-[9px] uppercase shadow-lg border-2 border-transparent hover:bg-slate-800 transition-all active:scale-95">
-          <ShieldAlert size={16} /> Auditoria PDF
-        </button>
-        <button onClick={() => exportToExcel(pendingItems, 'Auditoria_Geral')} className="flex items-center justify-center gap-2 py-4 bg-blue-600 text-white rounded-2xl font-black text-[9px] uppercase shadow-lg border-2 border-transparent hover:bg-blue-700 transition-all active:scale-95">
-          <ArrowDownToLine size={16} /> Auditoria Excel
+        <button onClick={() => exportAuditPDF(pendingItems)} className="flex items-center justify-center gap-2 py-4 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase shadow-lg border-2 border-transparent hover:bg-slate-800 transition-all active:scale-95">
+          <ShieldAlert size={18} /> Auditoria PDF
         </button>
       </div>
 

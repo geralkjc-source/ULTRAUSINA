@@ -77,6 +77,59 @@ export const formatSummaryForWhatsApp = (items: PendingItem[], note?: string): s
 };
 
 /**
+ * Formata um resumo de turno com trabalhos realizados e pendências remanescentes.
+ */
+export const formatShiftSummaryForWhatsApp = (items: PendingItem[], shiftInfo: { turma: string, turno: string }): string => {
+  const resolvedItems = items.filter(i => i.status === 'resolvido');
+  const openItems = items.filter(i => i.status === 'aberto');
+  const dateStr = new Date().toLocaleDateString('pt-BR');
+
+  let message = `*RESUMO OPERACIONAL - ULTRAFINO USINA 2*\n`;
+  message += `📅 DATA: ${dateStr} | 👥 TURMA: ${shiftInfo.turma} | 🕒 TURNO: ${shiftInfo.turno}\n\n`;
+
+  message += `✅ *TRABALHO REALIZADO NO TURNO*\n`;
+  if (resolvedItems.length === 0) {
+    message += `_Nenhum item resolvido neste turno._\n`;
+  } else {
+    const groupedResolved: Record<string, PendingItem[]> = {};
+    resolvedItems.forEach(item => {
+      if (!groupedResolved[item.area]) groupedResolved[item.area] = [];
+      groupedResolved[item.area].push(item);
+    });
+
+    Object.entries(groupedResolved).forEach(([area, areaItems]) => {
+      message += `\n*${area.toUpperCase()}*\n`;
+      areaItems.forEach(item => {
+        const tagPart = item.tag ? `▪️${item.tag.trim()} ` : `▪️`;
+        message += `${tagPart}${item.description.trim().toUpperCase()} ✅\n`;
+      });
+    });
+  }
+
+  message += `\n\n🚨 *PENDÊNCIAS REMANESCENTES*\n`;
+  if (openItems.length === 0) {
+    message += `_Nenhuma pendência em aberto._\n`;
+  } else {
+    const groupedOpen: Record<string, PendingItem[]> = {};
+    openItems.forEach(item => {
+      if (!groupedOpen[item.area]) groupedOpen[item.area] = [];
+      groupedOpen[item.area].push(item);
+    });
+
+    Object.entries(groupedOpen).forEach(([area, areaItems]) => {
+      message += `\n*${area.toUpperCase()}*\n`;
+      areaItems.forEach(item => {
+        let emoji = item.priority === 'alta' ? '🔴' : '🟡';
+        const tagPart = item.tag ? `▪️${item.tag.trim()} ` : `▪️`;
+        message += `${tagPart}${item.description.trim().toUpperCase()} ${emoji}\n`;
+      });
+    });
+  }
+
+  return message.trim();
+};
+
+/**
  * Formata um relatório completo respeitando as visibilidades condicionais.
  */
 export const formatReportForWhatsApp = (report: Report, itemsWithMaybeSections?: ChecklistItem[]): string => {
@@ -108,6 +161,13 @@ export const formatReportForWhatsApp = (report: Report, itemsWithMaybeSections?:
   }
 
   let hideDueToNoFeed = false;
+  let hideM1 = false;
+  let hideM2 = false;
+  let hideM3 = false;
+  let hideM4 = false;
+
+  const linesItem = report.items.find(i => i.label === 'Linhas em alimentação (1-4)');
+  const selectedLines = linesItem?.observation?.split(',').filter(Boolean) || [];
 
   itemsToFormat.forEach((item, index) => {
     if (item.label.startsWith('SECTION:')) {
@@ -116,10 +176,27 @@ export const formatReportForWhatsApp = (report: Report, itemsWithMaybeSections?:
       
       if (hideDueToNoFeed && sectionLower.includes('equipamentos hbf')) hideDueToNoFeed = false;
       
-      if (!hideDueToNoFeed || !sectionLower.includes('flotation columns')) {
+      if (sectionName.includes('SUBCÉLULA M1')) hideM1 = !selectedLines.includes('M1');
+      if (sectionName.includes('SUBCÉLULA M2')) hideM2 = !selectedLines.includes('M2');
+      if (sectionName.includes('SUBCÉLULA M3')) hideM3 = !selectedLines.includes('M3');
+      if (sectionName.includes('SUBCÉLULA M4')) hideM4 = !selectedLines.includes('M4');
+      
+      if (sectionName.includes('NÍVEIS DO TANK DE REAGENTE')) {
+        hideM1 = hideM2 = hideM3 = hideM4 = false;
+      }
+
+      const isHiddenColumnSection = hideDueToNoFeed && sectionLower.includes('flotation columns');
+      const isHiddenMSection = (hideM1 && sectionName.includes('M1')) || 
+                               (hideM2 && sectionName.includes('M2')) || 
+                               (hideM3 && sectionName.includes('M3')) || 
+                               (hideM4 && sectionName.includes('M4'));
+
+      if (!isHiddenColumnSection && !isHiddenMSection) {
         message += `\n*${sectionName}*\n`;
       }
     } else {
+      if (hideM1 || hideM2 || hideM3 || hideM4) return;
+
       const labelLower = item.label.toLowerCase();
       
       if (item.label === 'ALIMENTANDO COLUNAS?') {
@@ -139,7 +216,10 @@ export const formatReportForWhatsApp = (report: Report, itemsWithMaybeSections?:
                                      labelLower.includes('feed rate colunas') ||
                                      labelLower.includes('ar (kpa)') || 
                                      labelLower.includes('nível (%)') || 
-                                     labelLower.includes('setpoint (%)');
+                                     labelLower.includes('setpoint (%)') ||
+                                     labelLower.includes('vazão') ||
+                                     labelLower.includes('sp (l/min)') ||
+                                     labelLower.includes('sp(l/min)');
         if (isActuallyColumnItem) return;
       }
 

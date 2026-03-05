@@ -428,7 +428,7 @@ const App: React.FC = () => {
             onSync={() => refreshDataFromCloud()}
           />
           
-          {pendingItems.filter(p => p.area === Area.DFP2 && p.status === 'aberto').length > 5 && (
+          {pendingItems.filter(p => p.area === Area.DFP2 && p.status === 'aberto').length >= 50 && (
             <div className="mx-6 mt-6 animate-in slide-in-from-top-4 duration-500">
               <div className="bg-red-50 border-2 border-red-100 rounded-[2rem] p-6 flex items-center justify-between shadow-sm">
                 <div className="flex items-center gap-4">
@@ -436,9 +436,9 @@ const App: React.FC = () => {
                     <AlertCircle size={24} />
                   </div>
                   <div>
-                    <h3 className="text-red-900 font-black uppercase text-sm tracking-tight">Atenção: Volume de Pendências DFP</h3>
+                    <h3 className="text-red-900 font-black uppercase text-sm tracking-tight">Atenção Crítica: Volume de Pendências DFP</h3>
                     <p className="text-red-600 text-[10px] font-bold uppercase tracking-widest mt-1">
-                      Existem {pendingItems.filter(p => p.area === Area.DFP2 && p.status === 'aberto').length} pendências em aberto na área DFP 2.
+                      Limite atingido: Existem {pendingItems.filter(p => p.area === Area.DFP2 && p.status === 'aberto').length} pendências em aberto na área DFP 2.
                     </p>
                   </div>
                 </div>

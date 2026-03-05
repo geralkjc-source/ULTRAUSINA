@@ -26,32 +26,69 @@ export interface CloudStats {
 const parseDateFromCloud = (dateVal: any): number => {
   if (!dateVal || dateVal === '-' || dateVal === 'undefined' || dateVal === 'null' || dateVal === '') return 0;
   
-  // Se já for um objeto Date (Apps Script às vezes retorna Date)
+  // Se já for um objeto Date
   if (dateVal instanceof Date && !isNaN(dateVal.getTime())) return dateVal.getTime();
   
-  // Se for um timestamp numérico direto
+  // Se for um timestamp numérico direto (ms)
   if (typeof dateVal === 'number' && dateVal > 1700000000000) return dateVal;
+
+  // Se for um número pequeno (serial date do Google Sheets)
+  if (typeof dateVal === 'number' && dateVal > 40000 && dateVal < 60000) {
+    return Math.floor((dateVal - 25569) * 86400 * 1000);
+  }
 
   try {
     const s = dateVal.toString().trim();
     
-    // Tenta Date.parse padrão (funciona para ISO e alguns formatos regionais)
+    // Se for um ISO string (YYYY-MM-DDTHH:mm:ss...)
+    if (s.includes('T') && !isNaN(Date.parse(s))) {
+      const parsed = Date.parse(s);
+      const d = new Date(parsed);
+      // Se o ano for 1899 ou 1900, é apenas uma hora vinda do Sheets
+      if (d.getFullYear() < 1970) {
+          return (d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds()) * 1000;
+      }
+      return parsed;
+    }
+
+    // Tenta extrair data (DD/MM/YYYY ou YYYY-MM-DD) e hora (HH:mm:ss)
+    const brDateMatch = s.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+    const isoDateMatch = s.match(/(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
+    const timeMatch = s.match(/(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?/);
+
+    let year = 0, month = 0, day = 0;
+    let hasDate = false;
+
+    if (brDateMatch) {
+      day = parseInt(brDateMatch[1]);
+      month = parseInt(brDateMatch[2]) - 1;
+      year = parseInt(brDateMatch[3]);
+      hasDate = true;
+    } else if (isoDateMatch) {
+      year = parseInt(isoDateMatch[1]);
+      month = parseInt(isoDateMatch[2]) - 1;
+      day = parseInt(isoDateMatch[3]);
+      hasDate = true;
+    }
+
+    let hour = 0, min = 0, sec = 0;
+    let hasTime = false;
+    if (timeMatch) {
+      hour = parseInt(timeMatch[1]);
+      min = parseInt(timeMatch[2]);
+      sec = parseInt(timeMatch[3] || '0');
+      hasTime = true;
+    }
+
+    if (hasDate) {
+      const d = new Date(year, month, day, hasTime ? hour : 12, min, sec);
+      if (!isNaN(d.getTime())) return d.getTime();
+    } else if (hasTime) {
+      return (hour * 3600 + min * 60 + sec) * 1000;
+    }
+
     const standardParse = Date.parse(s);
     if (!isNaN(standardParse)) return standardParse;
-
-    // Fallback Robusto para o formato Brasileiro: DD/MM/YYYY HH:mm
-    const matches = s.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})(?:[\s,]+(\d{1,2}):(\d{1,2}))?/);
-    if (matches) {
-      const day = parseInt(matches[1]);
-      const month = parseInt(matches[2]) - 1;
-      const year = parseInt(matches[3]);
-      const hour = matches[4] ? parseInt(matches[4]) : 12;
-      const min = matches[5] ? parseInt(matches[5]) : 0;
-
-      // Cria a data no fuso horário local para manter a "hora visual" da planilha
-      const d = new Date(year, month, day, hour, min, 0);
-      return isNaN(d.getTime()) ? 0 : d.getTime();
-    }
   } catch (e) {
     return 0;
   }
@@ -59,6 +96,22 @@ const parseDateFromCloud = (dateVal: any): number => {
 };
 
 const sanitize = (str: any) => (str || '').toString().replace(/[\u0000-\u001F\u007F-\u009F]/g, "").trim().toUpperCase();
+
+/**
+ * Busca valor em objeto de forma insensível a maiúsculas/minúsculas
+ */
+const getCloudValue = (obj: any, ...keys: string[]): any => {
+  if (!obj) return undefined;
+  for (const key of keys) {
+    const targetKey = key.trim().toLowerCase();
+    // Tenta exato
+    if (obj[key] !== undefined && obj[key] !== null && obj[key] !== '') return obj[key];
+    // Tenta case-insensitive e trim
+    const foundKey = Object.keys(obj).find(k => k.trim().toLowerCase() === targetKey);
+    if (foundKey && obj[foundKey] !== undefined && obj[foundKey] !== null && obj[foundKey] !== '') return obj[foundKey];
+  }
+  return undefined;
+};
 
 export const testScriptConnection = async (url: string): Promise<{success: boolean, message: string, details?: string}> => {
   if (!url || !url.startsWith('https://script.google.com')) return { success: false, message: "URL inválida." };
@@ -98,12 +151,21 @@ export const syncToGoogleSheets = async (
     const now = new Date();
     const mesRef = `${(now.getMonth() + 1).toString().padStart(2, '0')}_${now.getFullYear()}`;
     
-    const formatForSheet = (ts: number) => {
+    const formatForSheet = (ts: number, turno?: string) => {
       if (!ts || ts === 0) return { date: '-', time: '-' };
       const d = new Date(ts);
-      const day = d.getDate().toString().padStart(2, '0');
-      const month = (d.getMonth() + 1).toString().padStart(2, '0');
-      const year = d.getFullYear();
+      const h = d.getHours();
+      
+      // Ajuste operacional para o turno da NOITE (22h - 06h)
+      // Se for entre 00h e 06h, operacionalmente pertence ao dia anterior
+      const opDate = new Date(d);
+      if (turno === 'NOITE' && h < 6) {
+        opDate.setDate(opDate.getDate() - 1);
+      }
+
+      const day = opDate.getDate().toString().padStart(2, '0');
+      const month = (opDate.getMonth() + 1).toString().padStart(2, '0');
+      const year = opDate.getFullYear();
       const hour = d.getHours().toString().padStart(2, '0');
       const min = d.getMinutes().toString().padStart(2, '0');
       return { date: `${day}/${month}/${year}`, time: `${hour}:${min}` };
@@ -114,7 +176,7 @@ export const syncToGoogleSheets = async (
       version: "4.0",
       mes_referencia: mesRef,
       reports: (reports || []).map(r => {
-        const fmt = formatForSheet(r.timestamp);
+        const fmt = formatForSheet(r.timestamp, r.turno);
         return {
           id: r.id,
           data: fmt.date,
@@ -128,8 +190,8 @@ export const syncToGoogleSheets = async (
         };
       }),
       pending: (pending || []).map(p => {
-        const fmt = formatForSheet(p.timestamp);
-        const fmtRes = p.resolvedAt ? formatForSheet(p.resolvedAt) : null;
+        const fmt = formatForSheet(p.timestamp, p.turno);
+        const fmtRes = p.resolvedAt ? formatForSheet(p.resolvedAt, p.resolvedByTurma ? 'NOITE' : undefined) : null; // Simplificado, idealmente teríamos o turno da resolução
         return {
           id: p.id,
           tag: sanitize(p.tag),
@@ -148,7 +210,7 @@ export const syncToGoogleSheets = async (
         };
       }),
       qualityReports: (qualityReports || []).map(qr => {
-        const fmt = formatForSheet(qr.timestamp);
+        const fmt = formatForSheet(qr.timestamp, qr.turno);
         return {
           id: qr.id,
           data: fmt.date,
@@ -177,7 +239,7 @@ export const syncToGoogleSheets = async (
         };
       }),
       operationalEvents: (operationalEvents || []).map(oe => {
-        const fmt = formatForSheet(oe.timestamp);
+        const fmt = formatForSheet(oe.timestamp); // Eventos operacionais geralmente usam data real
         return {
           id: oe.id,
           data: fmt.date,
@@ -210,26 +272,37 @@ export const fetchCloudItems = async (scriptUrl: string): Promise<PendingItem[]>
     if (!Array.isArray(data)) return [];
     
     return data.map((item: any): PendingItem => {
-      const statusText = (item.status || '').toUpperCase();
+      const statusText = (getCloudValue(item, 'status') || '').toUpperCase();
       const isResolved = statusText === 'RESOLVIDO' || statusText === 'CONCLUÍDO';
       
       // PRIORIDADE TOTAL PARA OS DADOS DA PLANILHA
-      const sheetTimestamp = parseDateFromCloud(item.data_criacao || item.data);
-      const sheetResolvedAt = parseDateFromCloud(item.data_resolucao);
+      const rawDate = getCloudValue(item, 'data_criacao', 'data', 'timestamp');
+      let sheetTimestamp = parseDateFromCloud(rawDate);
+      
+      // Fallback para o ID se a data falhar
+      const id = item.id || '';
+      if (!sheetTimestamp && id.includes('-')) {
+          const tsPart = id.split('-')[1];
+          if (tsPart && !isNaN(parseInt(tsPart)) && parseInt(tsPart) > 1700000000000) {
+              sheetTimestamp = parseInt(tsPart);
+          }
+      }
+
+      const sheetResolvedAt = parseDateFromCloud(getCloudValue(item, 'data_resolucao', 'resolvido_em'));
 
       return {
-        id: item.id || `cl-${Date.now()}`,
-        tag: sanitize(item.tag),
-        area: item.area as Area,
-        discipline: sanitize(item.disciplina) as any,
-        description: sanitize(item.descricao),
-        priority: (item.prioridade || 'baixa').toLowerCase() as any,
+        id: id || `cl-${Date.now()}`,
+        tag: sanitize(getCloudValue(item, 'tag')),
+        area: getCloudValue(item, 'area') as Area,
+        discipline: sanitize(getCloudValue(item, 'disciplina')) as any,
+        description: sanitize(getCloudValue(item, 'descricao')),
+        priority: (getCloudValue(item, 'prioridade') || 'baixa').toLowerCase() as any,
         status: isResolved ? 'resolvido' : 'aberto',
-        operator: sanitize(item.operador_origem),
-        turma: item.turma_origem || 'A',
-        turno: (item.turno_origem || 'MANHÃ') as any,
-        resolvedBy: item.operador_resolucao !== '-' ? sanitize(item.operador_resolucao) : undefined,
-        resolvedByTurma: item.turma_resolucao !== '-' ? (item.turma_resolucao as any) : undefined,
+        operator: sanitize(getCloudValue(item, 'operador_origem', 'operador')),
+        turma: getCloudValue(item, 'turma_origem', 'turma') || 'A',
+        turno: (getCloudValue(item, 'turno_origem', 'turno') || 'MANHÃ') as any,
+        resolvedBy: getCloudValue(item, 'operador_resolucao') !== '-' ? sanitize(getCloudValue(item, 'operador_resolucao')) : undefined,
+        resolvedByTurma: getCloudValue(item, 'turma_resolucao') !== '-' ? (getCloudValue(item, 'turma_resolucao') as any) : undefined,
         resolvedAt: sheetResolvedAt || undefined, 
         timestamp: sheetTimestamp || Date.now(),
         synced: true
@@ -248,11 +321,33 @@ export const fetchCloudReports = async (scriptUrl: string): Promise<Report[]> =>
     const data = await response.json();
     if (!Array.isArray(data)) return [];
     return data.map((r: any): Report => {
-      const dateRaw = r.data || '';
-      const hourRaw = r.hora || '12:00';
-      const sheetTimestamp = parseDateFromCloud(`${dateRaw} ${hourRaw}`);
+      const dateRaw = getCloudValue(r, 'data', 'date') || '';
+      const hourRaw = getCloudValue(r, 'hora', 'time') || '';
+      
+      let sheetTimestamp = 0;
+      if (dateRaw) {
+          const datePart = parseDateFromCloud(dateRaw);
+          const timePart = hourRaw ? parseDateFromCloud(hourRaw) : (12 * 3600 * 1000);
+          
+          if (timePart < 86400000 && datePart > 86400000) {
+              const d = new Date(datePart);
+              d.setHours(0, 0, 0, 0);
+              sheetTimestamp = d.getTime() + timePart;
+          } else {
+              sheetTimestamp = datePart || Date.now();
+          }
+      }
 
-      const failures = (r.falhas || r.itens_falha || r.itens_com_falha || '').split(',').map((s: string) => s.trim()).filter(Boolean);
+      const id = getCloudValue(r, 'id_ref', 'id') || '';
+      // Fallback para o ID se a data falhar
+      if (!sheetTimestamp && id.startsWith('rep-')) {
+          const tsPart = id.split('-')[1];
+          if (tsPart && !isNaN(parseInt(tsPart)) && parseInt(tsPart) > 1700000000000) {
+              sheetTimestamp = parseInt(tsPart);
+          }
+      }
+
+      const failures = (getCloudValue(r, 'falhas', 'itens_falha', 'itens_com_falha') || '').split(',').map((s: string) => s.trim()).filter(Boolean);
       const items = failures.map((f: string, i: number) => ({
         id: `fail-${i}`,
         label: f,
@@ -261,15 +356,15 @@ export const fetchCloudReports = async (scriptUrl: string): Promise<Report[]> =>
       }));
 
       return {
-        id: r.id_ref || r.id || `rep-${Date.now()}-${Math.random()}`,
+        id: id || `rep-${Date.now()}-${Math.random()}`,
         timestamp: sheetTimestamp || Date.now(),
-        area: r.area as Area,
-        operator: sanitize(r.operador),
-        turma: (r.turma || 'A') as any,
-        turno: (r.turno || 'MANHÃ') as any,
+        area: getCloudValue(r, 'area') as Area,
+        operator: sanitize(getCloudValue(r, 'operador', 'operator')),
+        turma: (getCloudValue(r, 'turma', 'team') || 'A') as any,
+        turno: (getCloudValue(r, 'turno', 'shift') || 'MANHÃ') as any,
         items: items,
         pendingItems: [],
-        generalObservations: sanitize(r.observacoes || r.obs),
+        generalObservations: sanitize(getCloudValue(r, 'observacoes', 'obs', 'observations')),
         synced: true
       };
     }).sort((a, b) => b.timestamp - a.timestamp);
@@ -299,14 +394,27 @@ export const fetchCloudQualityReports = async (scriptUrl: string): Promise<Quali
 
     // 1. Parse all rows into a temporary structure, keeping only non-empty fields
     const allReports = data.map((qr: any) => {
-      const dateRaw = qr.data || '';
-      const hourRaw = qr.hora || '12:00';
-      const sheetTimestamp = parseDateFromCloud(`${dateRaw} ${hourRaw}`);
+      const dateRaw = getCloudValue(qr, 'data', 'date') || '';
+      const hourRaw = getCloudValue(qr, 'hora', 'time') || '';
+      
+      let sheetTimestamp = 0;
+      if (dateRaw) {
+          const datePart = parseDateFromCloud(dateRaw);
+          const timePart = hourRaw ? parseDateFromCloud(hourRaw) : (12 * 3600 * 1000);
+          
+          if (timePart < 86400000 && datePart > 86400000) {
+              const d = new Date(datePart);
+              d.setHours(0, 0, 0, 0);
+              sheetTimestamp = d.getTime() + timePart;
+          } else {
+              sheetTimestamp = datePart || Date.now();
+          }
+      }
 
       const report: any = {
         timestamp: sheetTimestamp || Date.now(),
         category: (() => {
-          const cat = (qr.categoria || qr.category || 'DFP2');
+          const cat = (getCloudValue(qr, 'categoria', 'category') || 'DFP2');
           if (cat === 'COLUNAS D' || cat === 'COLUNAS_D') return 'COLUNAS_D';
           if (cat === 'HUMIDADE E PLY' || cat === 'HUMIDADE_PLY' || cat === 'HUMIDADE') return 'HUMIDADE_PLY';
           
@@ -314,35 +422,35 @@ export const fetchCloudQualityReports = async (scriptUrl: string): Promise<Quali
           if (cat.includes('DFP2') || cat.includes('DFP 2') || cat === 'DFP2') {
             // Se tiver campos de Colunas D, assume Colunas D
             if (
-              (qr.colunas_d_cr !== undefined && qr.colunas_d_cr !== null && qr.colunas_d_cr !== '') ||
-              (qr.colunas_d_yield !== undefined && qr.colunas_d_yield !== null && qr.colunas_d_yield !== '')
+              (getCloudValue(qr, 'colunas_d_cr') !== undefined) ||
+              (getCloudValue(qr, 'colunas_d_yield') !== undefined)
             ) return 'COLUNAS_D';
 
             // Se tiver campos de Humidade, assume Humidade
             if (
-              (qr.humidade_fundo !== undefined && qr.humidade_fundo !== null && qr.humidade_fundo !== '') ||
-              (qr.hum_fundo !== undefined && qr.hum_fundo !== null && qr.hum_fundo !== '') ||
-              (qr.ply !== undefined && qr.ply !== null && qr.ply !== '')
+              (getCloudValue(qr, 'humidade_fundo') !== undefined) ||
+              (getCloudValue(qr, 'hum_fundo') !== undefined) ||
+              (getCloudValue(qr, 'ply') !== undefined)
             ) return 'HUMIDADE_PLY';
 
             // Diferenciação DFP2 C vs D
             if (
-              (qr.dfp2_c_cr !== undefined && qr.dfp2_c_cr !== null && qr.dfp2_c_cr !== '') ||
-              (qr.dfp2_c_yield !== undefined && qr.dfp2_c_yield !== null && qr.dfp2_c_yield !== '')
+              (getCloudValue(qr, 'dfp2_c_cr') !== undefined) ||
+              (getCloudValue(qr, 'dfp2_c_yield') !== undefined)
             ) return 'DFP2_C';
             
             if (
-              (qr.dfp2_d_cr !== undefined && qr.dfp2_d_cr !== null && qr.dfp2_d_cr !== '') ||
-              (qr.dfp2_d_yield !== undefined && qr.dfp2_d_yield !== null && qr.dfp2_d_yield !== '')
+              (getCloudValue(qr, 'dfp2_d_cr') !== undefined) ||
+              (getCloudValue(qr, 'dfp2_d_yield') !== undefined)
             ) return 'DFP2_D';
           }
           
           return cat as any;
         })(),
-        area: (qr.area || 'DFP 2') as Area,
-        operator: sanitize(qr.operador),
-        turma: (qr.turma || 'A') as any,
-        turno: (qr.turno || 'MANHÃ') as any,
+        area: (getCloudValue(qr, 'area') || 'DFP 2') as Area,
+        operator: sanitize(getCloudValue(qr, 'operador', 'operator')),
+        turma: (getCloudValue(qr, 'turma', 'team') || 'A') as any,
+        turno: (getCloudValue(qr, 'turno', 'shift') || 'MANHÃ') as any,
       };
 
       // Only include fields if they have data
@@ -354,13 +462,15 @@ export const fetchCloudQualityReports = async (scriptUrl: string): Promise<Quali
       ];
 
       fields.forEach(field => {
-        let val = qr[field];
+        let val = getCloudValue(qr, field);
         
         // Fallback para nomes alternativos de colunas (legado ou variações de header)
         if (val === undefined || val === null || val === '') {
-          if (field === 'humidade_fundo') val = qr['hum_fundo'];
-          else if (field === 'humidade_oversize') val = qr['hum_oversize'];
-          else if (field === 'humidade_concentrado') val = qr['hum_conc'];
+          if (field === 'humidade_fundo') val = getCloudValue(qr, 'hum_fundo', 'humidade fundo');
+          else if (field === 'humidade_oversize') val = getCloudValue(qr, 'hum_oversize', 'humidade oversize');
+          else if (field === 'humidade_concentrado') val = getCloudValue(qr, 'hum_conc', 'humidade concentrado');
+          else if (field === 'dfp2_c_cr') val = getCloudValue(qr, 'dfp2 c cr', 'c_cr');
+          else if (field === 'dfp2_d_cr') val = getCloudValue(qr, 'dfp2 d cr', 'd_cr');
         }
 
         if (val !== undefined && val !== null && val !== '') {
@@ -433,21 +543,34 @@ export const fetchCloudOperationalEvents = async (scriptUrl: string): Promise<Op
     if (!Array.isArray(data)) return [];
 
     return data.map((oe: any): OperationalEvent => {
-      const dateRaw = oe.data || '';
-      const hourRaw = oe.hora || '12:00';
-      const sheetTimestamp = parseDateFromCloud(`${dateRaw} ${hourRaw}`);
+      const dateRaw = getCloudValue(oe, 'data', 'date') || '';
+      const hourRaw = getCloudValue(oe, 'hora', 'time') || '';
+      
+      let sheetTimestamp = 0;
+      if (dateRaw) {
+          const datePart = parseDateFromCloud(dateRaw);
+          const timePart = hourRaw ? parseDateFromCloud(hourRaw) : (12 * 3600 * 1000);
+          
+          if (timePart < 86400000 && datePart > 86400000) {
+              const d = new Date(datePart);
+              d.setHours(0, 0, 0, 0);
+              sheetTimestamp = d.getTime() + timePart;
+          } else {
+              sheetTimestamp = datePart || Date.now();
+          }
+      }
 
       return {
-        id: oe.id || `oe-${Date.now()}-${Math.random()}`,
+        id: getCloudValue(oe, 'id') || `oe-${Date.now()}-${Math.random()}`,
         timestamp: sheetTimestamp || Date.now(),
-        type: (oe.tipo || 'ELOGIO').toLowerCase() as any,
-        collaboratorName: sanitize(oe.colaborador),
-        collaboratorMatricula: oe.matricula,
-        collaboratorTeam: sanitize(oe.equipe),
-        collaboratorRole: sanitize(oe.funcao),
-        authorName: sanitize(oe.autor),
-        authorMatricula: oe.autor_matricula,
-        description: sanitize(oe.descricao),
+        type: (getCloudValue(oe, 'tipo', 'type') || 'ELOGIO').toLowerCase() as any,
+        collaboratorName: sanitize(getCloudValue(oe, 'colaborador', 'collaborator')),
+        collaboratorMatricula: getCloudValue(oe, 'matricula', 'id_number'),
+        collaboratorTeam: sanitize(getCloudValue(oe, 'equipe', 'team')),
+        collaboratorRole: sanitize(getCloudValue(oe, 'funcao', 'role')),
+        authorName: sanitize(getCloudValue(oe, 'autor', 'author')),
+        authorMatricula: getCloudValue(oe, 'autor_matricula'),
+        description: sanitize(getCloudValue(oe, 'descricao', 'description')),
         synced: true
       };
     }).sort((a, b) => b.timestamp - a.timestamp);

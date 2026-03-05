@@ -130,7 +130,7 @@ const ChecklistArea: React.FC<ChecklistAreaProps> = ({ onSaveReport }) => {
         return false; // Não gera pendência para 'NÃO' em ALIMENTANDO COLUNAS?
       }
 
-      if (!isColumnsFeeding && (labelLower.includes('coluna') || labelLower.includes('-fc-') || labelLower.includes('frother') || labelLower.includes('colector') || labelLower.includes('feed rate colunas'))) {
+      if (!isColumnsFeeding && (labelLower.includes('coluna') || labelLower.includes('-fc-') || labelLower.includes('frother') || labelLower.includes('colector') || labelLower.includes('feed rate colunas') || labelLower.includes('vazão') || labelLower.includes('sp (l/min)') || labelLower.includes('sp(l/min)'))) {
         return false;
       }
 
@@ -292,6 +292,34 @@ const ChecklistArea: React.FC<ChecklistAreaProps> = ({ onSaveReport }) => {
       );
     }
 
+    if (item.label === 'Linhas em alimentação (1-4)') {
+      const selectedLines = (item.observation || '').split(',').filter(Boolean);
+      const toggleLine = (line: string) => {
+        let newLines;
+        if (selectedLines.includes(line)) {
+          newLines = selectedLines.filter(l => l !== line);
+        } else {
+          newLines = [...selectedLines, line].sort();
+        }
+        updateItemObservation(item.id, newLines.join(','));
+      };
+
+      return (
+        <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200 gap-1">
+          {['M1', 'M2', 'M3', 'M4'].map(line => (
+            <button
+              key={line}
+              type="button"
+              onClick={() => toggleLine(line)}
+              className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all ${selectedLines.includes(line) ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-200'}`}
+            >
+              {line}
+            </button>
+          ))}
+        </div>
+      );
+    }
+
     const isMeasurement = labelLower.includes('(m³/h)') || labelLower.includes('(%)') || labelLower.includes('(kpa)') || 
                           labelLower.includes('(tph)') || labelLower.includes('(g/t)') || labelLower.includes('(hz)') || 
                           labelLower.includes('(ppm)') || labelLower.includes('(t/m³)') || labelLower.includes('(l/min)') ||
@@ -317,6 +345,13 @@ const ChecklistArea: React.FC<ChecklistAreaProps> = ({ onSaveReport }) => {
   };
 
   let skipDueToNoFeed = false;
+  let skipM1 = false;
+  let skipM2 = false;
+  let skipM3 = false;
+  let skipM4 = false;
+
+  const linesItem = items.find(i => i.label === 'Linhas em alimentação (1-4)');
+  const selectedLines = linesItem?.observation?.split(',').filter(Boolean) || [];
 
   const getShiftColor = (turno: Turno) => {
     if (turno === 'MANHÃ') return 'bg-blue-600';
@@ -452,13 +487,37 @@ const ChecklistArea: React.FC<ChecklistAreaProps> = ({ onSaveReport }) => {
 
             if (item.label === 'ALIMENTANDO COLUNAS?') {
               skipDueToNoFeed = !isColumnsFeeding;
-            } else if (isHeader && labelLower.includes('equipamentos hbf')) {
-              skipDueToNoFeed = false;
+            } else if (isHeader) {
+              const sectionName = item.label.replace('SECTION:', '').trim();
+              if (labelLower.includes('equipamentos hbf')) {
+                skipDueToNoFeed = false;
+              }
+              
+              if (sectionName.includes('SUBCÉLULA M1')) skipM1 = !selectedLines.includes('M1');
+              if (sectionName.includes('SUBCÉLULA M2')) skipM2 = !selectedLines.includes('M2');
+              if (sectionName.includes('SUBCÉLULA M3')) skipM3 = !selectedLines.includes('M3');
+              if (sectionName.includes('SUBCÉLULA M4')) skipM4 = !selectedLines.includes('M4');
+              
+              if (sectionName.includes('NÍVEIS DO TANK DE REAGENTE')) {
+                skipM1 = skipM2 = skipM3 = skipM4 = false;
+              }
             }
 
             if (skipDueToNoFeed && item.label !== 'ALIMENTANDO COLUNAS?') {
-              const isActuallyColumnItem = labelLower.includes('coluna') || labelLower.includes('-fc-') || labelLower.includes('frother') || labelLower.includes('colector') || labelLower.includes('feed rate colunas') || labelLower.includes('ar (kpa)') || labelLower.includes('nível (%)') || labelLower.includes('setpoint (%)');
+              const isActuallyColumnItem = labelLower.includes('coluna') || labelLower.includes('-fc-') || labelLower.includes('frother') || labelLower.includes('colector') || labelLower.includes('feed rate colunas') || labelLower.includes('ar (kpa)') || labelLower.includes('nível (%)') || labelLower.includes('setpoint (%)') || labelLower.includes('vazão') || labelLower.includes('sp (l/min)') || labelLower.includes('sp(l/min)');
               if (isActuallyColumnItem) return null;
+            }
+
+            if ((skipM1 || skipM2 || skipM3 || skipM4) && !isHeader) {
+              return null;
+            }
+            
+            if (isHeader) {
+              const sectionName = item.label.replace('SECTION:', '').trim();
+              if (sectionName.includes('SUBCÉLULA M1') && skipM1) return null;
+              if (sectionName.includes('SUBCÉLULA M2') && skipM2) return null;
+              if (sectionName.includes('SUBCÉLULA M3') && skipM3) return null;
+              if (sectionName.includes('SUBCÉLULA M4') && skipM4) return null;
             }
 
             const isFailOrWarning = item.status === 'fail' || item.status === 'warning';
