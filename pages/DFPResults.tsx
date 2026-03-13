@@ -48,20 +48,14 @@ const DFPResults: React.FC<DFPResultsProps> = ({ onSaveQualityReport, qualityRep
     dfp2_c_cr: '',
     dfp2_c_reject_ash: '',
     dfp2_c_conc_ash: '',
-    dfp2_c_colector: '',
-    dfp2_c_frother: '',
     dfp2_d_yield: '',
     dfp2_d_cr: '',
     dfp2_d_reject_ash: '',
     dfp2_d_conc_ash: '',
-    dfp2_d_colector: '',
-    dfp2_d_frother: '',
     colunas_d_yield: '',
     colunas_d_cr: '',
     colunas_d_reject_ash: '',
     colunas_d_conc_ash: '',
-    colunas_d_colector: '',
-    colunas_d_frother: '',
     humidade_fundo: '',
     humidade_oversize: '',
     humidade_concentrado: '',
@@ -159,11 +153,9 @@ const DFPResults: React.FC<DFPResultsProps> = ({ onSaveQualityReport, qualityRep
           dfp2_c_cr: parseValue(formData.dfp2_c_cr),
           dfp2_c_reject_ash: parseValue(formData.dfp2_c_reject_ash),
           dfp2_c_conc_ash: parseValue(formData.dfp2_c_conc_ash),
-          dfp2_c_colector: parseValue(formData.dfp2_c_colector),
-          dfp2_c_frother: parseValue(formData.dfp2_c_frother),
         } as QualityReport);
       }
-      if (formData.dfp2_d_yield || formData.dfp2_d_cr || formData.dfp2_d_reject_ash || formData.dfp2_d_conc_ash || formData.dfp2_d_colector || formData.dfp2_d_frother) {
+      if (formData.dfp2_d_yield || formData.dfp2_d_cr || formData.dfp2_d_reject_ash || formData.dfp2_d_conc_ash) {
         reportsToSave.push({
           ...baseReport,
           id: `qual-d-${Date.now() + 1}`,
@@ -172,8 +164,6 @@ const DFPResults: React.FC<DFPResultsProps> = ({ onSaveQualityReport, qualityRep
           dfp2_d_cr: parseValue(formData.dfp2_d_cr),
           dfp2_d_reject_ash: parseValue(formData.dfp2_d_reject_ash),
           dfp2_d_conc_ash: parseValue(formData.dfp2_d_conc_ash),
-          dfp2_d_colector: parseValue(formData.dfp2_d_colector),
-          dfp2_d_frother: parseValue(formData.dfp2_d_frother),
         } as QualityReport);
       }
     } else if (selectedCategory === 'COLUNAS_D') {
@@ -184,8 +174,6 @@ const DFPResults: React.FC<DFPResultsProps> = ({ onSaveQualityReport, qualityRep
         colunas_d_cr: parseValue(formData.colunas_d_cr),
         colunas_d_reject_ash: parseValue(formData.colunas_d_reject_ash),
         colunas_d_conc_ash: parseValue(formData.colunas_d_conc_ash),
-        colunas_d_colector: parseValue(formData.colunas_d_colector),
-        colunas_d_frother: parseValue(formData.colunas_d_frother),
       } as QualityReport);
     } else if (selectedCategory === 'HUMIDADE_PLY') {
       reportsToSave.push({
@@ -359,8 +347,6 @@ const DFPResults: React.FC<DFPResultsProps> = ({ onSaveQualityReport, qualityRep
                     { label: 'CR (%)', field: 'cr' },
                     { label: 'Reject Ash (%)', field: 'reject_ash' },
                     { label: 'Conc Ash (%)', field: 'conc_ash' },
-                    { label: 'Colector (m³/h)', field: 'colector' },
-                    { label: 'Frother (m³/h)', field: 'frother' },
                   ].map(item => (
                     <div key={item.field} className="space-y-1">
                       <label className="text-[9px] font-black text-slate-400 uppercase ml-2">{item.label}</label>
@@ -397,8 +383,6 @@ const DFPResults: React.FC<DFPResultsProps> = ({ onSaveQualityReport, qualityRep
                     { label: 'CR (%)', field: 'cr' },
                     { label: 'Reject Ash (%)', field: 'reject_ash' },
                     { label: 'Conc Ash (%)', field: 'conc_ash' },
-                    { label: 'Colector (m³/h)', field: 'colector' },
-                    { label: 'Frother (m³/h)', field: 'frother' },
                   ].map(item => (
                     <div key={item.field} className="space-y-1">
                       <label className="text-[9px] font-black text-slate-400 uppercase ml-2">{item.label}</label>
@@ -439,8 +423,6 @@ const DFPResults: React.FC<DFPResultsProps> = ({ onSaveQualityReport, qualityRep
                   { label: 'Yield (%)', field: 'yield' },
                   { label: 'CR (%)', field: 'cr' },
                   { label: 'Tail Ash (%)', field: 'reject_ash' },
-                  { label: 'Colector (m³/h)', field: 'colector' },
-                  { label: 'Frother (m³/h)', field: 'frother' },
                 ].map(item => (
                   <div key={item.field} className="space-y-1">
                     <label className="text-[9px] font-black text-slate-400 uppercase ml-2">{item.label}</label>

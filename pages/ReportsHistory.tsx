@@ -475,8 +475,7 @@ const ReportsHistory: React.FC<ReportsHistoryProps> = ({ reports = [], pendingIt
                   {Math.round((engagementStats.today / engagementStats.dayTarget) * 100)}% DA META
                 </span>
               </div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Engajamento Diário</p>
-              <h3 className="text-3xl font-black text-slate-900 mt-1">{engagementStats.today} <span className="text-slate-300 text-lg">/ {engagementStats.dayTarget}</span></h3>
+              {/* Engajamento Diário REMOVIDO */}
             </div>
 
             <div className="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm">
