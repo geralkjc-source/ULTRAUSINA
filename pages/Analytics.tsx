@@ -20,12 +20,16 @@ import {
   ShieldAlert,
   BarChart,
   ChevronRight,
-  Award
+  Award,
+  ExternalLink,
+  Link2,
+  FileSpreadsheet,
+  RefreshCw
 } from 'lucide-react';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { Report, PendingItem, Area, Turma, Discipline } from '../types';
-import { CloudStats } from '../services/googleSync';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+
+import { syncToGoogleSheets, testScriptConnection, DEFAULT_SCRIPT_URL, MASTER_SHEET_URL, CloudStats } from '../services/googleSync';
 
 interface AnalyticsProps {
   reports: Report[];
@@ -66,7 +70,7 @@ const Analytics: React.FC<AnalyticsProps> = ({
 
       return { 
         discipline: d, 
-        volume: totalVolume, 
+        volume: openCount, 
         open: openCount, 
         resolved: resolvedCount, 
         efficiency: Math.round(efficiency),
@@ -75,6 +79,58 @@ const Analytics: React.FC<AnalyticsProps> = ({
       };
     });
   }, [pendingItems]);
+
+  const productionByTurma = useMemo(() => {
+    const now = new Date();
+    const hour = now.getHours();
+    
+    // Data operacional de hoje (meio-dia para evitar problemas de fuso)
+    const todayOp = new Date(now);
+    if (hour < 6) todayOp.setDate(todayOp.getDate() - 1);
+    todayOp.setHours(12, 0, 0, 0);
+
+    const startOfMonth = new Date(todayOp.getFullYear(), todayOp.getMonth(), 1);
+    startOfMonth.setHours(0, 0, 0, 0);
+
+    const startOfWeek = new Date(todayOp);
+    startOfWeek.setDate(todayOp.getDate() - todayOp.getDay());
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    const getOpDate = (timestamp: number | string, turno: string) => {
+      const d = new Date(timestamp);
+      const h = d.getHours();
+      const op = new Date(d);
+      if (turno === 'NOITE' && h < 6) {
+        op.setDate(op.getDate() - 1);
+      }
+      op.setHours(12, 0, 0, 0);
+      return op;
+    };
+
+    const monthlyData = reports.filter(r => {
+      const opDate = getOpDate(r.timestamp, r.turno || 'MANHÃ');
+      return opDate >= startOfMonth;
+    });
+
+    const weeklyData = reports.filter(r => {
+      const opDate = getOpDate(r.timestamp, r.turno || 'MANHÃ');
+      return opDate >= startOfWeek;
+    });
+
+    const getTurmaData = (data: Report[]) => {
+      const turmaMap: { [key: string]: number } = {};
+      data.forEach(r => {
+        const turma = r.turma || 'N/A';
+        turmaMap[turma] = (turmaMap[turma] || 0) + 1;
+      });
+      return Object.entries(turmaMap).map(([name, value]) => ({ name: `Turma ${name}`, value }));
+    };
+
+    return {
+      monthly: getTurmaData(monthlyData),
+      weekly: getTurmaData(weeklyData)
+    };
+  }, [reports]);
 
   const turmaPerformance = useMemo(() => {
     const turmas: Turma[] = ['A', 'B', 'C', 'D'];
@@ -95,89 +151,8 @@ const Analytics: React.FC<AnalyticsProps> = ({
     }).sort((a,b) => b.openDebt - a.openDebt);
   }, [pendingItems]);
 
+
   const totalMonthlyVolume = pendingItems.length;
-
-  const generateCompliancePDF = () => {
-    const doc = new jsPDF();
-    const now = new Date();
-    const monthName = now.toLocaleString('pt-BR', { month: 'long' }).toUpperCase();
-    const year = now.getFullYear();
-
-    doc.setFillColor(15, 23, 42);
-    doc.rect(0, 0, 210, 35, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(18);
-    doc.setFont('helvetica', 'bold');
-    doc.text(`CONTROLE DE ENGAJAMENTO - ${monthName} ${year}`, 105, 18, { align: 'center' });
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'normal');
-    doc.text('META: MÍNIMO DE 3 CHECKLISTS POR OPERADOR EM CADA TURNO', 105, 26, { align: 'center' });
-
-    // Grouping logic for checklists (reports)
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
-    
-    const monthlyReports = reports.filter(r => {
-      const d = new Date(r.timestamp);
-      return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
-    });
-
-    // Stats by Operator
-    // We want to see: Operator | Turma | Total Reports | Shifts with Meta (>=3)
-    const operatorStats: { [key: string]: { 
-      count: number, 
-      turma: string, 
-      shifts: { [key: string]: number } 
-    } } = {};
-
-    monthlyReports.forEach(r => {
-      const op = r.operator.toUpperCase();
-      if (!operatorStats[op]) {
-        operatorStats[op] = { count: 0, turma: r.turma || 'N/A', shifts: {} };
-      }
-      operatorStats[op].count++;
-      
-      // Unique key for shift: Date + Turno
-      const dateKey = new Date(r.timestamp).toLocaleDateString() + '-' + (r.turno || 'N/A');
-      operatorStats[op].shifts[dateKey] = (operatorStats[op].shifts[dateKey] || 0) + 1;
-    });
-
-    const body = Object.entries(operatorStats)
-      .sort((a, b) => b[1].count - a[1].count)
-      .map(([name, stats]) => {
-        const totalShifts = Object.keys(stats.shifts).length;
-        const shiftsWithMeta = Object.values(stats.shifts).filter(count => count >= 3).length;
-        const compliance = totalShifts > 0 ? Math.round((shiftsWithMeta / totalShifts) * 100) : 0;
-
-        return [
-          name,
-          stats.turma,
-          stats.count.toString(),
-          `${shiftsWithMeta} / ${totalShifts}`,
-          `${compliance}%`
-        ];
-      });
-
-    autoTable(doc, {
-      startY: 45,
-      head: [['OPERADOR', 'TURMA', 'TOTAL MÊS', 'TURNOS C/ META', 'ENGAJAMENTO']],
-      body: body,
-      theme: 'grid',
-      headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: 'bold' },
-      styles: { fontSize: 8, cellPadding: 3 },
-      columnStyles: {
-        2: { halign: 'center' },
-        3: { halign: 'center' },
-        4: { halign: 'center', fontStyle: 'bold' }
-      }
-    });
-
-    doc.setFontSize(8);
-    doc.setTextColor(100);
-    doc.text(`* Engajamento baseado em turnos onde o operador realizou pelo menos 3 checklists.`, 15, doc.internal.pageSize.getHeight() - 10);
-
-    doc.save(`Engajamento_Operacional_${monthName}_${year}.pdf`);
-  };
 
   return (
     <div className="max-w-7xl mx-auto space-y-8 pb-12 animate-in fade-in duration-500">
@@ -190,23 +165,10 @@ const Analytics: React.FC<AnalyticsProps> = ({
           <p className="text-slate-500 font-bold uppercase text-[10px] tracking-widest mt-1">Auditagem de Volume Mensal Acumulado</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button 
-            onClick={generateCompliancePDF}
-            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-xl shadow-lg shadow-blue-600/20 hover:bg-blue-700 transition-all active:scale-95 text-[10px] font-black uppercase tracking-widest"
-          >
-            <Award size={16} /> Engajamento Mensal
-          </button>
           <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm">
             <span className={`w-2 h-2 rounded-full ${syncSource === 'cloud' ? 'bg-emerald-500' : 'bg-amber-500'} animate-pulse`}></span>
             <span className="text-[10px] font-black text-slate-500 uppercase">Carga Mensal: {syncSource === 'cloud' ? 'Sincronizada' : 'Local'}</span>
           </div>
-          <button 
-            onClick={onRefresh} 
-            disabled={isRefreshing} 
-            className="p-3 bg-slate-900 text-white rounded-xl shadow-xl hover:bg-slate-800 transition-all active:scale-95"
-          >
-            <RotateCw size={18} className={isRefreshing ? 'animate-spin' : ''} />
-          </button>
         </div>
       </div>
 
@@ -225,6 +187,7 @@ const Analytics: React.FC<AnalyticsProps> = ({
             </div>
           </div>
 
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-10">
             {disciplinePerformance.map(stat => (
               <button 
@@ -239,7 +202,7 @@ const Analytics: React.FC<AnalyticsProps> = ({
                     </div>
                     <div>
                       <p className="text-white text-[11px] font-black uppercase tracking-wider">{stat.discipline}</p>
-                      <p className="text-slate-500 text-[9px] font-bold uppercase">{stat.volume} Ocorrências no Mês</p>
+                      <p className="text-slate-500 text-[9px] font-bold uppercase">{stat.volume} Ocorrências em Aberto</p>
                     </div>
                   </div>
                   <div className="text-right">
@@ -311,9 +274,9 @@ const Analytics: React.FC<AnalyticsProps> = ({
             <div className="pt-4 border-t border-slate-100">
               <div className="space-y-1 mb-4">
                 <h2 className="text-red-600 text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
-                  <ShieldAlert size={14} /> Dívida Técnica (D.T)
+                  <ShieldAlert size={14} /> Pendências Identificadas
                 </h2>
-                <p className="text-slate-400 text-[8px] font-bold uppercase italic">Pendentes geradas pela equipe</p>
+                <p className="text-slate-400 text-[8px] font-bold uppercase italic">Pendências identificadas pela equipe</p>
               </div>
 
               <div className="space-y-2">
@@ -344,12 +307,10 @@ const Analytics: React.FC<AnalyticsProps> = ({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 gap-6">
         {[
           { label: 'Ocorrências Mês', val: totalMonthlyVolume, icon: <BarChart3 className="text-blue-500" /> },
           { label: 'Falhas Críticas', val: pendingItems.filter(p => p.priority === 'alta').length, icon: <AlertTriangle className="text-red-500" /> },
-          { label: 'Auditagem Ativa', val: 'V1.4', icon: <History className="text-amber-500" /> },
-          { label: 'Protocolo BI', val: 'MENSAL', icon: <Database className="text-purple-500" /> },
         ].map((kpi, i) => (
           <div key={i} className="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm flex items-center gap-4">
             <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center border border-slate-100">
@@ -362,6 +323,8 @@ const Analytics: React.FC<AnalyticsProps> = ({
           </div>
         ))}
       </div>
+
+      {/* Google Sheets Integration Section */}
     </div>
   );
 };

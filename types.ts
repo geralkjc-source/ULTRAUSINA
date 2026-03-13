@@ -83,6 +83,12 @@ export interface QualityReport {
   colunas_d_yield?: number;
   colunas_d_reject_ash?: number;
   colunas_d_conc_ash?: number;
+  dfp2_c_colector?: number;
+  dfp2_c_frother?: number;
+  dfp2_d_colector?: number;
+  dfp2_d_frother?: number;
+  colunas_d_colector?: number;
+  colunas_d_frother?: number;
   humidade_fundo?: number;
   humidade_oversize?: number;
   humidade_concentrado?: number;

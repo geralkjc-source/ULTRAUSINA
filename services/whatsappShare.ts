@@ -28,15 +28,21 @@ export const formatQualityReportForWhatsApp = (report: QualityReport): string =>
     message += `📉 REJECT ASH: ${report.dfp2_c_reject_ash}% \n`;
     message += `💎 CONC ASH: ${report.dfp2_c_conc_ash}% \n`;
     message += `⚙️ CR: ${report.dfp2_c_cr}% \n`;
+    message += `🧪 COLECTOR: ${report.dfp2_c_colector} m³/h \n`;
+    message += `🧪 FROTHER: ${report.dfp2_c_frother} m³/h \n`;
   } else if (report.category === 'DFP2_D') {
     message += `📈 YIELD: ${report.dfp2_d_yield}% \n`;
     message += `📉 REJECT ASH: ${report.dfp2_d_reject_ash}% \n`;
     message += `💎 CONC ASH: ${report.dfp2_d_conc_ash}% \n`;
     message += `⚙️ CR: ${report.dfp2_d_cr}% \n`;
+    message += `🧪 COLECTOR: ${report.dfp2_d_colector} m³/h \n`;
+    message += `🧪 FROTHER: ${report.dfp2_d_frother} m³/h \n`;
   } else if (report.category === 'COLUNAS_D') {
     message += `💎 PRODUCT ASH: ${report.colunas_d_conc_ash}% \n`;
     message += `📈 YIELD: ${report.colunas_d_yield}% \n`;
     message += `📉 TAIL ASH: ${report.colunas_d_reject_ash}% \n`;
+    message += `🧪 COLECTOR: ${report.colunas_d_colector} m³/h \n`;
+    message += `🧪 FROTHER: ${report.colunas_d_frother} m³/h \n`;
   } else if (report.category === 'HUMIDADE_PLY') {
     message += `🏷️ PLY: ${report.ply}\n`;
     message += `💧 HUMIDADE FUNDO: ${report.humidade_fundo}% \n`;
@@ -296,16 +302,20 @@ export const formatReportForWhatsApp = (report: Report, itemsWithMaybeSections?:
         const obsLower = (item.observation || '').toLowerCase();
 
         // Mapeamento v9.0 de Emojis
-        if (obsLower === 'ok' || obsLower === 'no lugar' || obsLower === 'sim' || obsLower === 'com retorno' || obsLower === 'limpa') {
+        if (item.label === 'Retorno do tanque 104') {
+          if (obsLower === 'com retorno') statusEmoji = '🔴';
+          else if (obsLower === 'sem retorno') statusEmoji = '🟢';
+          else statusEmoji = item.status === 'ok' ? '🟢' : '🔴';
+        } else if (obsLower === 'ok' || obsLower === 'no lugar' || obsLower === 'sim' || obsLower === 'com retorno' || obsLower === 'limpa') {
           statusEmoji = '🟢';
         } else if (obsLower === 'anormal' || obsLower === 'fora do lugar' || obsLower === 'não' || obsLower === 'sem retorno' || obsLower === 'suja') {
           statusEmoji = '🔴';
         } else if (obsLower === 'turva') {
           statusEmoji = '🟡';
         } else if (obsLower === 'aberta' || obsLower === 'aberto') {
-          statusEmoji = (labelLower.includes('diluicao')) ? '⚠️' : (labelLower.includes('corse') ? '🟢' : '🔵');
+          statusEmoji = (labelLower.includes('diluicao')) ? '🔴' : (labelLower.includes('corse') ? '🟢' : '🔵');
         } else if (obsLower === 'fechada' || obsLower === 'fechado') {
-          statusEmoji = (labelLower.includes('diluicao')) ? '⚠️' : (labelLower.includes('corse') ? '🔴' : '⚪');
+          statusEmoji = (labelLower.includes('diluicao')) ? '🟢' : (labelLower.includes('corse') ? '🔴' : '⚪');
         } else {
           switch (item.status) {
             case 'ok': statusEmoji = '🟢'; break;

@@ -1,6 +1,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { 
+  RefreshCw, 
   FileText, 
   Download, 
   Search, 
@@ -27,10 +28,12 @@ import {
   ChevronRight,
   ChevronLeft
 } from 'lucide-react';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { Report, Area, ChecklistItem, PendingItem, Turno, Turma } from '../types';
 import { CHECKLIST_TEMPLATES } from '../constants';
 import { exportToExcel } from '../services/excelExport';
 import { formatReportForWhatsApp, shareToWhatsApp, copyToClipboard } from '../services/whatsappShare';
+import { getCurrentShiftInfo } from '../services/shiftService';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -46,7 +49,17 @@ const ReportsHistory: React.FC<ReportsHistoryProps> = ({ reports = [], pendingIt
   const [dateFilter, setDateFilter] = useState(''); 
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [copyFeedback, setCopyFeedback] = useState(false);
-  const [engagementDate, setEngagementDate] = useState(new Date().toISOString().split('T')[0]);
+  
+  // Inicializa com a data operacional atual (troca às 06:00)
+  const [engagementDate, setEngagementDate] = useState(() => {
+    const now = new Date();
+    const hour = now.getHours();
+    const opDate = new Date(now);
+    if (hour < 6) {
+      opDate.setDate(opDate.getDate() - 1);
+    }
+    return opDate.toISOString().split('T')[0];
+  });
 
   // Áreas fixas para o cálculo de engajamento
   const AREAS = Object.values(Area);
@@ -227,7 +240,7 @@ const ReportsHistory: React.FC<ReportsHistoryProps> = ({ reports = [], pendingIt
       return opDate >= startOfMonth && opDate <= endOfMonth;
     });
 
-    // Produção por Turno (Hoje)
+    // Engajamento por Turno (Hoje)
     const shiftStats = TURNOS.map(turno => {
       const shiftReports = todayReports.filter(r => r.turno === turno);
       const areaStats = AREAS.map(area => {
@@ -237,26 +250,49 @@ const ReportsHistory: React.FC<ReportsHistoryProps> = ({ reports = [], pendingIt
       return { turno, areaStats, total: shiftReports.length };
     });
 
-    // Produção por Turma (Semana e Mês)
+    // Engajamento por Área (Semana e Mês)
+    const areaStats = AREAS.map(area => {
+      const weekCount = weekReports.filter(r => r.area === area).length;
+      const monthCount = monthReports.filter(r => r.area === area).length;
+      return { area, weekCount, monthCount };
+    });
+
+    // Engajamento por Área (Semana)
+    const areaStatsWeek = AREAS.map(area => {
+      const count = weekReports.filter(r => r.area === area).length;
+      return { area, count };
+    });
+
+    // Engajamento por Turma (Semana e Mês)
     const turmaStats = TURMAS.map(turma => {
       const weekCount = weekReports.filter(r => r.turma === turma).length;
       const monthCount = monthReports.filter(r => r.turma === turma).length;
       return { turma, weekCount, monthCount };
     });
 
-    // Produção por Área (Semana)
-    const areaStatsWeek = AREAS.map(area => {
-      const count = weekReports.filter(r => r.area === area).length;
-      return { area, count };
-    });
+    // Tendência Mensal por Turma (Dinâmico)
+    const daysInMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0).getDate();
+    const monthlyTrend = [];
+    for (let i = 1; i <= daysInMonth; i++) {
+      const dayData: any = { day: i };
+      TURMAS.forEach(turma => {
+        dayData[turma] = monthReports.filter(r => {
+          const opDate = getOpDate(r.timestamp, r.turno);
+          return opDate.getDate() === i;
+        }).length;
+      });
+      monthlyTrend.push(dayData);
+    }
 
     return {
       today: todayReports.length,
       week: weekReports.length,
       month: monthReports.length,
       shiftStats,
-      turmaStats,
+      areaStats,
       areaStatsWeek,
+      turmaStats,
+      monthlyTrend,
       dayTarget: 45,
       weekTarget: 315,
       monthTarget: 1350 // 45 * 30
@@ -303,9 +339,9 @@ const ReportsHistory: React.FC<ReportsHistoryProps> = ({ reports = [], pendingIt
       startY: 45,
       head: [['MÉTRICA', 'VALOR', 'META', 'STATUS']],
       body: [
-        ['Produção Diária', engagementStats.today, engagementStats.dayTarget, engagementStats.today >= engagementStats.dayTarget ? 'META ATINGIDA' : 'ABAIXO DA META'],
-        ...engagementStats.shiftStats.map(s => [`Produção Turno ${s.turno}`, s.total, 15, s.total >= 15 ? 'META ATINGIDA' : 'ABAIXO DA META']),
-        ['Produção Semanal', engagementStats.week, engagementStats.weekTarget, engagementStats.week >= engagementStats.weekTarget ? 'META ATINGIDA' : 'ABAIXO DA META'],
+        ['Engajamento Diário', engagementStats.today, engagementStats.dayTarget, engagementStats.today >= engagementStats.dayTarget ? 'META ATINGIDA' : 'ABAIXO DA META'],
+        ...engagementStats.shiftStats.map(s => [`Engajamento Turno ${s.turno}`, s.total, 15, s.total >= 15 ? 'META ATINGIDA' : 'ABAIXO DA META']),
+        ['Engajamento Semanal', engagementStats.week, engagementStats.weekTarget, engagementStats.week >= engagementStats.weekTarget ? 'META ATINGIDA' : 'ABAIXO DA META'],
       ],
       theme: 'striped',
       headStyles: { fillColor: [15, 23, 42] }
@@ -323,7 +359,7 @@ const ReportsHistory: React.FC<ReportsHistoryProps> = ({ reports = [], pendingIt
     });
 
     doc.setFontSize(12);
-    doc.text('PRODUÇÃO POR TURNO E ÁREA', 14, (doc as any).lastAutoTable.finalY + 15);
+    doc.text('ENGAJAMENTO POR TURNO E ÁREA', 14, (doc as any).lastAutoTable.finalY + 15);
 
     autoTable(doc, {
       startY: (doc as any).lastAutoTable.finalY + 20,
@@ -333,12 +369,12 @@ const ReportsHistory: React.FC<ReportsHistoryProps> = ({ reports = [], pendingIt
       headStyles: { fillColor: [37, 99, 235] }
     });
 
-    // Tabela por Turma
-    doc.text('PRODUÇÃO POR TURMA (SEMANA E MÊS)', 14, (doc as any).lastAutoTable.finalY + 15);
+    // Tabela por Área
+    doc.text('ENGAJAMENTO POR ÁREA (SEMANA E MÊS)', 14, (doc as any).lastAutoTable.finalY + 15);
     autoTable(doc, {
       startY: (doc as any).lastAutoTable.finalY + 20,
-      head: [['TURMA', 'SEMANAL', 'MENSAL']],
-      body: engagementStats.turmaStats.map(s => [`TURMA ${s.turma}`, s.weekCount.toString(), s.monthCount.toString()]),
+      head: [['ÁREA', 'SEMANAL', 'MENSAL']],
+      body: engagementStats.areaStats.map(s => [s.area, s.weekCount.toString(), s.monthCount.toString()]),
       theme: 'striped',
       headStyles: { fillColor: [79, 70, 229] }
     });
@@ -351,26 +387,36 @@ const ReportsHistory: React.FC<ReportsHistoryProps> = ({ reports = [], pendingIt
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-black text-slate-900 uppercase tracking-tighter">Histórico e Engajamento</h1>
-          <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mt-1">Controle de Produção e Auditoria Operacional</p>
+          <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mt-1">Controle de Engajamento e Auditoria Operacional</p>
         </div>
-        <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-xl">
+        <div className="flex items-center gap-3">
           <button 
-            onClick={() => setViewMode('engagement')}
-            className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all ${viewMode === 'engagement' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+            onClick={() => window.location.reload()} 
+            className="p-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl shadow-sm hover:bg-slate-50 transition-all active:scale-95"
+            title="Recarregar Página"
           >
-            <TrendingUp size={16} className="inline mr-2" /> Engajamento
+            <RefreshCw size={18} />
           </button>
-          <button 
-            onClick={() => setViewMode('list')}
-            className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all ${viewMode === 'list' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-          >
-            <ClipboardList size={16} className="inline mr-2" /> Lista
-          </button>
+          <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-xl">
+            <button 
+              onClick={() => setViewMode('engagement')}
+              className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all ${viewMode === 'engagement' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+            >
+              <TrendingUp size={16} className="inline mr-2" /> Engajamento
+            </button>
+            <button 
+              onClick={() => setViewMode('list')}
+              className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all ${viewMode === 'list' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+            >
+              <ClipboardList size={16} className="inline mr-2" /> Lista
+            </button>
+          </div>
         </div>
       </div>
 
       {viewMode === 'engagement' ? (
-        <div className="space-y-8 animate-in fade-in duration-500">
+        <>
+          <div className="space-y-8 animate-in fade-in duration-500">
           {/* Header de Filtro de Data */}
           <div className="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-4">
@@ -429,7 +475,7 @@ const ReportsHistory: React.FC<ReportsHistoryProps> = ({ reports = [], pendingIt
                   {Math.round((engagementStats.today / engagementStats.dayTarget) * 100)}% DA META
                 </span>
               </div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Produção Diária</p>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Engajamento Diário</p>
               <h3 className="text-3xl font-black text-slate-900 mt-1">{engagementStats.today} <span className="text-slate-300 text-lg">/ {engagementStats.dayTarget}</span></h3>
             </div>
 
@@ -444,7 +490,7 @@ const ReportsHistory: React.FC<ReportsHistoryProps> = ({ reports = [], pendingIt
                   ))}
                 </div>
               </div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Produção por Turno</p>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Engajamento por Turno</p>
               <div className="mt-2 space-y-1">
                 {engagementStats.shiftStats.map(s => (
                   <div key={s.turno} className="flex justify-between items-center">
@@ -464,7 +510,7 @@ const ReportsHistory: React.FC<ReportsHistoryProps> = ({ reports = [], pendingIt
                   {Math.round((engagementStats.week / engagementStats.weekTarget) * 100)}% DA META
                 </span>
               </div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Produção Semanal</p>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Engajamento Semanal</p>
               <h3 className="text-3xl font-black text-slate-900 mt-1">{engagementStats.week} <span className="text-slate-300 text-lg">/ {engagementStats.weekTarget}</span></h3>
             </div>
 
@@ -555,74 +601,84 @@ const ReportsHistory: React.FC<ReportsHistoryProps> = ({ reports = [], pendingIt
             </div>
           </div>
 
-          {/* Produção por Turma e Área (Semana/Mês) */}
+          {/* Gráficos de Engajamento Mensal */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm">
               <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight mb-6 flex items-center gap-2">
-                <Users size={18} className="text-blue-600" /> Produção por Turma (Semana e Mês)
+                <Users size={18} className="text-indigo-600" /> Engajamento por Área (Mensal)
               </h3>
-              <div className="space-y-6">
-                {engagementStats.turmaStats.map(stat => (
-                  <div key={stat.turma} className="space-y-3 p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-xs font-black text-slate-900 uppercase">Turma {stat.turma}</span>
-                    </div>
-                    
-                    {/* Barra Semanal */}
-                    <div className="space-y-1">
-                      <div className="flex justify-between items-end">
-                        <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Semanal</span>
-                        <span className="text-[10px] font-black text-blue-600">{stat.weekCount} <span className="text-slate-400 text-[8px]">Checklists</span></span>
-                      </div>
-                      <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-blue-600 rounded-full transition-all duration-1000"
-                          style={{ width: `${Math.min((stat.weekCount / (engagementStats.weekTarget / 4)) * 100, 100)}%` }}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Barra Mensal */}
-                    <div className="space-y-1">
-                      <div className="flex justify-between items-end">
-                        <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Mensal</span>
-                        <span className="text-[10px] font-black text-indigo-600">{stat.monthCount} <span className="text-slate-400 text-[8px]">Checklists</span></span>
-                      </div>
-                      <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-indigo-500 rounded-full transition-all duration-1000"
-                          style={{ width: `${Math.min((stat.monthCount / (engagementStats.monthTarget / 4)) * 100, 100)}%` }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ))}
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={engagementStats.areaStats}
+                      dataKey="monthCount"
+                      nameKey="area"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={80}
+                      label
+                    >
+                      {engagementStats.areaStats.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={['#3b82f6', '#6366f1', '#8b5cf6', '#ec4899', '#f43f5e'][index % 5]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
               </div>
             </div>
 
             <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm">
-              <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight mb-6 flex items-center gap-2">
-                <Target size={18} className="text-indigo-600" /> Produção por Área (Semana)
+              <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight mb-6 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Users size={18} className="text-indigo-600" /> Engajamento por Turma (Mensal)
+                </div>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tendência Diária</span>
               </h3>
-              <div className="space-y-4">
-                {engagementStats.areaStatsWeek.map(stat => (
-                  <div key={stat.area} className="space-y-2">
-                    <div className="flex justify-between items-end">
-                      <span className="text-[10px] font-black text-slate-700 uppercase truncate max-w-[200px]">{stat.area}</span>
-                      <span className="text-[11px] font-black text-slate-900">{stat.count}</span>
-                    </div>
-                    <div className="h-3 bg-slate-100 rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-indigo-500 rounded-full transition-all duration-1000"
-                        style={{ width: `${Math.min((stat.count / (engagementStats.weekTarget / 5)) * 100, 100)}%` }}
-                      />
-                    </div>
-                  </div>
-                ))}
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={engagementStats.monthlyTrend}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                    <XAxis 
+                      dataKey="day" 
+                      fontSize={10} 
+                      fontWeight="bold" 
+                      axisLine={false} 
+                      tickLine={false} 
+                      tick={{ fill: '#94a3b8' }}
+                    />
+                    <YAxis 
+                      fontSize={10} 
+                      fontWeight="bold" 
+                      axisLine={false} 
+                      tickLine={false} 
+                      tick={{ fill: '#94a3b8' }}
+                    />
+                    <Tooltip 
+                      contentStyle={{ 
+                        borderRadius: '12px', 
+                        border: 'none', 
+                        boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
+                        fontSize: '10px',
+                        fontWeight: 'bold',
+                        textTransform: 'uppercase'
+                      }} 
+                    />
+                    <Legend iconType="circle" wrapperStyle={{ fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase', paddingTop: '10px' }} />
+                    <Bar dataKey="A" stackId="a" fill="#3b82f6" radius={[0, 0, 0, 0]} />
+                    <Bar dataKey="B" stackId="a" fill="#6366f1" radius={[0, 0, 0, 0]} />
+                    <Bar dataKey="C" stackId="a" fill="#8b5cf6" radius={[0, 0, 0, 0]} />
+                    <Bar dataKey="D" stackId="a" fill="#ec4899" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
               </div>
             </div>
           </div>
-        </div>
+
+          </div>
+        </>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-in fade-in duration-500">
           <div className="lg:col-span-2 space-y-4">

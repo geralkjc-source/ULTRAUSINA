@@ -34,7 +34,7 @@ export const exportShiftReportPDF = (items: PendingItem[], meta: PDFMeta) => {
   doc.text('VULCAN', 15, 20);
   
   doc.setFontSize(16);
-  doc.text('RELATÓRIO EXECUTIVO DE TURNO', 15, 30);
+  doc.text('RELATÓRIO EXECUTIVO DE TURNO ULTRAFINO', 15, 30);
 
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
@@ -157,11 +157,13 @@ export const exportAuditPDF = (items: PendingItem[]) => {
     doc.setTextColor(255, 255, 255);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(14);
-    doc.text(`VULCAN - ${title}`, 15, 12);
+    doc.text(`VULCAN - ${title}`, 15, 10);
+    doc.setFontSize(10);
+    doc.text('Ultrafino RELATÓRIO EXECUTIVO DE TURNO ULTRAFINO', 15, 16);
     
     doc.setFontSize(7);
     doc.setFont('helvetica', 'normal');
-    doc.text(`EXTRAÇÃO: ${dateStr} | RASTREABILIDADE TOTAL`, 15, 20);
+    doc.text(`EXTRAÇÃO: ${dateStr} | RASTREABILIDADE TOTAL`, 15, 22);
 
     doc.setFillColor(...color);
     doc.rect(230, 8, 52, 8, 'F');

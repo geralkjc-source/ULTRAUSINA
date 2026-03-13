@@ -1,5 +1,5 @@
 {
-  "name": "Remix: PLATAFORMA ULTRAFINO 2",
+  "name": "PLATAFORMA ULTRAFINO 2 FINAL",
   "description": "Aplicação para exibir o status de produção e qualidade em tempo real, com armazenamento de histórico na nuvem e uma página dedicada para registros históricos.",
   "requestFramePermissions": [
     "camera"

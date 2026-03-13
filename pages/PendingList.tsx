@@ -46,11 +46,13 @@ const PendingList: React.FC<PendingListProps> = ({ pendingItems = [], onResolve,
   const queryArea = searchParams.get('area');
   const queryStatus = searchParams.get('status');
   const queryTurma = searchParams.get('turma');
+  const queryDiscipline = searchParams.get('discipline');
 
   const [searchTerm, setSearchTerm] = useState('');
   const [areaFilter, setAreaFilter] = useState<string>(queryArea || 'Tudo');
   const [statusFilter, setStatusFilter] = useState<'aberto' | 'resolvido' | 'Tudo'>( (queryStatus as any) || 'aberto');
   const [turmaFilter, setTurmaFilter] = useState<Turma | 'Tudo'>( (queryTurma as any) || 'Tudo');
+  const [disciplineFilter, setDisciplineFilter] = useState<Discipline | 'Tudo'>( (queryDiscipline as any) || 'Tudo');
   
   const [resolvingId, setResolvingId] = useState<string | null>(null);
   const [resolverName, setResolverName] = useState('');
@@ -74,8 +76,9 @@ const PendingList: React.FC<PendingListProps> = ({ pendingItems = [], onResolve,
     const matchesArea = areaFilter === 'Tudo' || item.area === areaFilter;
     const matchesStatus = statusFilter === 'Tudo' || item.status === statusFilter;
     const matchesTurma = turmaFilter === 'Tudo' || item.turma === turmaFilter;
+    const matchesDiscipline = disciplineFilter === 'Tudo' || item.discipline === disciplineFilter;
     
-    return matchesSearch && matchesArea && matchesStatus && matchesTurma;
+    return matchesSearch && matchesArea && matchesStatus && matchesTurma && matchesDiscipline;
   });
 
   const filteredEmployees = employees.filter(emp => 
@@ -88,6 +91,9 @@ const PendingList: React.FC<PendingListProps> = ({ pendingItems = [], onResolve,
     'INSTRUMENTAÇÃO': { icon: <Cpu size={12} />, color: 'text-purple-600', bg: 'bg-purple-50 border-purple-200' },
     'OPERAÇÃO': { icon: <UserCog size={12} />, color: 'text-emerald-600', bg: 'bg-emerald-50 border-emerald-200' }
   };
+
+  const disciplines: Discipline[] = ['MECÂNICA', 'ELÉTRICA', 'INSTRUMENTAÇÃO', 'OPERAÇÃO'];
+
 
   const handleCopySummary = async () => {
     const shiftInfo = getCurrentShiftInfo();
@@ -218,6 +224,10 @@ const PendingList: React.FC<PendingListProps> = ({ pendingItems = [], onResolve,
           <select value={areaFilter} onChange={(e) => setAreaFilter(e.target.value)} className="bg-slate-50 border-2 border-slate-100 rounded-xl px-3 py-3 text-[9px] font-black uppercase outline-none">
             <option value="Tudo">Áreas (Tudo)</option>
             {Object.values(Area).map(area => <option key={area} value={area}>{area}</option>)}
+          </select>
+          <select value={disciplineFilter} onChange={(e) => setDisciplineFilter(e.target.value as any)} className="bg-slate-50 border-2 border-slate-100 rounded-xl px-3 py-3 text-[9px] font-black uppercase outline-none">
+            <option value="Tudo">Disciplinas (Tudo)</option>
+            {disciplines.map(d => <option key={d} value={d}>{d}</option>)}
           </select>
           <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as any)} className="bg-slate-900 text-white rounded-xl px-3 py-3 text-[9px] font-black uppercase outline-none">
             <option value="aberto">🚨 Em Aberto</option>

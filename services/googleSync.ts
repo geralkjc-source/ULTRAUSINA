@@ -274,11 +274,22 @@ export const fetchCloudItems = async (scriptUrl: string): Promise<PendingItem[]>
     return data.map((item: any): PendingItem => {
       const statusText = (getCloudValue(item, 'status') || '').toUpperCase();
       const isResolved = statusText === 'RESOLVIDO' || statusText === 'CONCLUÍDO';
+      const turno = (getCloudValue(item, 'turno_origem', 'turno') || 'MANHÃ') as any;
       
       // PRIORIDADE TOTAL PARA OS DADOS DA PLANILHA
       const rawDate = getCloudValue(item, 'data_criacao', 'data', 'timestamp');
       let sheetTimestamp = parseDateFromCloud(rawDate);
       
+      // Ajuste reverso do "Dia Operacional" para reconstruir o timestamp real
+      if (sheetTimestamp && turno === 'NOITE') {
+        const d = new Date(sheetTimestamp);
+        if (d.getHours() < 6) {
+          // Se na planilha está como NOITE e hora < 6, o sync original subtraiu 1 dia.
+          // Precisamos somar 1 dia para ter o timestamp real.
+          sheetTimestamp += 24 * 3600 * 1000;
+        }
+      }
+
       // Fallback para o ID se a data falhar
       const id = item.id || '';
       if (!sheetTimestamp && id.includes('-')) {
@@ -300,7 +311,7 @@ export const fetchCloudItems = async (scriptUrl: string): Promise<PendingItem[]>
         status: isResolved ? 'resolvido' : 'aberto',
         operator: sanitize(getCloudValue(item, 'operador_origem', 'operador')),
         turma: getCloudValue(item, 'turma_origem', 'turma') || 'A',
-        turno: (getCloudValue(item, 'turno_origem', 'turno') || 'MANHÃ') as any,
+        turno: turno,
         resolvedBy: getCloudValue(item, 'operador_resolucao') !== '-' ? sanitize(getCloudValue(item, 'operador_resolucao')) : undefined,
         resolvedByTurma: getCloudValue(item, 'turma_resolucao') !== '-' ? (getCloudValue(item, 'turma_resolucao') as any) : undefined,
         resolvedAt: sheetResolvedAt || undefined, 
@@ -323,6 +334,7 @@ export const fetchCloudReports = async (scriptUrl: string): Promise<Report[]> =>
     return data.map((r: any): Report => {
       const dateRaw = getCloudValue(r, 'data', 'date') || '';
       const hourRaw = getCloudValue(r, 'hora', 'time') || '';
+      const turno = (getCloudValue(r, 'turno', 'shift') || 'MANHÃ') as any;
       
       let sheetTimestamp = 0;
       if (dateRaw) {
@@ -333,6 +345,11 @@ export const fetchCloudReports = async (scriptUrl: string): Promise<Report[]> =>
               const d = new Date(datePart);
               d.setHours(0, 0, 0, 0);
               sheetTimestamp = d.getTime() + timePart;
+              
+              // Ajuste reverso do "Dia Operacional" para reconstruir o timestamp real
+              if (turno === 'NOITE' && new Date(sheetTimestamp).getHours() < 6) {
+                sheetTimestamp += 24 * 3600 * 1000;
+              }
           } else {
               sheetTimestamp = datePart || Date.now();
           }
@@ -361,7 +378,7 @@ export const fetchCloudReports = async (scriptUrl: string): Promise<Report[]> =>
         area: getCloudValue(r, 'area') as Area,
         operator: sanitize(getCloudValue(r, 'operador', 'operator')),
         turma: (getCloudValue(r, 'turma', 'team') || 'A') as any,
-        turno: (getCloudValue(r, 'turno', 'shift') || 'MANHÃ') as any,
+        turno: turno,
         items: items,
         pendingItems: [],
         generalObservations: sanitize(getCloudValue(r, 'observacoes', 'obs', 'observations')),
@@ -396,6 +413,7 @@ export const fetchCloudQualityReports = async (scriptUrl: string): Promise<Quali
     const allReports = data.map((qr: any) => {
       const dateRaw = getCloudValue(qr, 'data', 'date') || '';
       const hourRaw = getCloudValue(qr, 'hora', 'time') || '';
+      const turno = (getCloudValue(qr, 'turno', 'shift') || 'MANHÃ') as any;
       
       let sheetTimestamp = 0;
       if (dateRaw) {
@@ -406,6 +424,11 @@ export const fetchCloudQualityReports = async (scriptUrl: string): Promise<Quali
               const d = new Date(datePart);
               d.setHours(0, 0, 0, 0);
               sheetTimestamp = d.getTime() + timePart;
+
+              // Ajuste reverso do "Dia Operacional" para reconstruir o timestamp real
+              if (turno === 'NOITE' && new Date(sheetTimestamp).getHours() < 6) {
+                sheetTimestamp += 24 * 3600 * 1000;
+              }
           } else {
               sheetTimestamp = datePart || Date.now();
           }
@@ -450,7 +473,7 @@ export const fetchCloudQualityReports = async (scriptUrl: string): Promise<Quali
         area: (getCloudValue(qr, 'area') || 'DFP 2') as Area,
         operator: sanitize(getCloudValue(qr, 'operador', 'operator')),
         turma: (getCloudValue(qr, 'turma', 'team') || 'A') as any,
-        turno: (getCloudValue(qr, 'turno', 'shift') || 'MANHÃ') as any,
+        turno: turno,
       };
 
       // Only include fields if they have data

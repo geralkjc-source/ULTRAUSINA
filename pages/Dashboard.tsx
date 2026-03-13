@@ -227,7 +227,7 @@ const Dashboard: React.FC<DashboardProps> = ({ reports, pendingItems, qualityRep
             </div>
             <div>
               <h2 className="text-sm font-black text-slate-900 uppercase tracking-tight">Escala Operacional 2026</h2>
-              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Hoje, {new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
+              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Hoje, {new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}</p>
             </div>
           </div>
           <div className="flex items-center gap-2 text-blue-600 font-black text-[10px] uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-all translate-x-4 group-hover:translate-x-0">
@@ -275,7 +275,7 @@ const Dashboard: React.FC<DashboardProps> = ({ reports, pendingItems, qualityRep
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-5 gap-4">
           <div>
             <h3 className="text-lg font-black uppercase tracking-tighter">Semáforo de Qualidade</h3>
-            <p className="text-slate-400 text-[8px] font-bold uppercase tracking-widest mt-1">Status de Produção e Qualidade em Tempo Real</p>
+            <p className="text-slate-400 text-[8px] font-bold uppercase tracking-widest mt-1">Status de Engajamento e Qualidade em Tempo Real</p>
           </div>
           <div className="flex items-center gap-2">
             {latestQuality?.ply && (

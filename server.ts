@@ -16,10 +16,46 @@ const OPERATIONAL_EVENTS_FILE = path.join(DATA_DIR, "operational_events.json");
 
 // Ensure data directory and files exist
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR);
-if (!fs.existsSync(REPORTS_FILE)) fs.writeFileSync(REPORTS_FILE, JSON.stringify([]));
-if (!fs.existsSync(QUALITY_REPORTS_FILE)) fs.writeFileSync(QUALITY_REPORTS_FILE, JSON.stringify([]));
-if (!fs.existsSync(PENDING_ITEMS_FILE)) fs.writeFileSync(PENDING_ITEMS_FILE, JSON.stringify([]));
-if (!fs.existsSync(OPERATIONAL_EVENTS_FILE)) fs.writeFileSync(OPERATIONAL_EVENTS_FILE, JSON.stringify([]));
+
+const initializeFile = (file: string, defaultData: any) => {
+  if (!fs.existsSync(file) || fs.readFileSync(file, "utf8").trim() === "[]" || fs.readFileSync(file, "utf8").trim() === "") {
+    fs.writeFileSync(file, JSON.stringify(defaultData, null, 2));
+  }
+};
+
+const sampleReports = [
+  {
+    id: "sample-1",
+    timestamp: new Date().toISOString(),
+    operator: "SISTEMA",
+    area: "MOAGEM",
+    turno: "A",
+    turma: "1",
+    status: "concluido",
+    items: [
+      { name: "Nivel de Oleo", status: "conforme", comment: "Ok" },
+      { name: "Temperatura Mancal", status: "conforme", comment: "65C" }
+    ]
+  }
+];
+
+const samplePending = [
+  {
+    id: "sample-p1",
+    timestamp: new Date().toISOString(),
+    operator: "SISTEMA",
+    area: "FILTRAGEM",
+    turma: "2",
+    description: "Vazamento na bomba 01",
+    status: "pendente",
+    priority: "alta"
+  }
+];
+
+initializeFile(REPORTS_FILE, sampleReports);
+initializeFile(QUALITY_REPORTS_FILE, []);
+initializeFile(PENDING_ITEMS_FILE, samplePending);
+initializeFile(OPERATIONAL_EVENTS_FILE, []);
 
 async function startServer() {
   const app = express();

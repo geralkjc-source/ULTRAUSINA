@@ -130,7 +130,7 @@ const ChecklistArea: React.FC<ChecklistAreaProps> = ({ onSaveReport }) => {
         return false; // Não gera pendência para 'NÃO' em ALIMENTANDO COLUNAS?
       }
 
-      if (!isColumnsFeeding && (labelLower.includes('coluna') || labelLower.includes('-fc-') || labelLower.includes('frother') || labelLower.includes('colector') || labelLower.includes('feed rate colunas') || labelLower.includes('vazão') || labelLower.includes('sp (l/min)') || labelLower.includes('sp(l/min)'))) {
+      if (!isColumnsFeeding && (labelLower.includes('coluna') || labelLower.includes('-fc-') || labelLower.includes('frother') || labelLower.includes('colector') || labelLower.includes('feed rate colunas') || (labelLower.includes('vazão') && !labelLower.includes('diluição')) || labelLower.includes('sp (l/min)') || labelLower.includes('sp(l/min)'))) {
         return false;
       }
 
@@ -156,7 +156,10 @@ const ChecklistArea: React.FC<ChecklistAreaProps> = ({ onSaveReport }) => {
     // Validação de Limite de Reagentes (0-4 L/min)
     const reagentItems = items.filter(item => {
       const labelLower = item.label.toLowerCase();
-      const isReagent = labelLower.includes('vazão') || labelLower.includes('sp (l/min)') || labelLower.includes('sp(l/min)');
+      // Exclui 'vazão de diluição' da regra de reagentes (L/min)
+      const isReagent = (labelLower.includes('vazão') && !labelLower.includes('diluição')) || 
+                        labelLower.includes('sp (l/min)') || 
+                        labelLower.includes('sp(l/min)');
       return isReagent && item.observation && item.observation.trim() !== '';
     });
 
@@ -546,7 +549,7 @@ const ChecklistArea: React.FC<ChecklistAreaProps> = ({ onSaveReport }) => {
 
               // Se não estiver alimentando colunas ou nenhuma linha selecionada, oculta dados de reagentes
               const isReagentSection = labelLower === 'section:colector' || labelLower === 'section:frother';
-              const isReagentItem = labelLower.includes('vazão') || labelLower.includes('sp (l/min)') || labelLower.includes('sp(l/min)');
+              const isReagentItem = (labelLower.includes('vazão') && !labelLower.includes('diluição')) || labelLower.includes('sp (l/min)') || labelLower.includes('sp(l/min)');
               const noLinesSelected = currentArea === Area.DFP2 && selectedLines.length === 0;
 
               if (skipDueToNoFeed || noLinesSelected) {
@@ -554,7 +557,7 @@ const ChecklistArea: React.FC<ChecklistAreaProps> = ({ onSaveReport }) => {
               }
 
               if (skipDueToNoFeed && item.label !== 'ALIMENTANDO COLUNAS?') {
-                const isActuallyColumnItem = labelLower.includes('coluna') || labelLower.includes('-fc-') || labelLower.includes('frother') || labelLower.includes('colector') || labelLower.includes('feed rate colunas') || labelLower.includes('ar (kpa)') || labelLower.includes('nível (%)') || labelLower.includes('setpoint (%)') || labelLower.includes('vazão') || labelLower.includes('sp (l/min)') || labelLower.includes('sp(l/min)');
+                const isActuallyColumnItem = labelLower.includes('coluna') || labelLower.includes('-fc-') || labelLower.includes('frother') || labelLower.includes('colector') || labelLower.includes('feed rate colunas') || labelLower.includes('ar (kpa)') || labelLower.includes('nível (%)') || labelLower.includes('setpoint (%)') || (labelLower.includes('vazão') && !labelLower.includes('diluição')) || labelLower.includes('sp (l/min)') || labelLower.includes('sp(l/min)');
                 if (isActuallyColumnItem) return null;
               }
 
