@@ -104,5 +104,22 @@ export const backendService = {
     });
     if (!response.ok) throw new Error('Failed to save operational event');
     return response.json();
+  },
+
+  // Config
+  async getConfig(): Promise<{ emailRecipients: string, emailCc: string }> {
+    const response = await fetch(`${API_BASE}/config`);
+    if (!response.ok) throw new Error('Failed to fetch config');
+    return response.json();
+  },
+
+  async saveConfig(config: { emailRecipients: string, emailCc: string }): Promise<{ emailRecipients: string, emailCc: string }> {
+    const response = await fetch(`${API_BASE}/config`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(config),
+    });
+    if (!response.ok) throw new Error('Failed to save config');
+    return response.json();
   }
 };

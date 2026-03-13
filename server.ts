@@ -4,6 +4,7 @@ import { createServer as createViteServer } from "vite";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import nodemailer from 'nodemailer';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -13,12 +14,14 @@ const REPORTS_FILE = path.join(DATA_DIR, "reports.json");
 const QUALITY_REPORTS_FILE = path.join(DATA_DIR, "quality_reports.json");
 const PENDING_ITEMS_FILE = path.join(DATA_DIR, "pending_items.json");
 const OPERATIONAL_EVENTS_FILE = path.join(DATA_DIR, "operational_events.json");
+const CONFIG_FILE = path.join(DATA_DIR, "config.json");
+const AUTOMATION_FILE = path.join(DATA_DIR, "automation.json");
 
 // Ensure data directory and files exist
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR);
 
 const initializeFile = (file: string, defaultData: any) => {
-  if (!fs.existsSync(file) || fs.readFileSync(file, "utf8").trim() === "[]" || fs.readFileSync(file, "utf8").trim() === "") {
+  if (!fs.existsSync(file) || fs.readFileSync(file, "utf8").trim() === "[]" || fs.readFileSync(file, "utf8").trim() === "" || (file.endsWith('config.json') && fs.readFileSync(file, "utf8").trim() === "{}") || (file.endsWith('automation.json') && fs.readFileSync(file, "utf8").trim() === "{}")) {
     fs.writeFileSync(file, JSON.stringify(defaultData, null, 2));
   }
 };
@@ -56,6 +59,8 @@ initializeFile(REPORTS_FILE, sampleReports);
 initializeFile(QUALITY_REPORTS_FILE, []);
 initializeFile(PENDING_ITEMS_FILE, samplePending);
 initializeFile(OPERATIONAL_EVENTS_FILE, []);
+initializeFile(CONFIG_FILE, { emailRecipients: process.env.EMAIL_TO || "" });
+initializeFile(AUTOMATION_FILE, { lastAuditSentDate: "" });
 
 async function startServer() {
   const app = express();
@@ -80,6 +85,58 @@ async function startServer() {
   // API routes
   app.get("/api/health", (req, res) => {
     res.json({ status: "ok", version: "4.0" });
+  });
+
+  // Email Endpoint
+  app.post("/api/send-email", async (req, res) => {
+    const { subject, text, attachment, to, cc } = req.body;
+    
+    // Get default recipients from config if not provided
+    let recipients = to;
+    let carbonCopy = cc;
+    
+    try {
+      const config = readJSON(CONFIG_FILE);
+      if (!recipients) recipients = config.emailRecipients || process.env.EMAIL_TO;
+      if (!carbonCopy) carbonCopy = config.emailCc || "";
+    } catch (e) {
+      if (!recipients) recipients = process.env.EMAIL_TO;
+    }
+    
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: parseInt(process.env.SMTP_PORT || '465'),
+      secure: process.env.SMTP_PORT === '465', // true for 465, false for other ports
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+    });
+
+    try {
+      const mailOptions: any = {
+        from: process.env.SMTP_USER,
+        to: recipients,
+        cc: carbonCopy,
+        subject: subject,
+        text: text,
+      };
+
+      if (attachment) {
+        mailOptions.attachments = [
+          {
+            filename: attachment.filename,
+            content: Buffer.from(attachment.content, 'base64'),
+          }
+        ];
+      }
+
+      await transporter.sendMail(mailOptions);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error sending email:", error);
+      res.status(500).json({ error: "Failed to send email" });
+    }
   });
 
   // Reports Endpoints
@@ -184,6 +241,64 @@ async function startServer() {
       res.status(201).json(newEvent);
     } catch (error) {
       res.status(500).json({ error: "Failed to save operational event" });
+    }
+  });
+
+  // Config Endpoints
+  app.get("/api/config", (req, res) => {
+    try {
+      res.json(readJSON(CONFIG_FILE));
+    } catch (error) {
+      res.status(500).json({ error: "Failed to read config" });
+    }
+  });
+
+  app.post("/api/config", (req, res) => {
+    try {
+      writeJSON(CONFIG_FILE, req.body);
+      res.json(req.body);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to save config" });
+    }
+  });
+
+  // Automation Check Endpoint
+  app.get("/api/automation/check-audit", (req, res) => {
+    try {
+      const automation = readJSON(AUTOMATION_FILE);
+      const now = new Date();
+      const todayStr = now.toISOString().split('T')[0];
+      
+      // Check if already sent today
+      if (automation.lastAuditSentDate === todayStr) {
+        return res.json({ shouldSend: false });
+      }
+
+      const dayOfWeek = now.getDay(); // 0 = Sunday, 1 = Monday, ...
+      const isMonday = dayOfWeek === 1;
+      
+      // Check if last day of month
+      const tomorrow = new Date(now);
+      tomorrow.setDate(now.getDate() + 1);
+      const isLastDayOfMonth = tomorrow.getMonth() !== now.getMonth();
+
+      if (isMonday || isLastDayOfMonth) {
+        res.json({ shouldSend: true, reason: isMonday ? "Monday" : "Last day of month" });
+      } else {
+        res.json({ shouldSend: false });
+      }
+    } catch (error) {
+      res.status(500).json({ error: "Failed to check automation" });
+    }
+  });
+
+  app.post("/api/automation/mark-audit-sent", (req, res) => {
+    try {
+      const todayStr = new Date().toISOString().split('T')[0];
+      writeJSON(AUTOMATION_FILE, { lastAuditSentDate: todayStr });
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to mark audit sent" });
     }
   });
 

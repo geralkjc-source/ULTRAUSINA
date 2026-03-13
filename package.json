@@ -20,6 +20,7 @@
     "jspdf": "^2.5.2",
     "jspdf-autotable": "^3.8.4",
     "lucide-react": "^0.563.0",
+    "nodemailer": "^8.0.2",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "react-router-dom": "^7.13.0",
@@ -29,6 +30,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
+    "@types/nodemailer": "^7.0.11",
     "@vitejs/plugin-react": "^5.0.0",
     "tsx": "^4.16.2",
     "typescript": "~5.8.2",

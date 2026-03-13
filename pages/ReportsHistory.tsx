@@ -606,7 +606,7 @@ const ReportsHistory: React.FC<ReportsHistoryProps> = ({ reports = [], pendingIt
               <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight mb-6 flex items-center gap-2">
                 <Users size={18} className="text-indigo-600" /> Engajamento por Área (Mensal)
               </h3>
-              <div className="h-64">
+              <div className="h-64 min-h-[256px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
@@ -636,7 +636,7 @@ const ReportsHistory: React.FC<ReportsHistoryProps> = ({ reports = [], pendingIt
                 </div>
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tendência Diária</span>
               </h3>
-              <div className="h-64">
+              <div className="h-64 min-h-[256px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={engagementStats.monthlyTrend}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />

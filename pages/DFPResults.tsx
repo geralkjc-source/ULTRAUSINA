@@ -189,6 +189,7 @@ const DFPResults: React.FC<DFPResultsProps> = ({ onSaveQualityReport, qualityRep
     reportsToSave.forEach(report => onSaveQualityReport(report));
     
     const text = reportsToSave.map(formatQualityReportForWhatsApp).join('\n\n');
+    
     copyToClipboard(text).then(success => {
       if (success) {
         alert('Registrado e Texto Copiado para o WhatsApp!');

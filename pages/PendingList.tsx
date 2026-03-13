@@ -24,11 +24,11 @@ import {
   ClipboardList,
   AlertCircle
 } from 'lucide-react';
-import { PendingItem, Area, Turma, Discipline } from '../types';
+import { PendingItem, Area, Turma, Discipline, Turno } from '../types';
 import { formatShiftSummaryForWhatsApp, copyToClipboard, shareToWhatsApp } from '../services/whatsappShare';
 import { getCurrentShiftInfo } from '../services/shiftService';
 import { exportToExcel } from '../services/excelExport';
-import { exportShiftReportPDF, exportAuditPDF } from '../services/pdfExport';
+import { exportShiftReportPDF, exportAuditPDF, generateShiftReportPDFBase64, generateAuditPDFBase64 } from '../services/pdfExport';
 import { fetchEmployees, Employee } from '../services/employeeService';
 
 interface PendingListProps {
@@ -53,6 +53,9 @@ const PendingList: React.FC<PendingListProps> = ({ pendingItems = [], onResolve,
   const [statusFilter, setStatusFilter] = useState<'aberto' | 'resolvido' | 'Tudo'>( (queryStatus as any) || 'aberto');
   const [turmaFilter, setTurmaFilter] = useState<Turma | 'Tudo'>( (queryTurma as any) || 'Tudo');
   const [disciplineFilter, setDisciplineFilter] = useState<Discipline | 'Tudo'>( (queryDiscipline as any) || 'Tudo');
+  const [monthFilter, setMonthFilter] = useState<string>('Tudo');
+  const [dateFilter, setDateFilter] = useState<string>('');
+  const [turnoFilter, setTurnoFilter] = useState<Turno | 'Tudo'>('Tudo');
   
   const [resolvingId, setResolvingId] = useState<string | null>(null);
   const [resolverName, setResolverName] = useState('');
@@ -67,7 +70,43 @@ const PendingList: React.FC<PendingListProps> = ({ pendingItems = [], onResolve,
       setEmployees(data);
     };
     loadEmployees();
-  }, []);
+
+    // Automation: Check and send Audit PDF
+    const checkAutomation = async () => {
+      try {
+        const res = await fetch('/api/automation/check-audit');
+        const { shouldSend, reason } = await res.json();
+        
+        if (shouldSend && pendingItems.length > 0) {
+          console.log(`Automation triggered: Sending ${reason} Audit PDF`);
+          const base64 = generateAuditPDFBase64(pendingItems);
+          const dateStr = new Date().toLocaleDateString('pt-BR');
+          
+          await fetch('/api/send-email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              subject: `Auditoria Automática - ${reason}`,
+              text: `Relatório de Auditoria Automática gerado em ${dateStr}.`,
+              attachment: {
+                filename: `Auditoria_Automatica_${dateStr.replace(/\//g, '-')}.pdf`,
+                content: base64
+              }
+            })
+          });
+          
+          await fetch('/api/automation/mark-audit-sent', { method: 'POST' });
+          console.log("Automation: Audit PDF sent successfully");
+        }
+      } catch (err) {
+        console.error("Automation error:", err);
+      }
+    };
+
+    // Delay slightly to ensure data is ready
+    const timer = setTimeout(checkAutomation, 5000);
+    return () => clearTimeout(timer);
+  }, [pendingItems]);
 
   const filteredItems = pendingItems.filter(item => {
     if (!item) return false;
@@ -78,7 +117,16 @@ const PendingList: React.FC<PendingListProps> = ({ pendingItems = [], onResolve,
     const matchesTurma = turmaFilter === 'Tudo' || item.turma === turmaFilter;
     const matchesDiscipline = disciplineFilter === 'Tudo' || item.discipline === disciplineFilter;
     
-    return matchesSearch && matchesArea && matchesStatus && matchesTurma && matchesDiscipline;
+    const itemDate = new Date(item.timestamp);
+    const itemMonth = (itemDate.getMonth() + 1).toString().padStart(2, '0');
+    const matchesMonth = monthFilter === 'Tudo' || itemMonth === monthFilter;
+    
+    const itemDateStr = itemDate.toISOString().split('T')[0];
+    const matchesDate = !dateFilter || itemDateStr === dateFilter;
+    
+    const matchesTurno = turnoFilter === 'Tudo' || item.turno === turnoFilter;
+    
+    return matchesSearch && matchesArea && matchesStatus && matchesTurma && matchesDiscipline && matchesMonth && matchesDate && matchesTurno;
   });
 
   const filteredEmployees = employees.filter(emp => 
@@ -93,6 +141,20 @@ const PendingList: React.FC<PendingListProps> = ({ pendingItems = [], onResolve,
   };
 
   const disciplines: Discipline[] = ['MECÂNICA', 'ELÉTRICA', 'INSTRUMENTAÇÃO', 'OPERAÇÃO'];
+  const months = [
+    { value: '01', label: 'Janeiro' },
+    { value: '02', label: 'Fevereiro' },
+    { value: '03', label: 'Março' },
+    { value: '04', label: 'Abril' },
+    { value: '05', label: 'Maio' },
+    { value: '06', label: 'Junho' },
+    { value: '07', label: 'Julho' },
+    { value: '08', label: 'Agosto' },
+    { value: '09', label: 'Setembro' },
+    { value: '10', label: 'Outubro' },
+    { value: '11', label: 'Novembro' },
+    { value: '12', label: 'Dezembro' }
+  ];
 
 
   const handleCopySummary = async () => {
@@ -101,14 +163,14 @@ const PendingList: React.FC<PendingListProps> = ({ pendingItems = [], onResolve,
     // Trabalho realizado: Itens resolvidos pela turma atual no turno atual (ou hoje)
     // Para simplificar e ser preciso: Itens resolvidos hoje pela turma logada
     const today = new Date().setHours(0, 0, 0, 0);
-    const workDone = pendingItems.filter(item => 
+    const workDone = filteredItems.filter(item => 
       item.status === 'resolvido' && 
       item.resolvedAt && item.resolvedAt >= today &&
       item.resolvedByTurma === shiftInfo.turma
     );
 
     // Pendências remanescentes: Todos os itens que continuam abertos
-    const remaining = pendingItems.filter(item => item.status === 'aberto');
+    const remaining = filteredItems.filter(item => item.status === 'aberto');
 
     const text = formatShiftSummaryForWhatsApp([...workDone, ...remaining], { turma: shiftInfo.turma, turno: shiftInfo.turno });
     const success = await copyToClipboard(text);
@@ -207,10 +269,48 @@ const PendingList: React.FC<PendingListProps> = ({ pendingItems = [], onResolve,
         <button onClick={handleCopySummary} className={`flex items-center justify-center gap-2 py-4 rounded-2xl font-black text-[10px] uppercase shadow-lg border-2 transition-all active:scale-95 ${copyFeedback ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-white text-slate-900 border-slate-100 hover:border-blue-500'}`}>
           <Copy size={18} /> Copiar Resumo e Partilhar
         </button>
-        <button onClick={() => exportShiftReportPDF(pendingItems, { teamLeader: 'EQUIPE VULCAN', turma: getCurrentShiftInfo().turma, turno: getCurrentShiftInfo().turno })} className="flex items-center justify-center gap-2 py-4 bg-red-600 text-white rounded-2xl font-black text-[10px] uppercase shadow-lg border-2 border-transparent hover:bg-red-700 transition-all active:scale-95">
+        <button onClick={() => {
+          exportShiftReportPDF(filteredItems, { teamLeader: 'EQUIPE VULCAN', turma: getCurrentShiftInfo().turma, turno: getCurrentShiftInfo().turno });
+          
+          const base64 = generateShiftReportPDFBase64(filteredItems, { teamLeader: 'EQUIPE VULCAN', turma: getCurrentShiftInfo().turma, turno: getCurrentShiftInfo().turno });
+          const dateStr = new Date().toLocaleDateString('pt-BR');
+          
+          fetch('/api/send-email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              subject: `Relatorio de Pendencias`,
+              text: `Segue abaixo o relatório com as Pendências.`,
+              attachment: {
+                filename: `Relatorio_Turno_${getCurrentShiftInfo().turma}_${dateStr.replace(/\//g, '-')}.pdf`,
+                content: base64
+              }
+            })
+          }).then(() => alert('Relatório enviado por e-mail!'))
+            .catch(err => console.error("Failed to send email", err));
+        }} className="flex items-center justify-center gap-2 py-4 bg-red-600 text-white rounded-2xl font-black text-[10px] uppercase shadow-lg border-2 border-transparent hover:bg-red-700 transition-all active:scale-95">
           <FileText size={18} /> PDF Turno
         </button>
-        <button onClick={() => exportAuditPDF(pendingItems)} className="flex items-center justify-center gap-2 py-4 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase shadow-lg border-2 border-transparent hover:bg-slate-800 transition-all active:scale-95">
+        <button onClick={() => {
+          exportAuditPDF(filteredItems);
+          
+          const base64 = generateAuditPDFBase64(filteredItems);
+          const dateStr = new Date().toLocaleDateString('pt-BR');
+          
+          fetch('/api/send-email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              subject: `Relatorio de Pendencias`,
+              text: `Segue abaixo o relatório com as Pendências.`,
+              attachment: {
+                filename: `Auditoria_Master_${getCurrentShiftInfo().turma}_${dateStr.replace(/\//g, '-')}.pdf`,
+                content: base64
+              }
+            })
+          }).then(() => alert('Auditoria enviada por e-mail!'))
+            .catch(err => console.error("Failed to send email", err));
+        }} className="flex items-center justify-center gap-2 py-4 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase shadow-lg border-2 border-transparent hover:bg-slate-800 transition-all active:scale-95">
           <ShieldAlert size={18} /> Auditoria PDF
         </button>
       </div>
@@ -220,7 +320,7 @@ const PendingList: React.FC<PendingListProps> = ({ pendingItems = [], onResolve,
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
           <input type="text" placeholder="BUSCAR TAG OU DESCRIÇÃO..." value={searchTerm || ''} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none text-sm font-black uppercase focus:bg-white focus:border-blue-500 transition-all shadow-inner" />
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
           <select value={areaFilter} onChange={(e) => setAreaFilter(e.target.value)} className="bg-slate-50 border-2 border-slate-100 rounded-xl px-3 py-3 text-[9px] font-black uppercase outline-none">
             <option value="Tudo">Áreas (Tudo)</option>
             {Object.values(Area).map(area => <option key={area} value={area}>{area}</option>)}
@@ -228,6 +328,24 @@ const PendingList: React.FC<PendingListProps> = ({ pendingItems = [], onResolve,
           <select value={disciplineFilter} onChange={(e) => setDisciplineFilter(e.target.value as any)} className="bg-slate-50 border-2 border-slate-100 rounded-xl px-3 py-3 text-[9px] font-black uppercase outline-none">
             <option value="Tudo">Disciplinas (Tudo)</option>
             {disciplines.map(d => <option key={d} value={d}>{d}</option>)}
+          </select>
+          <select value={monthFilter} onChange={(e) => setMonthFilter(e.target.value)} className="bg-slate-50 border-2 border-slate-100 rounded-xl px-3 py-3 text-[9px] font-black uppercase outline-none">
+            <option value="Tudo">Mês (Tudo)</option>
+            {months.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+          </select>
+          <input 
+            type="date" 
+            value={dateFilter} 
+            onChange={(e) => setDateFilter(e.target.value)} 
+            className="bg-slate-50 border-2 border-slate-100 rounded-xl px-3 py-3 text-[9px] font-black uppercase outline-none"
+          />
+          <select value={turmaFilter} onChange={(e) => setTurmaFilter(e.target.value as any)} className="bg-slate-50 border-2 border-slate-100 rounded-xl px-3 py-3 text-[9px] font-black uppercase outline-none">
+            <option value="Tudo">Turma (Tudo)</option>
+            {['A', 'B', 'C', 'D'].map(t => <option key={t} value={t}>Turma {t}</option>)}
+          </select>
+          <select value={turnoFilter} onChange={(e) => setTurnoFilter(e.target.value as any)} className="bg-slate-50 border-2 border-slate-100 rounded-xl px-3 py-3 text-[9px] font-black uppercase outline-none">
+            <option value="Tudo">Turno (Tudo)</option>
+            {['MANHÃ', 'TARDE', 'NOITE'].map(t => <option key={t} value={t}>{t}</option>)}
           </select>
           <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as any)} className="bg-slate-900 text-white rounded-xl px-3 py-3 text-[9px] font-black uppercase outline-none">
             <option value="aberto">🚨 Em Aberto</option>

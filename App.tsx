@@ -27,6 +27,7 @@ import OperationalForms from './pages/OperationalForms';
 import PerformanceHistory from './pages/PerformanceHistory';
 import DFPResults from './pages/DFPResults';
 import ManualPendingForm from './pages/ManualPendingForm';
+import SettingsPage from './pages/Settings';
 import { Area, Report, PendingItem, Turma, QualityReport, OperationalEvent } from './types';
 import { syncToGoogleSheets, fetchCloudItems, fetchCloudReports, fetchCloudQualityReports, fetchCloudOperationalEvents, fetchCloudData, CloudStats, DEFAULT_SCRIPT_URL } from './services/googleSync';
 import { backendService } from './services/backendService';
@@ -68,6 +69,7 @@ const Sidebar = ({ isOpen, toggle, unsyncedCount }: { isOpen: boolean; toggle: (
     },
     { path: '/forms', label: 'Formulários Operacionais', icon: <FileSpreadsheet size={20} /> },
     { path: '/performance-history', label: 'Histórico de Performance', icon: <Award size={20} /> },
+    { path: '/settings', label: 'Configurações', icon: <Settings size={20} /> },
   ];
 
   return (
@@ -466,6 +468,7 @@ const App: React.FC = () => {
               <Route path="/forms" element={<OperationalForms onAddManualPending={addManualPending} onSaveOperationalEvent={addOperationalEvent} operationalEvents={operationalEvents} />} />
               <Route path="/performance-history" element={<PerformanceHistory operationalEvents={operationalEvents} />} />
               <Route path="/manual-pending" element={<ManualPendingForm onAddManualPending={addManualPending} />} />
+              <Route path="/settings" element={<SettingsPage />} />
             </Routes>
           </div>
         </main>

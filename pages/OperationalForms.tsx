@@ -271,6 +271,7 @@ const OperationalForms: React.FC<OperationalFormsProps> = ({ onAddManualPending,
 
     onSaveOperationalEvent(event);
     generatePraisePDF(praiseData);
+    
     alert('Elogio registrado e sincronizado com a nuvem!');
     navigate(-1);
   };
@@ -299,6 +300,7 @@ const OperationalForms: React.FC<OperationalFormsProps> = ({ onAddManualPending,
 
     onSaveOperationalEvent(event);
     generateFailurePDF(failureData);
+    
     alert('Falha registrada e sincronizada com a nuvem!');
     navigate(-1);
   };
