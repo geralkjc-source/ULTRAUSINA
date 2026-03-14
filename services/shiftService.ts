@@ -143,9 +143,7 @@ export const getCurrentShiftRange = () => {
   } else if (hour >= 14 && hour < 22) {
     start.setHours(14, 0, 0, 0);
   } else {
-    // Turno da Noite (22h às 06h)
     if (hour < 6) {
-      // Se estamos entre 00h e 06h, o turno começou ontem às 22h
       start.setDate(start.getDate() - 1);
     }
     start.setHours(22, 0, 0, 0);
@@ -154,6 +152,78 @@ export const getCurrentShiftRange = () => {
   return {
     start: start.getTime(),
     end: now.getTime()
+  };
+};
+
+/**
+ * Retorna as informações do turno ANTERIOR ao atual.
+ */
+export const getPreviousShiftInfo = (): { turma: Turma; turno: Turno; date: Date } => {
+  const now = new Date();
+  const hour = now.getHours();
+  let prevDate = new Date(now);
+  let prevTurno: Turno;
+
+  if (hour >= 6 && hour < 14) {
+    // Atual é Manhã, anterior foi Noite (dia anterior)
+    prevDate.setDate(prevDate.getDate() - 1);
+    prevTurno = 'NOITE';
+  } else if (hour >= 14 && hour < 22) {
+    // Atual é Tarde, anterior foi Manhã
+    prevTurno = 'MANHÃ';
+  } else {
+    // Atual é Noite
+    if (hour < 6) {
+      // Estamos na madrugada, anterior foi Tarde (dia anterior)
+      prevDate.setDate(prevDate.getDate() - 1);
+      prevTurno = 'TARDE';
+    } else {
+      // Estamos entre 22h e 00h, anterior foi Tarde
+      prevTurno = 'TARDE';
+    }
+  }
+
+  const scale = getScaleForDate(prevDate);
+  let prevTurma: Turma;
+  if (prevTurno === 'MANHÃ') prevTurma = scale.morning;
+  else if (prevTurno === 'TARDE') prevTurma = scale.afternoon;
+  else prevTurma = scale.night;
+
+  return { turma: prevTurma, turno: prevTurno, date: prevDate };
+};
+
+/**
+ * Retorna o range de timestamps do turno ANTERIOR.
+ */
+export const getPreviousShiftRange = () => {
+  const now = new Date();
+  const hour = now.getHours();
+  const start = new Date(now);
+  const end = new Date(now);
+
+  if (hour >= 6 && hour < 14) {
+    // Atual Manhã (06-14). Anterior Noite (22-06)
+    start.setDate(start.getDate() - 1);
+    start.setHours(22, 0, 0, 0);
+    end.setHours(6, 0, 0, 0);
+  } else if (hour >= 14 && hour < 22) {
+    // Atual Tarde (14-22). Anterior Manhã (06-14)
+    start.setHours(6, 0, 0, 0);
+    end.setHours(14, 0, 0, 0);
+  } else {
+    // Atual Noite (22-06). Anterior Tarde (14-22)
+    if (hour < 6) {
+      // Madrugada. Anterior Tarde foi no dia anterior
+      start.setDate(start.getDate() - 1);
+      end.setDate(end.getDate() - 1);
+    }
+    start.setHours(14, 0, 0, 0);
+    end.setHours(22, 0, 0, 0);
+  }
+
+  return {
+    start: start.getTime(),
+    end: end.getTime()
   };
 };
 

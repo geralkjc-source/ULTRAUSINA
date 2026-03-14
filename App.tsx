@@ -69,7 +69,6 @@ const Sidebar = ({ isOpen, toggle, unsyncedCount }: { isOpen: boolean; toggle: (
     },
     { path: '/forms', label: 'Formulários Operacionais', icon: <FileSpreadsheet size={20} /> },
     { path: '/performance-history', label: 'Histórico de Performance', icon: <Award size={20} /> },
-    { path: '/settings', label: 'Configurações', icon: <Settings size={20} /> },
   ];
 
   return (
@@ -147,7 +146,9 @@ const Header = ({ onToggleSidebar, unsyncedCount, isSyncing, onSync }: { onToggl
           <Cloud size={14} /> Sincronizado
         </div>
       )}
-      <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400"><Settings size={18} /></div>
+      <Link to="/settings" className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 hover:bg-slate-200 transition-colors">
+        <Settings size={18} />
+      </Link>
     </div>
   </header>
 );

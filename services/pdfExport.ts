@@ -10,19 +10,27 @@ interface PDFMeta {
   turno: Turno;
 }
 
+const parseTimestamp = (ts: any): number => {
+  if (!ts) return 0;
+  const num = Number(ts);
+  if (!isNaN(num)) return num;
+  const date = new Date(ts);
+  return isNaN(date.getTime()) ? 0 : date.getTime();
+};
+
 /**
  * RELATÓRIO EXECUTIVO DE TURNO (LAYOUT RESUMIDO PARA APRESENTAÇÃO)
  */
-export const exportShiftReportPDF = (items: PendingItem[], meta: PDFMeta) => {
+export const exportShiftReportPDF = (items: PendingItem[], meta: PDFMeta, customRange?: { start: number, end: number }, customDate?: string) => {
   const doc = new jsPDF({
     orientation: 'landscape',
     unit: 'mm',
     format: 'a4'
   });
 
-  const dateStr = new Date().toLocaleDateString('pt-BR');
+  const dateStr = customDate || new Date().toLocaleDateString('pt-BR');
   const timeStr = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-  const shiftRange = getCurrentShiftRange();
+  const shiftRange = customRange || getCurrentShiftRange();
 
   // Cabeçalho Principal
   doc.setFillColor(15, 23, 42);
@@ -41,15 +49,17 @@ export const exportShiftReportPDF = (items: PendingItem[], meta: PDFMeta) => {
   doc.text(`DATA: ${dateStr} | EMISSÃO: ${timeStr}`, 282, 25, { align: 'right' });
 
   // FILTRAGEM RESTRITA PARA O PDF
-  const pendentesAtivas = items.filter(i => i.status === 'aberto');
+  const pendentesAtivas = items.filter(i => 
+    i.status === 'aberto' && 
+    parseTimestamp(i.timestamp) <= shiftRange.end
+  );
   
   // Apenas as resolvidas que ocorreram DENTRO do horário do turno vigente
-  const resolvidasNoTurno = items.filter(i => 
-    i.status === 'resolvido' && 
-    i.resolvedAt && 
-    i.resolvedAt >= shiftRange.start && 
-    i.resolvedAt <= shiftRange.end
-  );
+  const resolvidasNoTurno = items.filter(i => {
+    if (i.status !== 'resolvido' || !i.resolvedAt) return false;
+    const rTime = parseTimestamp(i.resolvedAt);
+    return rTime >= shiftRange.start && rTime <= shiftRange.end;
+  });
   
   // Cards de Resumo
   doc.setFillColor(248, 250, 252);
@@ -87,7 +97,7 @@ export const exportShiftReportPDF = (items: PendingItem[], meta: PDFMeta) => {
       ? item.comments[item.comments.length - 1].text.replace('RESOLVIDO: ', '').toUpperCase() 
       : item.description.toUpperCase(),
     item.resolvedBy?.toUpperCase() || '-',
-    item.resolvedAt ? new Date(item.resolvedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '-'
+    item.resolvedAt ? new Date(parseTimestamp(item.resolvedAt)).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '-'
   ]);
 
   (doc as any).autoTable({
@@ -112,7 +122,7 @@ export const exportShiftReportPDF = (items: PendingItem[], meta: PDFMeta) => {
     item.discipline,
     item.description.toUpperCase(),
     item.priority.toUpperCase(),
-    new Date(item.timestamp).toLocaleDateString('pt-BR')
+    new Date(parseTimestamp(item.timestamp)).toLocaleDateString('pt-BR')
   ]);
 
   (doc as any).autoTable({
@@ -136,15 +146,15 @@ export const exportShiftReportPDF = (items: PendingItem[], meta: PDFMeta) => {
   doc.save(`Relatorio_Turno_${meta.turno}_Turma_${meta.turma}_${dateStr.replace(/\//g, '-')}.pdf`);
 };
 
-export const generateShiftReportPDFBase64 = (items: PendingItem[], meta: PDFMeta): string => {
+export const generateShiftReportPDFBase64 = (items: PendingItem[], meta: PDFMeta, customRange?: { start: number, end: number }, customDate?: string): string => {
   const doc = new jsPDF({
     orientation: 'landscape',
     unit: 'mm',
     format: 'a4'
   });
 
-  const dateStr = new Date().toLocaleDateString('pt-BR');
-  const shiftRange = getCurrentShiftRange();
+  const dateStr = customDate || new Date().toLocaleDateString('pt-BR');
+  const shiftRange = customRange || getCurrentShiftRange();
 
   // Cabeçalho Principal
   doc.setFillColor(15, 23, 42);
@@ -159,14 +169,16 @@ export const generateShiftReportPDFBase64 = (items: PendingItem[], meta: PDFMeta
   doc.text('RELATÓRIO EXECUTIVO DE TURNO ULTRAFINO', 15, 30);
 
   // FILTRAGEM RESTRITA PARA O PDF
-  const pendentesAtivas = items.filter(i => i.status === 'aberto');
-  
-  const resolvidasNoTurno = items.filter(i => 
-    i.status === 'resolvido' && 
-    i.resolvedAt && 
-    i.resolvedAt >= shiftRange.start && 
-    i.resolvedAt <= shiftRange.end
+  const pendentesAtivas = items.filter(i => 
+    i.status === 'aberto' && 
+    parseTimestamp(i.timestamp) <= shiftRange.end
   );
+  
+  const resolvidasNoTurno = items.filter(i => {
+    if (i.status !== 'resolvido' || !i.resolvedAt) return false;
+    const rTime = parseTimestamp(i.resolvedAt);
+    return rTime >= shiftRange.start && rTime <= shiftRange.end;
+  });
   
   // Cards de Resumo
   doc.setFillColor(248, 250, 252);
@@ -204,7 +216,7 @@ export const generateShiftReportPDFBase64 = (items: PendingItem[], meta: PDFMeta
       ? item.comments[item.comments.length - 1].text.replace('RESOLVIDO: ', '').toUpperCase() 
       : item.description.toUpperCase(),
     item.resolvedBy?.toUpperCase() || '-',
-    item.resolvedAt ? new Date(item.resolvedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '-'
+    item.resolvedAt ? new Date(parseTimestamp(item.resolvedAt)).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '-'
   ]);
 
   (doc as any).autoTable({
@@ -229,7 +241,7 @@ export const generateShiftReportPDFBase64 = (items: PendingItem[], meta: PDFMeta
     item.discipline,
     item.description.toUpperCase(),
     item.priority.toUpperCase(),
-    new Date(item.timestamp).toLocaleDateString('pt-BR')
+    new Date(parseTimestamp(item.timestamp)).toLocaleDateString('pt-BR')
   ]);
 
   (doc as any).autoTable({
@@ -248,7 +260,7 @@ export const generateShiftReportPDFBase64 = (items: PendingItem[], meta: PDFMeta
 /**
  * AUDITORIA GERAL DE FALHAS (LAYOUT COMPLETO - SEPARADO POR STATUS EM PÁGINAS)
  */
-export const exportAuditPDF = (items: PendingItem[]) => {
+export const exportAuditPDF = (items: PendingItem[], period?: string) => {
   const doc = new jsPDF({
     orientation: 'landscape',
     unit: 'mm',
@@ -272,7 +284,7 @@ export const exportAuditPDF = (items: PendingItem[]) => {
     
     doc.setFontSize(7);
     doc.setFont('helvetica', 'normal');
-    doc.text(`EXTRAÇÃO: ${dateStr} | RASTREABILIDADE TOTAL`, 15, 22);
+    doc.text(`PERÍODO: ${period || 'GERAL'} | EXTRAÇÃO: ${dateStr} | RASTREABILIDADE TOTAL`, 15, 22);
 
     doc.setFillColor(...color);
     doc.rect(230, 8, 52, 8, 'F');
@@ -284,7 +296,7 @@ export const exportAuditPDF = (items: PendingItem[]) => {
   drawHeader('AUDITORIA DE RESOLUÇÕES (CONCLUÍDAS)', [22, 163, 74]); // Verde
 
   const resolvedTableData = resolvidas.map(item => [
-    new Date(item.timestamp).toLocaleDateString('pt-BR'),
+    new Date(parseTimestamp(item.timestamp)).toLocaleDateString('pt-BR'),
     item.area,
     item.tag || 'S/T',
     item.discipline,
@@ -292,7 +304,7 @@ export const exportAuditPDF = (items: PendingItem[]) => {
       ? item.comments[item.comments.length - 1].text.replace('RESOLVIDO: ', '').toUpperCase() 
       : item.description.toUpperCase(),
     `T-${item.turma}\n${item.operator}`,
-    item.resolvedAt ? new Date(item.resolvedAt).toLocaleDateString('pt-BR') : '-',
+    item.resolvedAt ? new Date(parseTimestamp(item.resolvedAt)).toLocaleDateString('pt-BR') : '-',
     `T-${item.resolvedByTurma}\n${item.resolvedBy}`
   ]);
 
@@ -311,7 +323,7 @@ export const exportAuditPDF = (items: PendingItem[]) => {
   drawHeader('AUDITORIA DE PENDÊNCIAS ATIVAS (EM ABERTO)', [30, 41, 59]); // Slate
 
   const pendingTableData = pendentes.map(item => [
-    new Date(item.timestamp).toLocaleDateString('pt-BR'),
+    new Date(parseTimestamp(item.timestamp)).toLocaleDateString('pt-BR'),
     item.area,
     item.tag || 'S/T',
     item.discipline,
@@ -347,7 +359,7 @@ export const exportAuditPDF = (items: PendingItem[]) => {
   doc.save(`Auditoria_Master_Ultrafino_Usina_2_${dateStr.replace(/\//g, '-')}.pdf`);
 };
 
-export const generateAuditPDFBase64 = (items: PendingItem[]): string => {
+export const generateAuditPDFBase64 = (items: PendingItem[], period?: string): string => {
   const doc = new jsPDF({
     orientation: 'landscape',
     unit: 'mm',
@@ -370,7 +382,7 @@ export const generateAuditPDFBase64 = (items: PendingItem[]): string => {
     
     doc.setFontSize(7);
     doc.setFont('helvetica', 'normal');
-    doc.text(`EXTRAÇÃO: ${new Date().toLocaleDateString('pt-BR')} | RASTREABILIDADE TOTAL`, 15, 22);
+    doc.text(`PERÍODO: ${period || 'GERAL'} | EXTRAÇÃO: ${new Date().toLocaleDateString('pt-BR')} | RASTREABILIDADE TOTAL`, 15, 22);
 
     doc.setFillColor(...color);
     doc.rect(230, 8, 52, 8, 'F');
@@ -382,7 +394,7 @@ export const generateAuditPDFBase64 = (items: PendingItem[]): string => {
   drawHeader('AUDITORIA DE RESOLUÇÕES (CONCLUÍDAS)', [22, 163, 74]); // Verde
 
   const resolvedTableData = resolvidas.map(item => [
-    new Date(item.timestamp).toLocaleDateString('pt-BR'),
+    new Date(parseTimestamp(item.timestamp)).toLocaleDateString('pt-BR'),
     item.area,
     item.tag || 'S/T',
     item.discipline,
@@ -390,7 +402,7 @@ export const generateAuditPDFBase64 = (items: PendingItem[]): string => {
       ? item.comments[item.comments.length - 1].text.replace('RESOLVIDO: ', '').toUpperCase() 
       : item.description.toUpperCase(),
     `T-${item.turma}\n${item.operator}`,
-    item.resolvedAt ? new Date(item.resolvedAt).toLocaleDateString('pt-BR') : '-',
+    item.resolvedAt ? new Date(parseTimestamp(item.resolvedAt)).toLocaleDateString('pt-BR') : '-',
     `T-${item.resolvedByTurma}\n${item.resolvedBy}`
   ]);
 
@@ -409,7 +421,7 @@ export const generateAuditPDFBase64 = (items: PendingItem[]): string => {
   drawHeader('AUDITORIA DE PENDÊNCIAS ATIVAS (EM ABERTO)', [30, 41, 59]); // Slate
 
   const pendingTableData = pendentes.map(item => [
-    new Date(item.timestamp).toLocaleDateString('pt-BR'),
+    new Date(parseTimestamp(item.timestamp)).toLocaleDateString('pt-BR'),
     item.area,
     item.tag || 'S/T',
     item.discipline,

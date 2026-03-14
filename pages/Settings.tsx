@@ -118,8 +118,7 @@ const Settings: React.FC = () => {
       <div className="bg-slate-50 rounded-3xl p-6 border border-slate-200">
         <h3 className="text-slate-900 font-bold mb-2">Dica</h3>
         <p className="text-slate-600 text-sm leading-relaxed">
-          Os relatórios são enviados automaticamente ao clicar no botão "PDF Turno" na lista de pendências. 
-          Certifique-se de que os e-mails estão corretos para garantir o recebimento.
+          O envio de e-mails é realizado automaticamente (Segundas-feiras e fim do mês) para os destinatários configurados acima.
         </p>
       </div>
     </div>

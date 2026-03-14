@@ -59,7 +59,10 @@ initializeFile(REPORTS_FILE, sampleReports);
 initializeFile(QUALITY_REPORTS_FILE, []);
 initializeFile(PENDING_ITEMS_FILE, samplePending);
 initializeFile(OPERATIONAL_EVENTS_FILE, []);
-initializeFile(CONFIG_FILE, { emailRecipients: process.env.EMAIL_TO || "" });
+initializeFile(CONFIG_FILE, { 
+  emailRecipients: "nilson.oliveira2@vulcaninternational.com",
+  emailCc: "cesar.mondlane@vulcaninternational.com, stanley.ferreira@vulcaninternational.com, jacla.celestino@vulcaninternational.com"
+});
 initializeFile(AUTOMATION_FILE, { lastAuditSentDate: "" });
 
 async function startServer() {

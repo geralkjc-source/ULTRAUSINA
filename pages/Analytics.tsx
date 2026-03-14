@@ -1,5 +1,5 @@
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Activity, 
@@ -24,10 +24,14 @@ import {
   ExternalLink,
   Link2,
   FileSpreadsheet,
-  RefreshCw
+  RefreshCw,
+  FileText,
+  Download,
+  Calendar
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { Report, PendingItem, Area, Turma, Discipline } from '../types';
+import { exportAuditPDF } from '../services/pdfExport';
 
 import { syncToGoogleSheets, testScriptConnection, DEFAULT_SCRIPT_URL, MASTER_SHEET_URL, CloudStats } from '../services/googleSync';
 
@@ -49,13 +53,36 @@ const Analytics: React.FC<AnalyticsProps> = ({
   syncSource 
 }) => {
   const navigate = useNavigate();
+  
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  });
+
+  const filteredData = useMemo(() => {
+    const [year, month] = selectedMonth.split('-').map(Number);
+    const startDate = new Date(year, month - 1, 1);
+    const endDate = new Date(year, month, 0, 23, 59, 59, 999);
+
+    const fReports = reports.filter(r => {
+      const d = new Date(r.timestamp);
+      return d >= startDate && d <= endDate;
+    });
+
+    const fPending = pendingItems.filter(p => {
+      const d = new Date(p.timestamp);
+      return d >= startDate && d <= endDate;
+    });
+
+    return { reports: fReports, pendingItems: fPending };
+  }, [reports, pendingItems, selectedMonth]);
 
   // Estatísticas de Carga Acumulada
   const disciplinePerformance = useMemo(() => {
     const disciplines: Discipline[] = ['MECÂNICA', 'ELÉTRICA', 'INSTRUMENTAÇÃO', 'OPERAÇÃO'];
     
     return disciplines.map(d => {
-      const totalInMonth = pendingItems.filter(p => p.discipline === d);
+      const totalInMonth = filteredData.pendingItems.filter(p => p.discipline === d);
       const openCount = totalInMonth.filter(p => p.status === 'aberto').length;
       const resolvedCount = totalInMonth.filter(p => p.status === 'resolvido').length;
       const totalVolume = totalInMonth.length;
@@ -73,28 +100,18 @@ const Analytics: React.FC<AnalyticsProps> = ({
         volume: openCount, 
         open: openCount, 
         resolved: resolvedCount, 
+        total: totalVolume,
         efficiency: Math.round(efficiency),
         icon,
         color
       };
     });
-  }, [pendingItems]);
+  }, [filteredData.pendingItems]);
 
   const productionByTurma = useMemo(() => {
-    const now = new Date();
-    const hour = now.getHours();
-    
-    // Data operacional de hoje (meio-dia para evitar problemas de fuso)
-    const todayOp = new Date(now);
-    if (hour < 6) todayOp.setDate(todayOp.getDate() - 1);
-    todayOp.setHours(12, 0, 0, 0);
-
-    const startOfMonth = new Date(todayOp.getFullYear(), todayOp.getMonth(), 1);
+    const [year, month] = selectedMonth.split('-').map(Number);
+    const startOfMonth = new Date(year, month - 1, 1);
     startOfMonth.setHours(0, 0, 0, 0);
-
-    const startOfWeek = new Date(todayOp);
-    startOfWeek.setDate(todayOp.getDate() - todayOp.getDay());
-    startOfWeek.setHours(0, 0, 0, 0);
 
     const getOpDate = (timestamp: number | string, turno: string) => {
       const d = new Date(timestamp);
@@ -107,14 +124,9 @@ const Analytics: React.FC<AnalyticsProps> = ({
       return op;
     };
 
-    const monthlyData = reports.filter(r => {
+    const monthlyData = filteredData.reports.filter(r => {
       const opDate = getOpDate(r.timestamp, r.turno || 'MANHÃ');
       return opDate >= startOfMonth;
-    });
-
-    const weeklyData = reports.filter(r => {
-      const opDate = getOpDate(r.timestamp, r.turno || 'MANHÃ');
-      return opDate >= startOfWeek;
     });
 
     const getTurmaData = (data: Report[]) => {
@@ -127,32 +139,42 @@ const Analytics: React.FC<AnalyticsProps> = ({
     };
 
     return {
-      monthly: getTurmaData(monthlyData),
-      weekly: getTurmaData(weeklyData)
+      monthly: getTurmaData(monthlyData)
     };
-  }, [reports]);
+  }, [filteredData.reports, selectedMonth]);
 
   const turmaPerformance = useMemo(() => {
     const turmas: Turma[] = ['A', 'B', 'C', 'D'];
     return turmas.map(t => {
-      const resolved = pendingItems.filter(p => p.resolvedByTurma === t && p.status === 'resolvido').length;
+      const resolved = filteredData.pendingItems.filter(p => p.resolvedByTurma === t && p.status === 'resolvido').length;
       return { turma: t, resolved };
     });
-  }, [pendingItems]);
+  }, [filteredData.pendingItems]);
 
   const debtPerformance = useMemo(() => {
     const turmas: Turma[] = ['A', 'B', 'C', 'D'];
     return turmas.map(t => {
-      const openDebt = pendingItems.filter(p => 
+      const openDebt = filteredData.pendingItems.filter(p => 
         p.turma === t && 
         (p.status === 'aberto' || (p.status === 'resolvido' && p.turma !== p.resolvedByTurma))
       ).length;
       return { turma: t, openDebt };
     }).sort((a,b) => b.openDebt - a.openDebt);
-  }, [pendingItems]);
+  }, [filteredData.pendingItems]);
 
 
-  const totalMonthlyVolume = pendingItems.length;
+  const selectedMonthLabel = useMemo(() => {
+    const [year, month] = selectedMonth.split('-').map(Number);
+    const d = new Date(year, month - 1, 1);
+    return d.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }).toUpperCase();
+  }, [selectedMonth]);
+
+  const handleDownloadDisciplinePDF = (discipline: Discipline) => {
+    const disciplineItems = filteredData.pendingItems.filter(p => p.discipline === discipline);
+    exportAuditPDF(disciplineItems, selectedMonthLabel);
+  };
+
+  const totalMonthlyVolume = filteredData.pendingItems.length;
 
   return (
     <div className="max-w-7xl mx-auto space-y-8 pb-12 animate-in fade-in duration-500">
@@ -166,8 +188,34 @@ const Analytics: React.FC<AnalyticsProps> = ({
         </div>
         <div className="flex flex-wrap gap-2">
           <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm">
+            <Calendar size={16} className="text-blue-500" />
+            <select 
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(e.target.value)}
+              className="text-[10px] font-black text-slate-700 uppercase bg-transparent border-none focus:ring-0 cursor-pointer"
+            >
+              {(() => {
+                const options = [];
+                const now = new Date();
+                const currentYear = now.getFullYear();
+                const startYear = 2026;
+
+                for (let year = currentYear; year >= startYear; year--) {
+                  // Show all 12 months for each year
+                  for (let month = 11; month >= 0; month--) {
+                    const d = new Date(year, month, 1);
+                    const val = `${year}-${String(month + 1).padStart(2, '0')}`;
+                    const label = d.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }).toUpperCase();
+                    options.push(<option key={val} value={val}>{label}</option>);
+                  }
+                }
+                return options;
+              })()}
+            </select>
+          </div>
+          <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm">
             <span className={`w-2 h-2 rounded-full ${syncSource === 'cloud' ? 'bg-emerald-500' : 'bg-amber-500'} animate-pulse`}></span>
-            <span className="text-[10px] font-black text-slate-500 uppercase">Carga Mensal: {syncSource === 'cloud' ? 'Sincronizada' : 'Local'}</span>
+            <span className="text-[10px] font-black text-slate-500 uppercase">Carga: {syncSource === 'cloud' ? 'Sincronizada' : 'Local'}</span>
           </div>
         </div>
       </div>
@@ -190,10 +238,10 @@ const Analytics: React.FC<AnalyticsProps> = ({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-10">
             {disciplinePerformance.map(stat => (
-              <button 
+              <div 
                 key={stat.discipline}
                 onClick={() => navigate(`/pending?status=Tudo&discipline=${encodeURIComponent(stat.discipline)}`)}
-                className="space-y-4 group text-left w-full hover:bg-white/5 p-4 rounded-3xl transition-all border border-transparent hover:border-white/10"
+                className="space-y-4 group text-left w-full hover:bg-white/5 p-4 rounded-3xl transition-all border border-transparent hover:border-white/10 cursor-pointer"
               >
                 <div className="flex justify-between items-end">
                   <div className="flex items-center gap-3">
@@ -202,12 +250,37 @@ const Analytics: React.FC<AnalyticsProps> = ({
                     </div>
                     <div>
                       <p className="text-white text-[11px] font-black uppercase tracking-wider">{stat.discipline}</p>
-                      <p className="text-slate-500 text-[9px] font-bold uppercase">{stat.volume} Ocorrências em Aberto</p>
+                      <div className="flex gap-3 mt-1">
+                        <div className="flex flex-col">
+                          <span className="text-slate-500 text-[7px] font-black uppercase tracking-tighter">Aberto</span>
+                          <span className="text-amber-500 text-[10px] font-black">{stat.open}</span>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-slate-500 text-[7px] font-black uppercase tracking-tighter">Resolvido</span>
+                          <span className="text-emerald-500 text-[10px] font-black">{stat.resolved}</span>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-slate-500 text-[7px] font-black uppercase tracking-tighter">Total</span>
+                          <span className="text-white text-[10px] font-black">{stat.total}</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <span className="text-[9px] font-black text-slate-600 uppercase block mb-1">Taxa de Resolução</span>
-                    <span className={`text-xl font-black text-${stat.color}-400`}>{stat.efficiency}%</span>
+                  <div className="flex flex-col items-end gap-2">
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDownloadDisciplinePDF(stat.discipline as Discipline);
+                      }}
+                      className={`p-2 rounded-lg bg-${stat.color}-500/10 text-${stat.color}-400 hover:bg-${stat.color}-500 hover:text-white transition-all border border-${stat.color}-500/20`}
+                      title="Baixar Relatório Mensal"
+                    >
+                      <Download size={14} />
+                    </button>
+                    <div className="text-right">
+                      <span className="text-[9px] font-black text-slate-600 uppercase block mb-1">Taxa de Resolução</span>
+                      <span className={`text-xl font-black text-${stat.color}-400`}>{stat.efficiency}%</span>
+                    </div>
                   </div>
                 </div>
                 <div className="space-y-2">
@@ -220,7 +293,7 @@ const Analytics: React.FC<AnalyticsProps> = ({
                     </div>
                   </div>
                 </div>
-              </button>
+              </div>
             ))}
           </div>
           
@@ -309,8 +382,8 @@ const Analytics: React.FC<AnalyticsProps> = ({
 
       <div className="grid grid-cols-2 gap-6">
         {[
-          { label: 'Ocorrências Mês', val: totalMonthlyVolume, icon: <BarChart3 className="text-blue-500" /> },
-          { label: 'Falhas Críticas', val: pendingItems.filter(p => p.priority === 'alta').length, icon: <AlertTriangle className="text-red-500" /> },
+          { label: 'Ocorrências Período', val: totalMonthlyVolume, icon: <BarChart3 className="text-blue-500" /> },
+          { label: 'Falhas Críticas', val: filteredData.pendingItems.filter(p => p.priority === 'alta').length, icon: <AlertTriangle className="text-red-500" /> },
         ].map((kpi, i) => (
           <div key={i} className="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm flex items-center gap-4">
             <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center border border-slate-100">
