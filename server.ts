@@ -21,7 +21,7 @@ const AUTOMATION_FILE = path.join(DATA_DIR, "automation.json");
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR);
 
 const initializeFile = (file: string, defaultData: any) => {
-  if (!fs.existsSync(file) || fs.readFileSync(file, "utf8").trim() === "[]" || fs.readFileSync(file, "utf8").trim() === "" || (file.endsWith('config.json') && fs.readFileSync(file, "utf8").trim() === "{}") || (file.endsWith('automation.json') && fs.readFileSync(file, "utf8").trim() === "{}")) {
+  if (!fs.existsSync(file) || fs.readFileSync(file, "utf8").trim() === "") {
     fs.writeFileSync(file, JSON.stringify(defaultData, null, 2));
   }
 };
@@ -55,9 +55,9 @@ const samplePending = [
   }
 ];
 
-initializeFile(REPORTS_FILE, sampleReports);
+initializeFile(REPORTS_FILE, []);
 initializeFile(QUALITY_REPORTS_FILE, []);
-initializeFile(PENDING_ITEMS_FILE, samplePending);
+initializeFile(PENDING_ITEMS_FILE, []);
 initializeFile(OPERATIONAL_EVENTS_FILE, []);
 initializeFile(CONFIG_FILE, { 
   emailRecipients: "nilson.oliveira2@vulcaninternational.com",
