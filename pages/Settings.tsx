@@ -8,6 +8,7 @@ const Settings: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
+  const [testing, setTesting] = useState(false);
 
   useEffect(() => {
     const loadConfig = async () => {
@@ -34,6 +35,30 @@ const Settings: React.FC = () => {
       setStatus({ type: 'error', message: 'Erro ao salvar configurações.' });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleTestEmail = async () => {
+    if (!emails) {
+      setStatus({ type: 'error', message: 'Insira pelo menos um destinatário para testar.' });
+      return;
+    }
+
+    setTesting(true);
+    setStatus(null);
+    try {
+      await backendService.sendEmail({
+        subject: 'TESTE DE CONEXÃO - SISTEMA VULCAN',
+        text: `Este é um e-mail de teste enviado em ${new Date().toLocaleString('pt-BR')}.\n\nSe você recebeu este e-mail, as configurações de SMTP e destinatários estão funcionando corretamente.`,
+        recipients: emails,
+        carbonCopy: ccEmails
+      });
+      setStatus({ type: 'success', message: 'E-mail de teste enviado com sucesso! Verifique sua caixa de entrada.' });
+    } catch (error: any) {
+      console.error('Test email error:', error);
+      setStatus({ type: 'error', message: `Erro ao enviar e-mail de teste: ${error.message}` });
+    } finally {
+      setTesting(false);
     }
   };
 
@@ -100,19 +125,35 @@ const Settings: React.FC = () => {
           </div>
         )}
 
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="w-full py-4 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg shadow-blue-600/20 transition-all active:scale-95 flex items-center justify-center gap-2"
-        >
-          {saving ? (
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-          ) : (
-            <>
-              <Save size={18} /> Salvar Configurações
-            </>
-          )}
-        </button>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <button
+            onClick={handleSave}
+            disabled={saving || testing}
+            className="flex-1 py-4 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg shadow-blue-600/20 transition-all active:scale-95 flex items-center justify-center gap-2"
+          >
+            {saving ? (
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+            ) : (
+              <>
+                <Save size={18} /> Salvar Configurações
+              </>
+            )}
+          </button>
+
+          <button
+            onClick={handleTestEmail}
+            disabled={saving || testing}
+            className="flex-1 py-4 bg-white border-2 border-slate-100 hover:border-blue-500 text-slate-900 rounded-2xl font-black uppercase text-xs tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2"
+          >
+            {testing ? (
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+            ) : (
+              <>
+                <Mail size={18} className="text-blue-600" /> Testar Envio
+              </>
+            )}
+          </button>
+        </div>
       </div>
       
       <div className="bg-slate-50 rounded-3xl p-6 border border-slate-200">

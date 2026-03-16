@@ -92,18 +92,23 @@ async function startServer() {
 
   // Email Endpoint
   app.post("/api/send-email", async (req, res) => {
-    const { subject, text, attachment, to, cc } = req.body;
+    const { subject, text, attachment, to, cc, recipients: bodyRecipients, carbonCopy: bodyCC } = req.body;
     
     // Get default recipients from config if not provided
-    let recipients = to;
-    let carbonCopy = cc;
+    let recipients = to || bodyRecipients;
+    let carbonCopy = cc || bodyCC;
     
     try {
       const config = readJSON(CONFIG_FILE);
       if (!recipients) recipients = config.emailRecipients || process.env.EMAIL_TO;
-      if (!carbonCopy) carbonCopy = config.emailCc || "";
+      if (!carbonCopy && carbonCopy !== "") carbonCopy = config.emailCc || process.env.EMAIL_CC || "";
     } catch (e) {
       if (!recipients) recipients = process.env.EMAIL_TO;
+      if (!carbonCopy && carbonCopy !== "") carbonCopy = process.env.EMAIL_CC || "";
+    }
+
+    if (!recipients) {
+      return res.status(400).json({ error: "Nenhum destinatário configurado." });
     }
     
     const transporter = nodemailer.createTransport({
@@ -136,9 +141,13 @@ async function startServer() {
 
       await transporter.sendMail(mailOptions);
       res.json({ success: true });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error sending email:", error);
-      res.status(500).json({ error: "Failed to send email" });
+      res.status(500).json({ 
+        error: "Falha ao enviar e-mail", 
+        details: error.message,
+        code: error.code 
+      });
     }
   });
 

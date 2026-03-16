@@ -121,5 +121,18 @@ export const backendService = {
     });
     if (!response.ok) throw new Error('Failed to save config');
     return response.json();
+  },
+
+  async sendEmail(payload: { subject: string, text: string, recipients?: string, carbonCopy?: string, attachment?: { filename: string, content: string } }): Promise<{ success: boolean }> {
+    const response = await fetch(`${API_BASE}/send-email`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+      throw new Error(errorData.error || 'Failed to send email');
+    }
+    return response.json();
   }
 };
