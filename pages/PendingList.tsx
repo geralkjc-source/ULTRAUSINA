@@ -18,6 +18,7 @@ import {
   Download,
   FileSpreadsheet,
   FileText,
+  Mail,
   ShieldAlert,
   ArrowDownToLine,
   ExternalLink,
@@ -28,8 +29,9 @@ import { PendingItem, Area, Turma, Discipline, Turno } from '../types';
 import { formatShiftSummaryForWhatsApp, copyToClipboard, shareToWhatsApp } from '../services/whatsappShare';
 import { getCurrentShiftInfo, getPreviousShiftInfo, getPreviousShiftRange } from '../services/shiftService';
 import { exportToExcel } from '../services/excelExport';
-import { exportShiftReportPDF, exportAuditPDF, generateShiftReportPDFBase64, generateAuditPDFBase64 } from '../services/pdfExport';
+import { exportShiftReportPDF, exportAuditPDF, generateShiftReportPDFBase64, generateAuditPDFBase64, generateDisciplineAuditPDFBase64 } from '../services/pdfExport';
 import { fetchEmployees, Employee } from '../services/employeeService';
+import { backendService } from '../services/backendService';
 
 interface PendingListProps {
   pendingItems: PendingItem[];
@@ -58,6 +60,124 @@ const PendingList: React.FC<PendingListProps> = ({ pendingItems = [], onResolve,
   const [copyFeedback, setCopyFeedback] = useState(false);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [showResolverSuggestions, setShowResolverSuggestions] = useState(false);
+  const [isSendingReports, setIsSendingReports] = useState(false);
+  const [reportSentFeedback, setReportSentFeedback] = useState<string | null>(null);
+
+  const sendReports = async (reason: string, reportType: 'all' | 'master' | 'discipline' = 'all') => {
+    setIsSendingReports(true);
+    setReportSentFeedback(null);
+    try {
+      console.log(`Sending ${reason} Audit PDF (${reportType})`);
+      const dateStr = new Date().toLocaleDateString('pt-BR');
+      
+      // 1. Enviar Auditoria Geral (Master)
+      if (reportType === 'all' || reportType === 'master') {
+      const base64Master = generateAuditPDFBase64(pendingItems, `AUDITORIA: ${reason}`.toUpperCase());
+      
+      const masterEmailBody = `Prezado(a) Gestor(a),
+
+Informamos que o relatório de Auditoria Geral de Pendências (${reason}) foi gerado automaticamente pelo nosso sistema de gestão operacional.
+
+Este documento consolida todas as pendências em aberto, visando auxiliar no acompanhamento estratégico, na priorização das atividades e na tomada de decisão gerencial.
+
+Detalhes do Relatório:
+Data de Extração: ${dateStr}
+Total de itens em aberto: ${pendingItems.filter(i => i.status === 'aberto').length}
+Total de itens CONCLUÍDAS: ${pendingItems.filter(i => i.status === 'resolvido').length}
+
+O arquivo encontra-se em anexo para sua análise. Solicitamos que as ações corretivas sejam avaliadas e executadas conforme o cronograma estabelecido.
+
+Em caso de dúvidas ou inconsistências nos dados, favor entrar em contato com a equipe de suporte operacional.
+
+Atenciosamente,
+
+---
+Sistema de Gestão Operacional Vulcan
+Departamento de Operações e Manutenção
+Este é um e-mail automático. Por favor, não responda a esta mensagem.`;
+
+      await fetch('/api/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          subject: `Auditoria Geral Ultrafino`,
+          text: masterEmailBody,
+          attachment: {
+            filename: `Auditoria_${dateStr.replace(/\//g, '-')}.pdf`,
+            content: base64Master
+          }
+        })
+      });
+    }
+
+    // 2. Enviar Carga Acumulada por Disciplina para Gestores
+    if (reportType === 'all' || reportType === 'discipline') {
+      try {
+        const config = await backendService.getConfig();
+        if (config.disciplineEmails) {
+          for (const [discipline, email] of Object.entries(config.disciplineEmails)) {
+            if (email && email.trim() !== "") {
+              const itemsForDiscipline = pendingItems.filter(i => i.discipline === discipline && i.status === 'aberto');
+              
+              if (itemsForDiscipline.length > 0) {
+                const base64Disc = generateDisciplineAuditPDFBase64(pendingItems, discipline);
+                const emailBody = `Prezado(a) Supervisor(a),
+
+Informamos que o relatório de Carga Acumulada de Pendências referente à disciplina de ${discipline} foi gerado automaticamente pelo nosso sistema de gestão operacional.
+
+Este documento contém o detalhamento das pendências em aberto, visando auxiliar no acompanhamento, na priorização das atividades e na tomada de decisão em sua área de atuação.
+
+Detalhes do Relatório:
+Data de Extração: ${dateStr}
+Disciplina: ${discipline}
+Total de itens em aberto: ${itemsForDiscipline.length}
+Total de itens CONCLUÍDAS: ${pendingItems.filter(i => i.discipline === discipline && i.status === 'resolvido').length}
+
+O arquivo encontra-se em anexo para sua análise. Solicitamos que as ações corretivas sejam avaliadas e executadas conforme o cronograma estabelecido.
+
+Em caso de dúvidas ou inconsistências nos dados, favor entrar em contato com a equipe de suporte operacional.
+
+Atenciosamente,
+
+---
+Sistema de Gestão Operacional Vulcan
+Departamento de Operações e Manutenção
+Este é um e-mail automático. Por favor, não responda a esta mensagem.`;
+
+                  await fetch('/api/send-email', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      to: email,
+                      cc: "",
+                      subject: `Carga Acumulada Ultrafino - ${discipline.toUpperCase()} - ${dateStr}`,
+                      text: emailBody,
+                      attachment: {
+                        filename: `Carga_Acumulada_${discipline}_${dateStr.replace(/\//g, '-')}.pdf`,
+                        content: base64Disc
+                      }
+                    })
+                  });
+                }
+              }
+            }
+          }
+      } catch (configErr) {
+        console.error("Error sending discipline emails:", configErr);
+        throw configErr;
+      }
+    }
+    
+    setReportSentFeedback('Relatórios enviados com sucesso!');
+    setTimeout(() => setReportSentFeedback(null), 5000);
+    } catch (error) {
+      console.error("Error sending reports:", error);
+      setReportSentFeedback('Erro ao enviar relatórios.');
+      setTimeout(() => setReportSentFeedback(null), 5000);
+    } finally {
+      setIsSendingReports(false);
+    }
+  };
 
   useEffect(() => {
     const loadEmployees = async () => {
@@ -67,34 +187,119 @@ const PendingList: React.FC<PendingListProps> = ({ pendingItems = [], onResolve,
     loadEmployees();
 
     // Automation: Check and send Audit PDF
+    const sendReportsInternal = async (reason: string, reportType: 'all' | 'master' | 'discipline' = 'all') => {
+      console.log(`Sending ${reason} Audit PDF (${reportType})`);
+      const dateStr = new Date().toLocaleDateString('pt-BR');
+      
+      // 1. Enviar Auditoria Geral (Master)
+      if (reportType === 'all' || reportType === 'master') {
+        const base64Master = generateAuditPDFBase64(pendingItems, `AUDITORIA: ${reason}`.toUpperCase());
+        
+        const masterEmailBody = `Prezado(a) Gestor(a),
+
+Informamos que o relatório de Auditoria Geral de Pendências (${reason}) foi gerado automaticamente pelo nosso sistema de gestão operacional.
+
+Este documento consolida todas as pendências em aberto, visando auxiliar no acompanhamento estratégico, na priorização das atividades e na tomada de decisão gerencial.
+
+Detalhes do Relatório:
+Data de Extração: ${dateStr}
+Total de itens em aberto: ${pendingItems.filter(i => i.status === 'aberto').length}
+Total de itens CONCLUÍDAS: ${pendingItems.filter(i => i.status === 'resolvido').length}
+
+O arquivo encontra-se em anexo para sua análise. Solicitamos que as ações corretivas sejam avaliadas e executadas conforme o cronograma estabelecido.
+
+Em caso de dúvidas ou inconsistências nos dados, favor entrar em contato com a equipe de suporte operacional.
+
+Atenciosamente,
+
+---
+Sistema de Gestão Operacional Vulcan
+Departamento de Operações e Manutenção
+Este é um e-mail automático. Por favor, não responda a esta mensagem.`;
+
+        await fetch('/api/send-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            subject: `Auditoria Geral Ultrafino`,
+            text: masterEmailBody,
+            attachment: {
+              filename: `Auditoria_${dateStr.replace(/\//g, '-')}.pdf`,
+              content: base64Master
+            }
+          })
+        });
+      }
+
+      // 2. Enviar Carga Acumulada por Disciplina para Gestores
+      if (reportType === 'all' || reportType === 'discipline') {
+        try {
+          const config = await backendService.getConfig();
+          if (config.disciplineEmails) {
+            for (const [discipline, email] of Object.entries(config.disciplineEmails)) {
+              if (email && email.trim() !== "") {
+                const itemsForDiscipline = pendingItems.filter(i => i.discipline === discipline && i.status === 'aberto');
+                
+                if (itemsForDiscipline.length > 0) {
+                  const base64Disc = generateDisciplineAuditPDFBase64(pendingItems, discipline);
+                  const emailBody = `Prezado(a) Supervisor(a),
+
+Informamos que o relatório de Carga Acumulada de Pendências referente à disciplina de ${discipline} foi gerado automaticamente pelo nosso sistema de gestão operacional.
+
+Este documento contém o detalhamento das pendências em aberto, visando auxiliar no acompanhamento, na priorização das atividades e na tomada de decisão em sua área de atuação.
+
+Detalhes do Relatório:
+Data de Extração: ${dateStr}
+Disciplina: ${discipline}
+Total de itens em aberto: ${itemsForDiscipline.length}
+Total de itens CONCLUÍDAS: ${pendingItems.filter(i => i.discipline === discipline && i.status === 'resolvido').length}
+
+O arquivo encontra-se em anexo para sua análise. Solicitamos que as ações corretivas sejam avaliadas e executadas conforme o cronograma estabelecido.
+
+Em caso de dúvidas ou inconsistências nos dados, favor entrar em contato com a equipe de suporte operacional.
+
+Atenciosamente,
+
+---
+Sistema de Gestão Operacional Vulcan
+Departamento de Operações e Manutenção
+Este é um e-mail automático. Por favor, não responda a esta mensagem.`;
+
+                  await fetch('/api/send-email', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      to: email,
+                      cc: "",
+                      subject: `Carga Acumulada Ultrafino - ${discipline.toUpperCase()} - ${dateStr}`,
+                      text: emailBody,
+                      attachment: {
+                        filename: `Carga_Acumulada_${discipline}_${dateStr.replace(/\//g, '-')}.pdf`,
+                        content: base64Disc
+                      }
+                    })
+                  });
+                }
+              }
+            }
+          }
+        } catch (configErr) {
+          console.error("Error sending discipline emails:", configErr);
+        }
+      }
+    };
+
     const checkAutomation = async () => {
       try {
         const res = await fetch('/api/automation/check-audit');
         const { shouldSend, reason } = await res.json();
         
         if (shouldSend && pendingItems.length > 0) {
-          console.log(`Automation triggered: Sending ${reason} Audit PDF`);
-          const base64 = generateAuditPDFBase64(pendingItems, `AUTOMAÇÃO: ${reason}`.toUpperCase());
-          const dateStr = new Date().toLocaleDateString('pt-BR');
-          
-          await fetch('/api/send-email', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              subject: `Auditoria Automática - ${reason}`,
-              text: `Relatório de Auditoria Automática gerado em ${dateStr}.`,
-              attachment: {
-                filename: `Auditoria_Automatica_${dateStr.replace(/\//g, '-')}.pdf`,
-                content: base64
-              }
-            })
-          });
-          
+          await sendReportsInternal(reason, 'all');
           await fetch('/api/automation/mark-audit-sent', { method: 'POST' });
-          console.log("Automation: Audit PDF sent successfully");
         }
-      } catch (err) {
-        console.error("Automation error:", err);
+      } catch (error) {
+        console.error("Automation error:", error);
       }
     };
 
@@ -236,6 +441,12 @@ const PendingList: React.FC<PendingListProps> = ({ pendingItems = [], onResolve,
         </button>
       </div>
 
+      {reportSentFeedback && (
+        <div className={`p-4 rounded-2xl font-bold text-sm text-center ${reportSentFeedback.includes('Erro') ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'}`}>
+          {reportSentFeedback}
+        </div>
+      )}
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <button onClick={handleCopySummary} className={`flex items-center justify-center gap-2 py-4 rounded-2xl font-black text-[10px] uppercase shadow-lg border-2 transition-all active:scale-95 ${copyFeedback ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-white text-slate-900 border-slate-100 hover:border-blue-500'}`}>
           <Copy size={18} /> Copiar Resumo
@@ -259,6 +470,12 @@ const PendingList: React.FC<PendingListProps> = ({ pendingItems = [], onResolve,
           exportAuditPDF(filteredItems, period);
         }} className="flex items-center justify-center gap-2 py-4 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase shadow-lg border-2 border-transparent hover:bg-slate-800 transition-all active:scale-95">
           <ShieldAlert size={18} /> Auditoria PDF
+        </button>
+        <button disabled={isSendingReports} onClick={() => sendReports("Manual", "all")} className={`flex items-center justify-center gap-2 py-4 text-white rounded-2xl font-black text-[10px] uppercase shadow-lg border-2 border-transparent transition-all active:scale-95 ${isSendingReports ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}>
+          <Mail size={18} /> {isSendingReports ? 'Enviando...' : 'Enviar Relatórios Agora'}
+        </button>
+        <button disabled={isSendingReports} onClick={() => sendReports("Manual", "discipline")} className={`flex items-center justify-center gap-2 py-4 text-white rounded-2xl font-black text-[10px] uppercase shadow-lg border-2 border-transparent transition-all active:scale-95 ${isSendingReports ? 'bg-emerald-400 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700'}`}>
+          <Mail size={18} /> {isSendingReports ? 'Enviando...' : 'Enviar Carga por Disciplina'}
         </button>
       </div>
 

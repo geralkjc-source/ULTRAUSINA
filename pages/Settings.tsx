@@ -5,6 +5,12 @@ import { backendService } from '../services/backendService';
 const Settings: React.FC = () => {
   const [emails, setEmails] = useState<string>('');
   const [ccEmails, setCcEmails] = useState<string>('');
+  const [disciplineEmails, setDisciplineEmails] = useState<Record<string, string>>({
+    'MECÂNICA': '',
+    'ELÉTRICA': '',
+    'INSTRUMENTAÇÃO': '',
+    'OPERAÇÃO': ''
+  });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
@@ -16,6 +22,9 @@ const Settings: React.FC = () => {
         const config = await backendService.getConfig();
         setEmails(config.emailRecipients || '');
         setCcEmails(config.emailCc || '');
+        if (config.disciplineEmails) {
+          setDisciplineEmails(prev => ({ ...prev, ...config.disciplineEmails }));
+        }
       } catch (error) {
         console.error('Error loading config:', error);
       } finally {
@@ -29,7 +38,11 @@ const Settings: React.FC = () => {
     setSaving(true);
     setStatus(null);
     try {
-      await backendService.saveConfig({ emailRecipients: emails, emailCc: ccEmails });
+      await backendService.saveConfig({ 
+        emailRecipients: emails, 
+        emailCc: ccEmails,
+        disciplineEmails: disciplineEmails
+      });
       setStatus({ type: 'success', message: 'Configurações salvas com sucesso!' });
     } catch (error) {
       setStatus({ type: 'error', message: 'Erro ao salvar configurações.' });
@@ -116,6 +129,33 @@ const Settings: React.FC = () => {
               placeholder="copia1@gmail.com, copia2@gmail.com"
               className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-blue-500 focus:ring-0 transition-all min-h-[80px] font-mono text-sm"
             />
+          </div>
+        </div>
+
+        <div className="space-y-4 pt-4 border-t border-slate-100">
+          <div className="flex items-center gap-2 text-slate-700 font-bold">
+            <Mail size={20} className="text-blue-500" />
+            <h2>Gestores por Disciplina</h2>
+          </div>
+          <p className="text-slate-500 text-sm">
+            Configure os e-mails dos supervisores para recebimento da Carga Acumulada.
+          </p>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {Object.keys(disciplineEmails).map((discipline) => (
+              <div key={discipline} className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">
+                  {discipline}
+                </label>
+                <input
+                  type="email"
+                  value={disciplineEmails[discipline]}
+                  onChange={(e) => setDisciplineEmails(prev => ({ ...prev, [discipline]: e.target.value }))}
+                  placeholder={`E-mail Gestor ${discipline}`}
+                  className="w-full p-3 bg-slate-50 border-2 border-slate-100 rounded-xl focus:border-blue-500 focus:ring-0 transition-all text-sm"
+                />
+              </div>
+            ))}
           </div>
         </div>
 

@@ -107,13 +107,21 @@ export const backendService = {
   },
 
   // Config
-  async getConfig(): Promise<{ emailRecipients: string, emailCc: string }> {
+  async getConfig(): Promise<{ 
+    emailRecipients: string, 
+    emailCc: string,
+    disciplineEmails?: Record<string, string>
+  }> {
     const response = await fetch(`${API_BASE}/config`);
     if (!response.ok) throw new Error('Failed to fetch config');
     return response.json();
   },
 
-  async saveConfig(config: { emailRecipients: string, emailCc: string }): Promise<{ emailRecipients: string, emailCc: string }> {
+  async saveConfig(config: { 
+    emailRecipients: string, 
+    emailCc: string,
+    disciplineEmails?: Record<string, string>
+  }): Promise<any> {
     const response = await fetch(`${API_BASE}/config`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

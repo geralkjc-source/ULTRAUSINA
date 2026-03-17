@@ -61,7 +61,13 @@ initializeFile(PENDING_ITEMS_FILE, []);
 initializeFile(OPERATIONAL_EVENTS_FILE, []);
 initializeFile(CONFIG_FILE, { 
   emailRecipients: "nilson.oliveira2@vulcaninternational.com",
-  emailCc: "cesar.mondlane@vulcaninternational.com, stanley.ferreira@vulcaninternational.com, jacla.celestino@vulcaninternational.com"
+  emailCc: "cesar.mondlane@vulcaninternational.com, stanley.ferreira@vulcaninternational.com, jacla.celestino@vulcaninternational.com",
+  disciplineEmails: {
+    "MECÂNICA": "bruno.rabelo@vulcaninternational.com, alcar.rafael@vulcaninternational.com, amancio.novela@vulcaninternational.com, rodrigo.silva@vulcaninternational.com",
+    "ELÉTRICA": "alex.julai@vulcaninternational.com, booz.hobjane@vulcaninternational.com",
+    "INSTRUMENTAÇÃO": "alex.julai@vulcaninternational.com, booz.hobjane@vulcaninternational.com",
+    "OPERAÇÃO": "cesar.mondlane@vulcaninternational.com, stanley.ferreira@vulcaninternational.com, nilson.oliveira2@vulcaninternational.com"
+  }
 });
 initializeFile(AUTOMATION_FILE, { lastAuditSentDate: "" });
 
@@ -96,15 +102,15 @@ async function startServer() {
     
     // Get default recipients from config if not provided
     let recipients = to || bodyRecipients;
-    let carbonCopy = cc || bodyCC;
+    let carbonCopy = cc !== undefined ? cc : bodyCC;
     
     try {
       const config = readJSON(CONFIG_FILE);
       if (!recipients) recipients = config.emailRecipients || process.env.EMAIL_TO;
-      if (!carbonCopy && carbonCopy !== "") carbonCopy = config.emailCc || process.env.EMAIL_CC || "";
+      if (carbonCopy === undefined) carbonCopy = config.emailCc || process.env.EMAIL_CC || "";
     } catch (e) {
       if (!recipients) recipients = process.env.EMAIL_TO;
-      if (!carbonCopy && carbonCopy !== "") carbonCopy = process.env.EMAIL_CC || "";
+      if (carbonCopy === undefined) carbonCopy = process.env.EMAIL_CC || "";
     }
 
     if (!recipients) {
@@ -143,8 +149,14 @@ async function startServer() {
       res.json({ success: true });
     } catch (error: any) {
       console.error("Error sending email:", error);
+      
+      let errorMessage = "Falha ao enviar e-mail";
+      if (error.code === 'EAUTH' || error.responseCode === 535) {
+        errorMessage = "Erro de Autenticação: O usuário ou a senha do e-mail estão incorretos. Se estiver usando Gmail, você precisa usar uma 'Senha de App'.";
+      }
+
       res.status(500).json({ 
-        error: "Falha ao enviar e-mail", 
+        error: errorMessage, 
         details: error.message,
         code: error.code 
       });
@@ -259,7 +271,27 @@ async function startServer() {
   // Config Endpoints
   app.get("/api/config", (req, res) => {
     try {
-      res.json(readJSON(CONFIG_FILE));
+      const config = readJSON(CONFIG_FILE);
+      const defaults = {
+        disciplineEmails: {
+          "MECÂNICA": "bruno.rabelo@vulcaninternational.com, alcar.rafael@vulcaninternational.com, amancio.novela@vulcaninternational.com, rodrigo.silva@vulcaninternational.com",
+          "ELÉTRICA": "alex.julai@vulcaninternational.com, booz.hobjane@vulcaninternational.com",
+          "INSTRUMENTAÇÃO": "alex.julai@vulcaninternational.com, booz.hobjane@vulcaninternational.com",
+          "OPERAÇÃO": "cesar.mondlane@vulcaninternational.com, stanley.ferreira@vulcaninternational.com, nilson.oliveira2@vulcaninternational.com"
+        }
+      };
+      
+      // Merge defaults if disciplineEmails is missing
+      const mergedConfig = {
+        ...defaults,
+        ...config,
+        disciplineEmails: {
+          ...defaults.disciplineEmails,
+          ...(config.disciplineEmails || {})
+        }
+      };
+      
+      res.json(mergedConfig);
     } catch (error) {
       res.status(500).json({ error: "Failed to read config" });
     }

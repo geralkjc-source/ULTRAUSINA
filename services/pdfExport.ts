@@ -456,3 +456,65 @@ export const generateAuditPDFBase64 = (items: PendingItem[], period?: string): s
 
   return doc.output('datauristring').split(',')[1];
 };
+
+/**
+ * RELATÓRIO DE CARGA ACUMULADA POR DISCIPLINA
+ */
+export const generateDisciplineAuditPDFBase64 = (items: PendingItem[], discipline: string): string => {
+  const doc = new jsPDF({
+    orientation: 'landscape',
+    unit: 'mm',
+    format: 'a4'
+  });
+
+  const dateStr = new Date().toLocaleDateString('pt-BR');
+  const pendentes = items.filter(i => i.status === 'aberto' && i.discipline === discipline);
+
+  doc.setFillColor(15, 23, 42);
+  doc.rect(0, 0, 297, 25, 'F');
+  
+  doc.setTextColor(255, 255, 255);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(14);
+  doc.text(`VULCAN - CARGA ACUMULADA: ${discipline}`, 15, 10);
+  doc.setFontSize(10);
+  doc.text('RELATÓRIO DE PENDÊNCIAS POR DISCIPLINA', 15, 16);
+  
+  doc.setFontSize(7);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`EXTRAÇÃO: ${dateStr} | FOCO: ${discipline}`, 15, 22);
+
+  const pendingTableData = pendentes.map(item => [
+    new Date(parseTimestamp(item.timestamp)).toLocaleDateString('pt-BR'),
+    item.area,
+    item.tag || 'S/T',
+    item.description.toUpperCase(),
+    `T-${item.turma}\n${item.operator}`,
+    item.priority.toUpperCase()
+  ]);
+
+  (doc as any).autoTable({
+    startY: 30,
+    head: [['DATA REPORTE', 'ÁREA', 'TAG', 'DESCRIÇÃO TÉCNICA', 'REPORTADO POR', 'PRIORIDADE']],
+    body: pendingTableData.length > 0 ? pendingTableData : [['-', '-', '-', 'NENHUMA PENDÊNCIA EM ABERTO PARA ESTA DISCIPLINA', '-', '-']],
+    theme: 'grid',
+    headStyles: { fillColor: [30, 41, 59], fontSize: 7, fontStyle: 'bold', halign: 'center' },
+    styles: { fontSize: 7, cellPadding: 2, valign: 'middle' },
+    columnStyles: { 3: { cellWidth: 100 }, 4: { halign: 'center' }, 5: { halign: 'center' } },
+    didParseCell: function(data: any) {
+      if (data.section === 'body' && data.column.index === 5) {
+        if (data.cell.raw === 'ALTA') data.cell.styles.textColor = [220, 38, 38];
+      }
+    }
+  });
+
+  const pageCount = (doc as any).internal.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setFontSize(6);
+    doc.setTextColor(100);
+    doc.text(`Sistema Vulcan Ultrafino | Carga Acumulada ${discipline} | Página ${i} de ${pageCount}`, 148, 205, { align: 'center' });
+  }
+
+  return doc.output('datauristring').split(',')[1];
+};
