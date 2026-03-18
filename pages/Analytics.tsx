@@ -54,7 +54,7 @@ const Analytics: React.FC<AnalyticsProps> = ({
   syncSource 
 }) => {
   const navigate = useNavigate();
-  const { t, language } = useLanguage();
+  const { t, language, translateDiscipline } = useLanguage();
   
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const now = new Date();
@@ -146,7 +146,7 @@ const Analytics: React.FC<AnalyticsProps> = ({
   }, [filteredData.reports, selectedMonth]);
 
   const turmaPerformance = useMemo(() => {
-    const turmas: Turma[] = ['A', 'B', 'C', 'D'];
+    const turmas: Turma[] = ['A', 'B', 'C', 'D', 'ADM'];
     return turmas.map(turma => {
       const resolved = filteredData.pendingItems.filter(p => p.resolvedByTurma === turma && p.status === 'resolvido').length;
       return { turma: turma, resolved };
@@ -154,7 +154,7 @@ const Analytics: React.FC<AnalyticsProps> = ({
   }, [filteredData.pendingItems]);
 
   const debtPerformance = useMemo(() => {
-    const turmas: Turma[] = ['A', 'B', 'C', 'D'];
+    const turmas: Turma[] = ['A', 'B', 'C', 'D', 'ADM'];
     return turmas.map(turma => {
       const openDebt = filteredData.pendingItems.filter(p => 
         p.turma === turma && 
@@ -242,7 +242,7 @@ const Analytics: React.FC<AnalyticsProps> = ({
             {disciplinePerformance.map(stat => (
               <div 
                 key={stat.discipline}
-                onClick={() => navigate(`/pending?status=Tudo&discipline=${encodeURIComponent(stat.discipline)}`)}
+                onClick={() => navigate(`/pending?status=all&discipline=${encodeURIComponent(stat.discipline)}`)}
                 className="space-y-4 group text-left w-full hover:bg-white/5 p-4 rounded-3xl transition-all border border-transparent hover:border-white/10 cursor-pointer"
               >
                 <div className="flex justify-between items-end">
@@ -251,7 +251,7 @@ const Analytics: React.FC<AnalyticsProps> = ({
                       {stat.icon}
                     </div>
                     <div>
-                      <p className="text-white text-[11px] font-black uppercase tracking-wider">{stat.discipline}</p>
+                      <p className="text-white text-[11px] font-black uppercase tracking-wider">{translateDiscipline(stat.discipline)}</p>
                       <div className="flex gap-3 mt-1">
                         <div className="flex flex-col">
                           <span className="text-slate-500 text-[7px] font-black uppercase tracking-tighter">{t('statusOpen')}</span>
@@ -348,7 +348,7 @@ const Analytics: React.FC<AnalyticsProps> = ({
 
             <div className="pt-4 border-t border-slate-100">
               <div className="space-y-1 mb-4">
-                <h2 className="text-red-600 text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
+                <h2 className="text-emerald-600 text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
                   <ShieldAlert size={14} /> {t('identifiedPending')}
                 </h2>
                 <p className="text-slate-400 text-[8px] font-bold uppercase italic">{t('identifiedByTeam')}</p>
@@ -359,20 +359,34 @@ const Analytics: React.FC<AnalyticsProps> = ({
                   <button 
                     key={tData.turma} 
                     onClick={() => navigate(`/pending?status=aberto&turma=${tData.turma}`)}
-                    className="w-full flex items-center justify-between p-3 bg-red-50/50 rounded-xl border border-red-100 hover:bg-red-50 transition-colors active:scale-95 group"
+                    className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all active:scale-95 group ${
+                      idx === 0 
+                        ? 'bg-emerald-50 border-emerald-200 hover:bg-emerald-100 shadow-sm' 
+                        : 'bg-emerald-50/30 border-emerald-100 hover:bg-emerald-50'
+                    }`}
                   >
                     <div className="flex items-center gap-2">
-                      <span className={`w-7 h-7 rounded-lg flex items-center justify-center font-black text-[10px] ${idx === 0 ? 'bg-red-600 text-white' : 'bg-red-200 text-red-700'}`}>
+                      <span className={`w-7 h-7 rounded-lg flex items-center justify-center font-black text-[10px] ${
+                        idx === 0 ? 'bg-emerald-600 text-white shadow-sm' : 'bg-emerald-200 text-emerald-700'
+                      }`}>
                         {tData.turma}
                       </span>
                       <div className="text-left">
                         <span className="text-[10px] font-black text-slate-700 uppercase">{t('team')} {tData.turma}</span>
-                        <span className="text-[7px] font-black text-red-400 uppercase tracking-widest block group-hover:text-red-600 transition-colors">{t('viewPendingSmall')}</span>
+                        <span className={`text-[7px] font-black uppercase tracking-widest block transition-colors ${
+                          idx === 0 ? 'text-emerald-500 group-hover:text-emerald-700' : 'text-emerald-400 group-hover:text-emerald-600'
+                        }`}>
+                          {idx === 0 ? 'LÍDER EM IDENTIFICAÇÃO' : t('viewPendingSmall')}
+                        </span>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-base font-black text-red-600">{tData.openDebt}</span>
-                      <History size={14} className="text-red-400" />
+                      <span className={`text-base font-black text-emerald-600`}>{tData.openDebt}</span>
+                      {idx === 0 ? (
+                        <Trophy size={14} className="text-emerald-500 animate-bounce" />
+                      ) : (
+                        <History size={14} className="text-emerald-400" />
+                      )}
                     </div>
                   </button>
                 ))}

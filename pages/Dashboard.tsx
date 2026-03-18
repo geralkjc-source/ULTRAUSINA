@@ -35,18 +35,8 @@ interface DashboardProps {
 
 const Dashboard: React.FC<DashboardProps> = ({ reports, pendingItems, qualityReports, operationalEvents, onRefreshCloud, isRefreshing }) => {
   const navigate = useNavigate();
-  const { t, language, translateArea } = useLanguage();
+  const { t, language, translateArea, translateShift } = useLanguage();
   const [todayScale, setTodayScale] = useState(getScaleForDate(new Date()));
-
-  const translateShift = (shift: string) => {
-    const s = shift.toUpperCase();
-    if (s === 'MANHÃ' || s === 'MORNING') return t('shifts.morning');
-    if (s === 'TARDE' || s === 'AFTERNOON') return t('shifts.afternoon');
-    if (s === 'NOITE' || s === 'NIGHT') return t('shifts.night');
-    if (s === 'FOLGA' || s === 'OFF') return t('shiftCalendar.off');
-    if (s === 'ADM') return 'ADM (08:00 - 16:00)';
-    return shift;
-  };
 
   const unsyncedCount = 
     reports.filter(r => !r.synced).length + 
@@ -247,10 +237,10 @@ const Dashboard: React.FC<DashboardProps> = ({ reports, pendingItems, qualityRep
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {(() => {
             const currentShift = getCurrentShiftInfo();
-            return (['A', 'B', 'C', 'D', 'ADM'] as Turma[]).map(turma => {
+            return (['A', 'B', 'C', 'D'] as Turma[]).map(turma => {
               const status = getStatusForTurma(new Date(), turma);
               const isActive = currentShift.turma === turma;
               

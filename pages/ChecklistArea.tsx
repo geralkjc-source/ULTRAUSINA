@@ -35,7 +35,7 @@ interface ChecklistAreaProps {
 }
 
 const ChecklistArea: React.FC<ChecklistAreaProps> = ({ onSaveReport }) => {
-  const { t, translateArea } = useLanguage();
+  const { t, translateArea, translateShift } = useLanguage();
   const { areaName } = useParams<{ areaName: string }>();
   const navigate = useNavigate();
   const currentArea = areaName ? decodeURIComponent(areaName) as Area : Area.DFP2;
@@ -423,13 +423,6 @@ const ChecklistArea: React.FC<ChecklistAreaProps> = ({ onSaveReport }) => {
     return 'bg-slate-900';
   };
 
-  const displayTurno = (turno: Turno) => {
-    if (turno === 'MANHÃ') return t('shifts.morning');
-    if (turno === 'TARDE') return t('shifts.afternoon');
-    if (turno === 'NOITE') return t('shifts.night');
-    return turno;
-  };
-
   return (
     <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-500 pb-20">
       {showSuccessModal && (
@@ -540,7 +533,7 @@ const ChecklistArea: React.FC<ChecklistAreaProps> = ({ onSaveReport }) => {
                       <span className="text-[8px] font-black text-white/60 uppercase tracking-widest">{t('checklistArea.shiftLabel')}</span>
                       <ClockIcon size={12} className="text-white/40" />
                    </div>
-                   <span className="text-white font-black uppercase text-sm">{displayTurno(detectedScale.turno)}</span>
+                   <span className="text-white font-black uppercase text-sm">{translateShift(detectedScale.turno)}</span>
                 </div>
                 <button 
                    type="button"

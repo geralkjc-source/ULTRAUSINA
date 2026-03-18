@@ -23,7 +23,9 @@ import {
   ArrowDownToLine,
   ExternalLink,
   ClipboardList,
-  AlertCircle
+  AlertCircle,
+  Tag,
+  Activity
 } from 'lucide-react';
 import { PendingItem, Area, Turma, Discipline, Turno } from '../types';
 import { formatShiftSummaryForWhatsApp, copyToClipboard, shareToWhatsApp } from '../services/whatsappShare';
@@ -45,21 +47,22 @@ interface PendingListProps {
 const PendingList: React.FC<PendingListProps> = ({ pendingItems = [], onResolve, onRefresh, isRefreshing }) => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { t, language, translateArea } = useLanguage();
+  const { t, language, translateArea, translateDiscipline, translateShift } = useLanguage();
   
   const queryArea = searchParams.get('area');
   const queryStatus = searchParams.get('status');
   const queryDiscipline = searchParams.get('discipline');
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [areaFilter, setAreaFilter] = useState<string>(queryArea || t('pendingList.all'));
-  const [statusFilter, setStatusFilter] = useState<string>( (queryStatus as any) || t('pendingList.all'));
-  const [disciplineFilter, setDisciplineFilter] = useState<string>( (queryDiscipline as any) || t('pendingList.all'));
+  const [areaFilter, setAreaFilter] = useState<string>(queryArea || 'all');
+  const [statusFilter, setStatusFilter] = useState<string>( (queryStatus as any) || 'all');
+  const [disciplineFilter, setDisciplineFilter] = useState<string>( (queryDiscipline as any) || 'all');
   
   const [resolvingId, setResolvingId] = useState<string | null>(null);
   const [resolverName, setResolverName] = useState('');
   const [resolutionDescription, setResolutionDescription] = useState('');
   const [copyFeedback, setCopyFeedback] = useState(false);
+  const [detectedScale, setDetectedScale] = useState<{ turma: Turma; turno: Turno }>(getCurrentShiftInfo());
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [showResolverSuggestions, setShowResolverSuggestions] = useState(false);
 
@@ -163,13 +166,20 @@ ${t('settings.auditEmailFooter')}`;
     return () => clearTimeout(timer);
   }, [pendingItems]);
 
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setDetectedScale(getCurrentShiftInfo());
+    }, 60000);
+    return () => clearInterval(timer);
+  }, []);
+
   const filteredItems = pendingItems.filter(item => {
     if (!item) return false;
     const matchesSearch = (item.description || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
                           (item.tag || '').toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesArea = areaFilter === t('pendingList.all') || item.area === areaFilter;
-    const matchesStatus = statusFilter === t('pendingList.all') || item.status === statusFilter;
-    const matchesDiscipline = disciplineFilter === t('pendingList.all') || item.discipline === disciplineFilter;
+    const matchesArea = areaFilter === 'all' || item.area === areaFilter;
+    const matchesStatus = statusFilter === 'all' || item.status === statusFilter;
+    const matchesDiscipline = disciplineFilter === 'all' || item.discipline === disciplineFilter;
     
     return matchesSearch && matchesArea && matchesStatus && matchesDiscipline;
   });
@@ -216,23 +226,6 @@ ${t('settings.auditEmailFooter')}`;
    * Vulcan Strict-Date Formatter v3.9
    * Formata Data e Hora para exibir exatamente o que está na planilha.
    */
-  const translateShift = (shift: string) => {
-    const s = shift.toUpperCase();
-    if (s === 'MANHÃ' || s === 'MORNING') return t('shifts.morning');
-    if (s === 'TARDE' || s === 'AFTERNOON') return t('shifts.afternoon');
-    if (s === 'NOITE' || s === 'NIGHT') return t('shifts.night');
-    return shift;
-  };
-
-  const translateDiscipline = (discipline: string) => {
-    const d = discipline.toUpperCase();
-    if (d === 'MECÂNICA' || d === 'MECHANICAL') return t('disciplines.mechanical');
-    if (d === 'ELÉTRICA' || d === 'ELECTRICAL') return t('disciplines.electrical');
-    if (d === 'INSTRUMENTAÇÃO' || d === 'INSTRUMENTATION') return t('disciplines.instrumentation');
-    if (d === 'OPERAÇÃO' || d === 'OPERATION') return t('disciplines.operation');
-    return discipline;
-  };
-
   const formatDateSafely = (timestamp: number | undefined) => {
     if (!timestamp || timestamp === 0) return "---";
     const date = new Date(timestamp);
@@ -256,9 +249,27 @@ ${t('settings.auditEmailFooter')}`;
             <div className="text-center space-y-2">
               <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tighter">{t('resolutionTitle')}</h2>
               <p className="text-slate-400 text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-2">
-                <Lock size={12} /> {t('loggedTeam')}: <span className="text-emerald-600">{t('team')} {getCurrentShiftInfo().turma}</span>
+                <Lock size={12} /> {t('loggedTeam')}: <span className="text-emerald-600">{t('team')} {detectedScale.turma}</span>
               </p>
             </div>
+
+            <div className="flex flex-wrap gap-2 p-2 bg-slate-50 rounded-2xl border-2 border-slate-100">
+              {(['A', 'B', 'C', 'D', 'ADM'] as Turma[]).map(t_val => (
+                <button
+                  key={t_val}
+                  type="button"
+                  onClick={() => setDetectedScale(prev => ({ ...prev, turma: t_val }))}
+                  className={`flex-1 py-3 rounded-xl font-black text-xs transition-all ${
+                    detectedScale.turma === t_val 
+                      ? 'bg-slate-900 text-white shadow-lg scale-105' 
+                      : 'bg-white text-slate-400 hover:bg-slate-100'
+                  }`}
+                >
+                  {t_val}
+                </button>
+              ))}
+            </div>
+
             <div className="space-y-4 relative">
               <input 
                 type="text" 
@@ -283,6 +294,13 @@ ${t('settings.auditEmailFooter')}`;
                       onClick={() => { 
                         setResolverName(emp.nome); 
                         setShowResolverSuggestions(false); 
+                        // Auto-detect team
+                        if (emp.equipe) {
+                           const teamUpper = emp.equipe.toUpperCase();
+                           if (['A', 'B', 'C', 'D', 'ADM'].includes(teamUpper)) {
+                             setDetectedScale(prev => ({ ...prev, turma: teamUpper as Turma }));
+                           }
+                        }
                       }} 
                       className="w-full text-left px-6 py-3 hover:bg-emerald-50 border-b border-slate-50 last:border-0 transition-colors"
                     >
@@ -295,7 +313,7 @@ ${t('settings.auditEmailFooter')}`;
             </div>
             <div className="flex gap-3">
               <button onClick={() => { setResolvingId(null); setResolutionDescription(''); }} className="flex-1 py-5 border-2 border-slate-100 rounded-2xl font-black uppercase text-slate-400 text-[10px] tracking-widest">{t('cancel')}</button>
-              <button onClick={() => { if(resolvingId && resolverName.trim()){ onResolve(resolvingId, resolverName.toUpperCase(), getCurrentShiftInfo().turma, resolutionDescription); setResolvingId(null); setResolverName(''); setResolutionDescription(''); } }} disabled={!resolverName.trim()} className="flex-1 bg-emerald-600 text-white py-5 rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl">{t('confirm')}</button>
+              <button onClick={() => { if(resolvingId && resolverName.trim()){ onResolve(resolvingId, resolverName.toUpperCase(), detectedScale.turma, resolutionDescription); setResolvingId(null); setResolverName(''); setResolutionDescription(''); } }} disabled={!resolverName.trim()} className="flex-1 bg-emerald-600 text-white py-5 rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl">{t('confirm')}</button>
             </div>
           </div>
         </div>
@@ -330,7 +348,7 @@ ${t('settings.auditEmailFooter')}`;
           <Clock size={18} /> {t('pdfPreviousShift')}
         </button>
         <button onClick={() => {
-          const period = (areaFilter !== t('pendingList.all') || statusFilter !== t('pendingList.all') || disciplineFilter !== t('pendingList.all')) 
+          const period = (areaFilter !== 'all' || statusFilter !== 'all' || disciplineFilter !== 'all') 
             ? `FILTRADO: ${areaFilter}/${disciplineFilter}/${statusFilter}`.toUpperCase()
             : 'LISTA GERAL';
           exportAuditPDF(filteredItems, period);
@@ -346,17 +364,17 @@ ${t('settings.auditEmailFooter')}`;
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <select value={areaFilter} onChange={(e) => setAreaFilter(e.target.value)} className="bg-slate-50 border-2 border-slate-100 rounded-xl px-3 py-3 text-[9px] font-black uppercase outline-none">
-            <option value={t('pendingList.all')}>{t('pendingList.allAreas')}</option>
+            <option value="all">{t('pendingList.allAreas')}</option>
             {Object.values(Area).map(area => <option key={area} value={area}>{translateArea(area)}</option>)}
           </select>
           <select value={disciplineFilter} onChange={(e) => setDisciplineFilter(e.target.value as any)} className="bg-slate-50 border-2 border-slate-100 rounded-xl px-3 py-3 text-[9px] font-black uppercase outline-none">
-            <option value={t('pendingList.all')}>{t('pendingList.allDisciplines')}</option>
+            <option value="all">{t('pendingList.allDisciplines')}</option>
             {disciplines.map(d => <option key={d} value={d}>{translateDiscipline(d)}</option>)}
           </select>
           <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as any)} className="bg-slate-900 text-white rounded-xl px-3 py-3 text-[9px] font-black uppercase outline-none">
             <option value="aberto">{t('pendingList.open')}</option>
             <option value="resolvido">{t('pendingList.resolved')}</option>
-            <option value={t('pendingList.all')}>{t('pendingList.allStatus')}</option>
+            <option value="all">{t('pendingList.allStatus')}</option>
           </select>
         </div>
       </div>
@@ -377,9 +395,15 @@ ${t('settings.auditEmailFooter')}`;
               </div>
               
               <div className="p-6 space-y-4 flex-grow">
-                <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-tight">
-                  <span className="bg-slate-900 text-white px-3 py-1 rounded-lg">{translateArea(item.area)}</span>
-                  <span className="text-blue-600 border border-blue-100 px-3 py-1 rounded-lg">{t('tag')}: {item.tag || t('noTag')}</span>
+                <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-tight overflow-x-auto no-scrollbar pb-1">
+                  <span className="bg-slate-900 text-white px-3 py-1.5 rounded-lg text-[12px] font-black uppercase tracking-widest shadow-md border border-slate-700 flex items-center gap-1.5 shrink-0">
+                    <Activity size={14} className="text-slate-400" />
+                    {translateArea(item.area)}
+                  </span>
+                  <span className="bg-blue-700 text-white px-3 py-1.5 rounded-lg text-[13px] font-black uppercase tracking-widest shadow-md border border-blue-400 flex items-center gap-1.5 shrink-0">
+                    <Tag size={16} className="text-blue-200" />
+                    {item.tag || t('noTag')}
+                  </span>
                 </div>
                 <p className={`text-sm font-black uppercase leading-relaxed ${item.status === 'resolvido' ? 'text-emerald-900' : 'text-slate-800'}`}>{item.description}</p>
                 

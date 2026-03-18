@@ -11,7 +11,9 @@ import {
   Wrench,
   Cpu,
   UserCog,
-  Search
+  Search,
+  Tag,
+  Activity
 } from 'lucide-react';
 import { Area, Turma, Turno, Discipline, PendingItem } from '../types';
 import { getCurrentShiftInfo } from '../services/shiftService';
@@ -24,7 +26,7 @@ interface ManualPendingFormProps {
 }
 
 const ManualPendingForm: React.FC<ManualPendingFormProps> = ({ onAddManualPending }) => {
-  const { t, translateArea } = useLanguage();
+  const { t, translateArea, translateDiscipline, translateShift } = useLanguage();
   const navigate = useNavigate();
   const [detectedScale, setDetectedScale] = useState<{ turma: Turma; turno: Turno }>(getCurrentShiftInfo());
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -96,35 +98,11 @@ const ManualPendingForm: React.FC<ManualPendingFormProps> = ({ onAddManualPendin
     navigate('/pending');
   };
 
-  const translateShift = (shift: string) => {
-    const s = shift.toUpperCase();
-    if (s === 'MANHÃ' || s === 'MORNING') return t('shifts.morning');
-    if (s === 'TARDE' || s === 'AFTERNOON') return t('shifts.afternoon');
-    if (s === 'NOITE' || s === 'NIGHT') return t('shifts.night');
-    return shift;
-  };
-
-  const translateDiscipline = (discipline: string) => {
-    const d = discipline.toUpperCase();
-    if (d === 'MECÂNICA' || d === 'MECHANICAL') return t('disciplines.mechanical');
-    if (d === 'ELÉTRICA' || d === 'ELECTRICAL') return t('disciplines.electrical');
-    if (d === 'INSTRUMENTAÇÃO' || d === 'INSTRUMENTATION') return t('disciplines.instrumentation');
-    if (d === 'OPERAÇÃO' || d === 'OPERATION') return t('disciplines.operation');
-    return discipline;
-  };
-
   const getShiftColor = (turno: Turno) => {
     if (turno === 'MANHÃ') return 'bg-blue-600';
     if (turno === 'TARDE') return 'bg-orange-500';
     if (turno === 'NOITE') return 'bg-indigo-700';
     return 'bg-slate-900';
-  };
-
-  const displayTurno = (turno: Turno) => {
-    if (turno === 'MANHÃ') return t('shifts.morning');
-    if (turno === 'TARDE') return t('shifts.afternoon');
-    if (turno === 'NOITE') return t('shifts.night');
-    return turno;
   };
 
   return (
@@ -213,20 +191,44 @@ const ManualPendingForm: React.FC<ManualPendingFormProps> = ({ onAddManualPendin
         <div className="bg-white p-8 rounded-[2.5rem] border-2 border-slate-100 shadow-sm space-y-6">
           <h2 className="text-[11px] font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2"><AlertTriangleIcon size={16} className="text-blue-500" /> {t('manualPending.pendingDetails')}</h2>
           
-          <div className="space-y-2">
-            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">{t('manualPending.area')}</label>
-            <select name="area" value={pendingData.area} onChange={handlePendingChange} className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-black uppercase text-sm focus:border-blue-500 focus:bg-white transition-all shadow-inner">
-              {Object.values(Area).map(area => (
-                <option key={area} value={area}>{translateArea(area)}</option>
-              ))}
-            </select>
+          <div className="space-y-3">
+            <label className="text-[10px] font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2">
+              <Activity size={16} className="text-slate-400" />
+              {t('manualPending.area')}
+            </label>
+            <div className="relative">
+              <select 
+                name="area" 
+                value={pendingData.area} 
+                onChange={handlePendingChange} 
+                className="w-full px-8 py-5 bg-slate-900 text-white border-2 border-slate-700 rounded-[2rem] outline-none font-black uppercase text-lg focus:border-blue-500 transition-all shadow-2xl appearance-none cursor-pointer"
+              >
+                {Object.values(Area).map(area => (
+                  <option key={area} value={area}>{translateArea(area)}</option>
+                ))}
+              </select>
+              <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none">
+                <Search size={20} className="text-slate-500" />
+              </div>
+            </div>
           </div>
 
-          <div className="space-y-2 relative">
-            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">{t('manualPending.tagAtivo')}</label>
+          <div className="space-y-4 relative">
+            <label className="text-[14px] font-black text-blue-700 uppercase tracking-[0.2em] block flex items-center gap-3 bg-blue-50 p-3 rounded-xl border border-blue-100">
+              <Tag size={20} className="text-blue-600" /> {t('manualPending.tagAtivo')}
+            </label>
             <div className="relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-              <input type="text" name="tag" placeholder={t('manualPending.tagPlaceholder')} value={pendingData.tag || ''} onChange={handlePendingChange} onFocus={() => setShowSuggestions(true)} className="w-full pl-12 pr-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-black uppercase text-sm focus:border-blue-500 focus:bg-white transition-all shadow-inner" required />
+              <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-blue-600" size={28} />
+              <input 
+                type="text" 
+                name="tag" 
+                placeholder={t('manualPending.tagPlaceholder')} 
+                value={pendingData.tag || ''} 
+                onChange={handlePendingChange} 
+                onFocus={() => setShowSuggestions(true)} 
+                className="w-full pl-16 pr-8 py-7 bg-blue-100 border-4 border-blue-200 rounded-[2rem] outline-none font-black uppercase text-2xl focus:border-blue-600 focus:bg-white transition-all shadow-2xl text-blue-900 placeholder:text-blue-300" 
+                required 
+              />
             </div>
             {showSuggestions && pendingData.tag && filteredTags.length > 0 && (
               <div className="absolute z-10 w-full bg-white border-2 border-slate-100 rounded-2xl shadow-xl mt-1 max-h-48 overflow-y-auto">

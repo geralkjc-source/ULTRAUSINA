@@ -7,6 +7,8 @@ interface LanguageContextType {
   setLanguage: (lang: Language) => void;
   t: (key: string) => any;
   translateArea: (area: string) => string;
+  translateDiscipline: (discipline: string) => string;
+  translateShift: (shift: string) => string;
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
@@ -14,7 +16,7 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [language, setLanguageState] = useState<Language>(() => {
     const saved = localStorage.getItem('app_language');
-    return (saved as Language) || 'en';
+    return (saved as Language) || 'pt';
   });
 
   const setLanguage = (lang: Language) => {
@@ -30,6 +32,25 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     if (a === 'HBF-COLUNAS C' || a === 'HBF-COLUMNS C') return t('areas.hbf_c');
     if (a === 'HBF- COLUNAS D' || a === 'HBF- COLUMNS D') return t('areas.hbf_d');
     return area;
+  };
+
+  const translateDiscipline = (discipline: string) => {
+    const d = discipline.toUpperCase();
+    if (d === 'MECÂNICA' || d === 'MECHANICAL') return t('disciplines.mechanical');
+    if (d === 'ELÉTRICA' || d === 'ELECTRICAL') return t('disciplines.electrical');
+    if (d === 'INSTRUMENTAÇÃO' || d === 'INSTRUMENTATION') return t('disciplines.instrumentation');
+    if (d === 'OPERAÇÃO' || d === 'OPERATION') return t('disciplines.operation');
+    return discipline;
+  };
+
+  const translateShift = (shift: string) => {
+    const s = shift.toUpperCase();
+    if (s === 'MANHÃ' || s === 'MORNING') return t('shifts.morning');
+    if (s === 'TARDE' || s === 'AFTERNOON') return t('shifts.afternoon');
+    if (s === 'NOITE' || s === 'NIGHT') return t('shifts.night');
+    if (s === 'FOLGA' || s === 'OFF') return t('shiftCalendar.off');
+    if (s === 'ADM') return t('shifts.adm') + ' (08:00 - 16:00)';
+    return shift;
   };
 
   const t = (key: string): any => {
@@ -65,7 +86,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, t, translateArea }}>
+    <LanguageContext.Provider value={{ language, setLanguage, t, translateArea, translateDiscipline, translateShift }}>
       {children}
     </LanguageContext.Provider>
   );

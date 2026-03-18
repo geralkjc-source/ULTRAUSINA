@@ -181,16 +181,17 @@ const ShiftCalendar: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         {[
           { label: `${t('shiftCalendar.team')} A`, color: 'bg-yellow-400', desc: t('shiftCalendar.yellow') },
           { label: `${t('shiftCalendar.team')} B`, color: 'bg-orange-500', desc: t('shiftCalendar.orange') },
           { label: `${t('shiftCalendar.team')} C`, color: 'bg-emerald-500', desc: t('shiftCalendar.green') },
           { label: `${t('shiftCalendar.team')} D`, color: 'bg-sky-500', desc: t('shiftCalendar.blue') },
+          { label: `${t('shiftCalendar.team')} ADM`, color: 'bg-slate-900', desc: '08:00 - 16:00' },
         ].map(tData => (
           <div key={tData.label} className="bg-white p-6 rounded-[2rem] border-2 border-slate-100 flex items-center gap-4 shadow-sm">
             <div className={`w-12 h-12 rounded-2xl ${tData.color} flex items-center justify-center font-black text-white border shadow-lg`}>
-              {tData.label.split(' ')[1]}
+              {tData.label.split(' ')[tData.label.split(' ').length - 1]}
             </div>
             <div>
               <p className="text-xs font-black text-slate-900 uppercase tracking-tight">{tData.label}</p>

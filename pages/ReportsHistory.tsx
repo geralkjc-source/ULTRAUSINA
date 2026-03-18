@@ -26,7 +26,8 @@ import {
   TrendingUp,
   Target,
   ChevronRight,
-  ChevronLeft
+  ChevronLeft,
+  Activity
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { Report, Area, ChecklistItem, PendingItem, Turno, Turma } from '../types';
@@ -45,7 +46,7 @@ interface ReportsHistoryProps {
 }
 
 const ReportsHistory: React.FC<ReportsHistoryProps> = ({ reports = [], pendingItems = [] }) => {
-  const { t, language, translateArea } = useLanguage();
+  const { t, language, translateArea, translateShift } = useLanguage();
   const [viewMode, setViewMode] = useState<'list' | 'engagement'>('engagement');
   const [searchTerm, setSearchTerm] = useState('');
   const [dateFilter, setDateFilter] = useState(''); 
@@ -66,7 +67,7 @@ const ReportsHistory: React.FC<ReportsHistoryProps> = ({ reports = [], pendingIt
   // Áreas fixas para o cálculo de engajamento
   const AREAS = Object.values(Area);
   const TURNOS: Turno[] = ['MANHÃ', 'TARDE', 'NOITE'];
-  const TURMAS: Turma[] = ['A', 'B', 'C', 'D'];
+  const TURMAS: Turma[] = ['A', 'B', 'C', 'D', 'ADM'];
   const TARGET_PER_AREA_SHIFT = 3;
 
   // Ordenação por data (decrescente baseada no timestamp da planilha)
@@ -169,14 +170,6 @@ const ReportsHistory: React.FC<ReportsHistoryProps> = ({ reports = [], pendingIt
       case 'NIGHT': return 'bg-indigo-100 text-indigo-700 border-indigo-200';
       default: return 'bg-slate-100 text-slate-700 border-slate-200';
     }
-  };
-
-  const translateShift = (shift: string) => {
-    const s = shift.toUpperCase();
-    if (s === 'MANHÃ' || s === 'MORNING') return t('shifts.morning');
-    if (s === 'TARDE' || s === 'AFTERNOON') return t('shifts.afternoon');
-    if (s === 'NOITE' || s === 'NIGHT') return t('shifts.night');
-    return shift;
   };
 
   const translateLabel = (label: string) => {
@@ -336,7 +329,7 @@ const ReportsHistory: React.FC<ReportsHistoryProps> = ({ reports = [], pendingIt
       TURMAS.forEach(turma => {
         dayData[turma] = monthReports.filter(r => {
           const opDate = getOpDate(r.timestamp, r.turno);
-          return opDate.getDate() === i;
+          return r.turma === turma && opDate.getDate() === i;
         }).length;
       });
       monthlyTrend.push(dayData);
@@ -625,7 +618,12 @@ const ReportsHistory: React.FC<ReportsHistoryProps> = ({ reports = [], pendingIt
                   {AREAS.map(area => (
                     <tr key={area} className="hover:bg-slate-50/50 transition-colors">
                       <td className="p-4 border-r border-slate-100">
-                        <span className="text-[11px] font-black text-slate-700 uppercase">{translateArea(area)}</span>
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center text-slate-500">
+                            <Activity size={14} />
+                          </div>
+                          <span className="text-[11px] font-black text-slate-900 uppercase tracking-tight">{translateArea(area)}</span>
+                        </div>
                       </td>
                       {TURNOS.map(turno => {
                         const shift = engagementStats.shiftStats.find(s => s.turno === turno);
@@ -728,7 +726,8 @@ const ReportsHistory: React.FC<ReportsHistoryProps> = ({ reports = [], pendingIt
                     <Bar dataKey="A" stackId="a" fill="#3b82f6" radius={[0, 0, 0, 0]} />
                     <Bar dataKey="B" stackId="a" fill="#6366f1" radius={[0, 0, 0, 0]} />
                     <Bar dataKey="C" stackId="a" fill="#8b5cf6" radius={[0, 0, 0, 0]} />
-                    <Bar dataKey="D" stackId="a" fill="#ec4899" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="D" stackId="a" fill="#ec4899" radius={[0, 0, 0, 0]} />
+                    <Bar dataKey="ADM" stackId="a" fill="#94a3b8" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -819,7 +818,12 @@ const ReportsHistory: React.FC<ReportsHistoryProps> = ({ reports = [], pendingIt
                     </div>
                     <button onClick={() => setSelectedReport(null)} className="text-slate-400 hover:text-white transition-colors"><X size={24} /></button>
                   </div>
-                  <h3 className="text-xl font-black uppercase tracking-tight">{translateArea(selectedReport.area)}</h3>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-blue-400 border border-white/10">
+                      <Activity size={20} />
+                    </div>
+                    <h3 className="text-xl font-black uppercase tracking-tight">{translateArea(selectedReport.area)}</h3>
+                  </div>
                   <div className="flex items-center gap-2 mt-2 text-blue-400">
                     <Calendar size={14} />
                     <span className="text-[12px] font-black uppercase tracking-widest">{t('date')}: {formatDateOnly(selectedReport.timestamp)}</span>

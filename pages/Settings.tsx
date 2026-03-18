@@ -5,7 +5,7 @@ import { generateAuditPDFBase64, generateDisciplineAuditPDFBase64 } from '../ser
 import { useLanguage } from '../LanguageContext';
 
 const Settings: React.FC = () => {
-  const { t, language, setLanguage } = useLanguage();
+  const { t, language, setLanguage, translateDiscipline } = useLanguage();
   const [emails, setEmails] = useState<string>('');
   const [ccEmails, setCcEmails] = useState<string>('');
   const [disciplineEmails, setDisciplineEmails] = useState<Record<string, string>>({
@@ -262,13 +262,13 @@ ${t('settings.auditEmailFooter')}`;
             {Object.keys(disciplineEmails).map((discipline) => (
               <div key={discipline} className="space-y-2">
                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">
-                  {discipline}
+                  {translateDiscipline(discipline)}
                 </label>
                 <input
                   type="email"
                   value={disciplineEmails[discipline]}
                   onChange={(e) => setDisciplineEmails(prev => ({ ...prev, [discipline]: e.target.value }))}
-                  placeholder={`E-mail Gestor ${discipline}`}
+                  placeholder={`${t('settings.managerEmail')} ${translateDiscipline(discipline)}`}
                   className="w-full p-3 bg-slate-50 border-2 border-slate-100 rounded-xl focus:border-blue-500 focus:ring-0 transition-all text-sm"
                 />
               </div>
