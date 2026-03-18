@@ -7,7 +7,7 @@ export enum Area {
   HBF_D = 'HBF- COLUNAS D'
 }
 
-export type Turma = 'A' | 'B' | 'C' | 'D';
+export type Turma = 'A' | 'B' | 'C' | 'D' | 'ADM';
 export type Turno = 'MANHÃ' | 'TARDE' | 'NOITE';
 export type Discipline = 'MECÂNICA' | 'ELÉTRICA' | 'INSTRUMENTAÇÃO' | 'OPERAÇÃO';
 export type QualityCategory = 'DFP2' | 'DFP2_C' | 'DFP2_D' | 'COLUNAS_D' | 'HUMIDADE_PLY';

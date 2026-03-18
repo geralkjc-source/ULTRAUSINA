@@ -46,6 +46,23 @@ const SyncDashboard: React.FC<SyncDashboardProps> = ({ reports, pendingItems, qu
   const [copySuccess, setCopySuccess] = useState(false);
   const [testStatus, setTestStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [logs, setLogs] = useState<string[]>([]);
+  const [fullConfig, setFullConfig] = useState<any>(null);
+
+  useEffect(() => {
+    const loadConfig = async () => {
+      try {
+        const config = await backendService.getConfig();
+        setFullConfig(config);
+        if (config.googleScriptUrl) {
+          setScriptUrl(config.googleScriptUrl);
+          localStorage.setItem('google_apps_script_url', config.googleScriptUrl);
+        }
+      } catch (error) {
+        console.error('Failed to load config', error);
+      }
+    };
+    loadConfig();
+  }, []);
 
   useEffect(() => {
     if (scriptUrl) localStorage.setItem('google_apps_script_url', scriptUrl);
@@ -498,7 +515,18 @@ function fetchSheetData(ss, sheetName) {
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <button onClick={handleTestConnection} className="py-5 rounded-2xl font-black uppercase text-[10px] flex items-center justify-center gap-2 bg-slate-900 text-white shadow-xl">Validar v4.0</button>
-                      <button onClick={() => setshowConfig(false)} className="py-5 bg-blue-600 text-white rounded-2xl font-black uppercase text-[10px] flex items-center justify-center gap-2 shadow-xl">Salvar e Sair</button>
+                      <button onClick={async () => {
+                        try {
+                          const currentConfig = fullConfig || await backendService.getConfig().catch(() => ({ emailRecipients: '', emailCc: '' }));
+                          await backendService.saveConfig({
+                            ...currentConfig,
+                            googleScriptUrl: scriptUrl
+                          });
+                        } catch (e) {
+                          console.error('Failed to save script URL to backend', e);
+                        }
+                        setshowConfig(false);
+                      }} className="py-5 bg-blue-600 text-white rounded-2xl font-black uppercase text-[10px] flex items-center justify-center gap-2 shadow-xl">Salvar e Sair</button>
                     </div>
                   </div>
                 </div>

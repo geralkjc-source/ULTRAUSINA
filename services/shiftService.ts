@@ -227,8 +227,15 @@ export const getPreviousShiftRange = () => {
   };
 };
 
-export const getStatusForTurma = (date: Date, turma: Turma): { turno: Turno | 'FOLGA'; isWorking: boolean } => {
+export const getStatusForTurma = (date: Date, turma: Turma): { turno: Turno | 'ADM' | 'FOLGA'; isWorking: boolean } => {
   const hour = date.getHours();
+
+  // ADM Team Logic: Fixed shift from 08:00 to 16:00
+  if (turma === 'ADM') {
+    const isWorking = hour >= 8 && hour < 16;
+    return { turno: isWorking ? 'ADM' : 'FOLGA', isWorking };
+  }
+
   const operationalDate = new Date(date);
   
   // Ajuste para o dia operacional (troca às 06:00)

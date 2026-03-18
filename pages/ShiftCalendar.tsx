@@ -14,14 +14,23 @@ import {
   Activity
 } from 'lucide-react';
 import { SHIFT_DATA_2026 } from '../services/shiftService';
+import { useLanguage } from '../LanguageContext';
 
 const ShiftCalendar: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useLanguage();
+  
   const months = [
-    "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
-    "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+    t('shiftCalendar.months.0'), t('shiftCalendar.months.1'), t('shiftCalendar.months.2'), 
+    t('shiftCalendar.months.3'), t('shiftCalendar.months.4'), t('shiftCalendar.months.5'),
+    t('shiftCalendar.months.6'), t('shiftCalendar.months.7'), t('shiftCalendar.months.8'), 
+    t('shiftCalendar.months.9'), t('shiftCalendar.months.10'), t('shiftCalendar.months.11')
   ];
-  const weekDaysShort = ["D", "S", "T", "Q", "Q", "S", "S"];
+  const weekDaysShort = [
+    t('shiftCalendar.weekDays.0'), t('shiftCalendar.weekDays.1'), t('shiftCalendar.weekDays.2'), 
+    t('shiftCalendar.weekDays.3'), t('shiftCalendar.weekDays.4'), t('shiftCalendar.weekDays.5'), 
+    t('shiftCalendar.weekDays.6')
+  ];
   const [currentMonthIdx, setCurrentMonthIdx] = useState(new Date().getMonth());
   const year = 2026;
 
@@ -64,14 +73,14 @@ const ShiftCalendar: React.FC = () => {
     <div className="max-w-6xl mx-auto space-y-8 pb-12 animate-in fade-in duration-500 px-4">
       <div className="flex items-center justify-between">
         <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-slate-500 hover:text-slate-800 font-black uppercase text-[10px] tracking-widest transition-colors">
-          <ArrowLeft size={16} /> Voltar
+          <ArrowLeft size={16} /> {t('back')}
         </button>
         <div className="text-right">
           <h1 className="text-3xl font-black text-slate-900 tracking-tighter uppercase flex items-center justify-end gap-3">
             <Activity className="text-blue-600" size={32} />
-            Escala 2026
+            {t('shiftCalendar.title')}
           </h1>
-          <p className="text-slate-400 text-[9px] font-bold uppercase tracking-[0.2em] mt-1">Sincronizado com Anexo de Março</p>
+          <p className="text-slate-400 text-[9px] font-bold uppercase tracking-[0.2em] mt-1">{t('shiftCalendar.subtitle')}</p>
         </div>
       </div>
 
@@ -83,7 +92,7 @@ const ShiftCalendar: React.FC = () => {
             </div>
             <div>
               <h2 className="text-3xl font-black uppercase tracking-tight leading-none">{months[currentMonthIdx]}</h2>
-              <p className="text-blue-400 text-[11px] font-black uppercase tracking-[0.3em] mt-2">Calendário Operacional {year}</p>
+              <p className="text-blue-400 text-[11px] font-black uppercase tracking-[0.3em] mt-2">{t('shiftCalendar.operationalCalendar')} {year}</p>
             </div>
           </div>
           <div className="flex gap-4">
@@ -126,7 +135,7 @@ const ShiftCalendar: React.FC = () => {
                       </span>
                       {isToday && (
                         <div className="flex flex-col items-end animate-bounce">
-                          <span className="text-[8px] font-black bg-blue-600 text-white px-3 py-1 rounded-full tracking-widest shadow-lg">HOJE</span>
+                          <span className="text-[8px] font-black bg-blue-600 text-white px-3 py-1 rounded-full tracking-widest shadow-lg">{t('shiftCalendar.today')}</span>
                           <Star size={12} className="text-blue-600 mt-1 fill-blue-600" />
                         </div>
                       )}
@@ -174,18 +183,18 @@ const ShiftCalendar: React.FC = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Equipe A', color: 'bg-yellow-400', desc: 'Amarelo' },
-          { label: 'Equipe B', color: 'bg-orange-500', desc: 'Laranja' },
-          { label: 'Equipe C', color: 'bg-emerald-500', desc: 'Verde' },
-          { label: 'Equipe D', color: 'bg-sky-500', desc: 'Azul' },
-        ].map(t => (
-          <div key={t.label} className="bg-white p-6 rounded-[2rem] border-2 border-slate-100 flex items-center gap-4 shadow-sm">
-            <div className={`w-12 h-12 rounded-2xl ${t.color} flex items-center justify-center font-black text-white border shadow-lg`}>
-              {t.label.split(' ')[1]}
+          { label: `${t('shiftCalendar.team')} A`, color: 'bg-yellow-400', desc: t('shiftCalendar.yellow') },
+          { label: `${t('shiftCalendar.team')} B`, color: 'bg-orange-500', desc: t('shiftCalendar.orange') },
+          { label: `${t('shiftCalendar.team')} C`, color: 'bg-emerald-500', desc: t('shiftCalendar.green') },
+          { label: `${t('shiftCalendar.team')} D`, color: 'bg-sky-500', desc: t('shiftCalendar.blue') },
+        ].map(tData => (
+          <div key={tData.label} className="bg-white p-6 rounded-[2rem] border-2 border-slate-100 flex items-center gap-4 shadow-sm">
+            <div className={`w-12 h-12 rounded-2xl ${tData.color} flex items-center justify-center font-black text-white border shadow-lg`}>
+              {tData.label.split(' ')[1]}
             </div>
             <div>
-              <p className="text-xs font-black text-slate-900 uppercase tracking-tight">{t.label}</p>
-              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{t.desc}</p>
+              <p className="text-xs font-black text-slate-900 uppercase tracking-tight">{tData.label}</p>
+              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{tData.desc}</p>
             </div>
           </div>
         ))}

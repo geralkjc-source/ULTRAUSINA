@@ -20,6 +20,7 @@ import {
 import { Area, Turma, Turno, Discipline, PendingItem, OperationalEvent } from '../types';
 import { getCurrentShiftInfo } from '../services/shiftService';
 import { fetchEmployees, Employee } from '../services/employeeService';
+import { useLanguage } from '../LanguageContext';
 
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -32,6 +33,7 @@ interface OperationalFormsProps {
 
 const OperationalForms: React.FC<OperationalFormsProps> = ({ onAddManualPending, onSaveOperationalEvent, operationalEvents }) => {
   const navigate = useNavigate();
+  const { t, language } = useLanguage();
   const [activeTab, setActiveTab] = useState<'praise' | 'failure'>('praise');
   const [detectedScale, setDetectedScale] = useState<{ turma: Turma; turno: Turno }>(getCurrentShiftInfo());
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -87,33 +89,33 @@ const OperationalForms: React.FC<OperationalFormsProps> = ({ onAddManualPending,
 
   const generatePraisePDF = (data: typeof praiseData) => {
     const doc = new jsPDF();
-    const timestamp = new Date().toLocaleString('pt-BR', { hour12: false });
+    const timestamp = new Date().toLocaleString(language === 'pt' ? 'pt-BR' : 'en-US', { hour12: false });
 
     doc.setFontSize(18);
-    doc.text('FORMULÁRIO DE ELOGIO OPERACIONAL', 105, 20, { align: 'center' });
+    doc.text(t('operationalForms.praiseForm.title'), 105, 20, { align: 'center' });
     doc.setFontSize(10);
-    doc.text('Plataforma Ultrafino Usina 2', 105, 28, { align: 'center' });
+    doc.text(t('operationalForms.subtitle'), 105, 28, { align: 'center' });
 
     autoTable(doc, {
       startY: 40,
-      head: [['CAMPO', 'INFORMAÇÃO']],
+      head: [[t('operationalForms.pdf.field'), t('operationalForms.pdf.info')]],
       body: [
-        ['1. DADOS DO COLABORADOR ELOGIADO', ''],
-        ['Nome', data.elogioNome],
-        ['Matrícula', data.elogioMatricula],
-        ['Departamento / Equipa', data.elogioDepartamento],
-        ['Função', data.elogioFuncao],
-        ['2. DADOS DE QUEM ELOGIA', ''],
-        ['Nome', data.quemElogiaNome],
-        ['Matrícula', data.quemElogiaMatricula],
-        ['Departamento / Função', data.quemElogiaDepartamento],
-        ['Função', data.quemElogiaFuncao],
-        ['3. DATA DO ELOGIO', data.dataElogio],
-        ['4. MOTIVO DO ELOGIO', data.motivoElogio],
-        ['5. IMPACTO DA AÇÃO ELOGIADA', data.impactoElogio],
-        ['6. ASSINATURAS', ''],
-        ['Colaborador que regista', data.assinaturaColaborador],
-        ['Supervisor / Gestor', data.assinaturaSupervisor],
+        [t('operationalForms.praiseForm.section1'), ''],
+        [t('operationalForms.praiseForm.namePlaceholder'), data.elogioNome],
+        [t('operationalForms.praiseForm.matriculaPlaceholder'), data.elogioMatricula],
+        [t('operationalForms.praiseForm.deptPlaceholder'), data.elogioDepartamento],
+        [t('operationalForms.praiseForm.rolePlaceholder'), data.elogioFuncao],
+        [t('operationalForms.praiseForm.section2'), ''],
+        [t('operationalForms.praiseForm.namePlaceholder'), data.quemElogiaNome],
+        [t('operationalForms.praiseForm.matriculaPlaceholder'), data.quemElogiaMatricula],
+        [t('operationalForms.praiseForm.deptRolePlaceholder'), data.quemElogiaDepartamento],
+        [t('operationalForms.praiseForm.rolePlaceholder'), data.quemElogiaFuncao],
+        [t('operationalForms.praiseForm.section3'), data.dataElogio],
+        [t('operationalForms.praiseForm.section4'), data.motivoElogio],
+        [t('operationalForms.praiseForm.section5'), data.impactoElogio],
+        [t('operationalForms.praiseForm.section6'), ''],
+        [t('operationalForms.praiseForm.signatureRegistrar'), data.assinaturaColaborador],
+        [t('operationalForms.praiseForm.signatureSupervisor'), data.assinaturaSupervisor],
       ],
       theme: 'grid',
       headStyles: { fillColor: [16, 185, 129] },
@@ -122,38 +124,38 @@ const OperationalForms: React.FC<OperationalFormsProps> = ({ onAddManualPending,
     });
 
     doc.setFontSize(8);
-    doc.text(`Gerado em: ${timestamp}`, 10, doc.internal.pageSize.height - 10);
-    doc.save(`Elogio_${data.elogioNome.replace(/\s+/g, '_')}_${Date.now()}.pdf`);
+    doc.text(`${t('operationalForms.pdf.generatedAt')}: ${timestamp}`, 10, doc.internal.pageSize.height - 10);
+    doc.save(`${t('operationalForms.praise')}_${data.elogioNome.replace(/\s+/g, '_')}_${Date.now()}.pdf`);
   };
 
   const generateFailurePDF = (data: typeof failureData) => {
     const doc = new jsPDF();
-    const timestamp = new Date().toLocaleString('pt-BR', { hour12: false });
+    const timestamp = new Date().toLocaleString(language === 'pt' ? 'pt-BR' : 'en-US', { hour12: false });
 
     doc.setFontSize(18);
-    doc.text('FORMULÁRIO DE FALHA OPERACIONAL', 105, 20, { align: 'center' });
+    doc.text(t('operationalForms.failureForm.title'), 105, 20, { align: 'center' });
     doc.setFontSize(10);
-    doc.text('Plataforma Ultrafino Usina 2', 105, 28, { align: 'center' });
+    doc.text(t('operationalForms.subtitle'), 105, 28, { align: 'center' });
 
     autoTable(doc, {
       startY: 40,
-      head: [['CAMPO', 'INFORMAÇÃO']],
+      head: [[t('operationalForms.pdf.field'), t('operationalForms.pdf.info')]],
       body: [
-        ['1. DADOS DO COLABORADOR ENVOLVIDO', ''],
-        ['Nome', data.colaboradorNome],
-        ['Matrícula', data.colaboradorMatricula],
-        ['Departamento / Equipa', data.colaboradorDepartamento],
-        ['Função', data.colaboradorFuncao],
-        ['2. DATA E HORA DA OCORRÊNCIA', `${data.dataOcorrencia} ${data.horaOcorrencia}`],
-        ['3. LOCAL DA OCORRÊNCIA', data.localOcorrencia],
-        ['4. DESCRIÇÃO DA FALHA', data.descricaoFalha],
-        ['5. CAUSAS PROVÁVEIS', data.causasProvaveis.join(', ') + (data.outraCausa ? ` - ${data.outraCausa}` : '')],
-        ['6. CONSEQUÊNCIAS OBSERVADAS', data.consequenciasObservadas],
-        ['7. AÇÕES CORRETIVAS IMEDIATAS', data.acoesCorretivas],
-        ['8. MEDIDAS PREVENTIVAS RECOMENDADAS', data.medidasPreventivas],
-        ['9. ASSINATURAS', ''],
-        ['Responsável pelo registo', data.responsavelRegisto],
-        ['Supervisor / Gestor', data.supervisorGestor],
+        [t('operationalForms.failureForm.section1'), ''],
+        [t('operationalForms.failureForm.namePlaceholder'), data.colaboradorNome],
+        [t('operationalForms.failureForm.matriculaPlaceholder'), data.colaboradorMatricula],
+        [t('operationalForms.failureForm.deptPlaceholder'), data.colaboradorDepartamento],
+        [t('operationalForms.failureForm.rolePlaceholder'), data.colaboradorFuncao],
+        [t('operationalForms.failureForm.section2'), `${data.dataOcorrencia} ${data.horaOcorrencia}`],
+        [t('operationalForms.failureForm.section3'), data.localOcorrencia],
+        [t('operationalForms.failureForm.section4'), data.descricaoFalha],
+        [t('operationalForms.failureForm.section5'), data.causasProvaveis.join(', ') + (data.outraCausa ? ` - ${data.outraCausa}` : '')],
+        [t('operationalForms.failureForm.section6'), data.consequenciasObservadas],
+        [t('operationalForms.failureForm.section7'), data.acoesCorretivas],
+        [t('operationalForms.failureForm.section8'), data.medidasPreventivas],
+        [t('operationalForms.failureForm.section9'), ''],
+        [t('operationalForms.failureForm.signatureRegistrar'), data.responsavelRegisto],
+        [t('operationalForms.failureForm.signatureSupervisor'), data.supervisorGestor],
       ],
       theme: 'grid',
       headStyles: { fillColor: [220, 38, 38] },
@@ -162,8 +164,8 @@ const OperationalForms: React.FC<OperationalFormsProps> = ({ onAddManualPending,
     });
 
     doc.setFontSize(8);
-    doc.text(`Gerado em: ${timestamp}`, 10, doc.internal.pageSize.height - 10);
-    doc.save(`Falha_${data.colaboradorNome.replace(/\s+/g, '_')}_${Date.now()}.pdf`);
+    doc.text(`${t('operationalForms.pdf.generatedAt')}: ${timestamp}`, 10, doc.internal.pageSize.height - 10);
+    doc.save(`${t('operationalForms.failure')}_${data.colaboradorNome.replace(/\s+/g, '_')}_${Date.now()}.pdf`);
   };
 
   const handlePraiseChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -211,6 +213,11 @@ const OperationalForms: React.FC<OperationalFormsProps> = ({ onAddManualPending,
       }));
     }
     setShowSuggestions({ field: '', visible: false });
+
+    // Auto-detect team if it matches Turma type
+    if (emp.equipe && (['A', 'B', 'C', 'D', 'ADM'] as string[]).includes(emp.equipe.toUpperCase())) {
+       setDetectedScale(prev => ({ ...prev, turma: emp.equipe.toUpperCase() as Turma }));
+    }
   };
 
   const handleFailureChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -272,7 +279,7 @@ const OperationalForms: React.FC<OperationalFormsProps> = ({ onAddManualPending,
     onSaveOperationalEvent(event);
     generatePraisePDF(praiseData);
     
-    alert('Elogio registrado e sincronizado com a nuvem!');
+    alert(t('operationalForms.praiseForm.successMessage'));
     navigate(-1);
   };
 
@@ -301,16 +308,16 @@ const OperationalForms: React.FC<OperationalFormsProps> = ({ onAddManualPending,
     onSaveOperationalEvent(event);
     generateFailurePDF(failureData);
     
-    alert('Falha registrada e sincronizada com a nuvem!');
+    alert(t('operationalForms.failureForm.successMessage'));
     navigate(-1);
   };
 
   const causasOptions = [
-    'Procedimento não seguido',
-    'Falha de comunicação',
-    'Falha técnica / equipamento',
-    'Erro humano',
-    'Formação insuficiente',
+    { key: 'procedure', label: t('operationalForms.failureForm.causas.procedure') },
+    { key: 'communication', label: t('operationalForms.failureForm.causas.communication') },
+    { key: 'technical', label: t('operationalForms.failureForm.causas.technical') },
+    { key: 'human', label: t('operationalForms.failureForm.causas.human') },
+    { key: 'training', label: t('operationalForms.failureForm.causas.training') },
   ];
 
   useEffect(() => {
@@ -330,7 +337,7 @@ const OperationalForms: React.FC<OperationalFormsProps> = ({ onAddManualPending,
       setIsAuthenticated(true);
       setError('');
     } else {
-      setError('Senha incorreta!');
+      setError(t('operationalForms.wrongPassword'));
     }
   };
 
@@ -341,8 +348,8 @@ const OperationalForms: React.FC<OperationalFormsProps> = ({ onAddManualPending,
           <div className="w-16 h-16 bg-slate-900 text-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
             <ShieldAlert size={32} />
           </div>
-          <h1 className="text-2xl font-black text-slate-900 uppercase tracking-tighter">Acesso Restrito</h1>
-          <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-1">Insira a senha de administrador</p>
+          <h1 className="text-2xl font-black text-slate-900 uppercase tracking-tighter">{t('operationalForms.restrictedAccess')}</h1>
+          <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-1">{t('operationalForms.adminPasswordDescription')}</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-6">
@@ -351,17 +358,17 @@ const OperationalForms: React.FC<OperationalFormsProps> = ({ onAddManualPending,
               type="password" 
               value={password} 
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="SENHA"
+              placeholder={t('operationalForms.passwordPlaceholder')}
               className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-black uppercase text-center tracking-[0.5em] focus:border-blue-500 focus:bg-white transition-all shadow-inner"
               autoFocus
             />
             {error && <p className="text-red-500 text-[10px] font-black uppercase text-center animate-bounce">{error}</p>}
           </div>
           <button type="submit" className="w-full py-4 rounded-2xl bg-slate-900 text-white font-black uppercase tracking-widest hover:bg-slate-800 transition-all active:scale-95 shadow-lg">
-            Entrar
+            {t('operationalForms.enterButton')}
           </button>
           <button type="button" onClick={() => navigate('/')} className="w-full py-4 text-slate-400 font-black uppercase text-[10px] tracking-widest hover:text-slate-600 transition-colors">
-            Voltar ao Início
+            {t('operationalForms.backToHome')}
           </button>
         </form>
       </div>
@@ -395,14 +402,14 @@ const OperationalForms: React.FC<OperationalFormsProps> = ({ onAddManualPending,
     return (
       <div className="flex gap-2 mt-2">
         <div className="bg-emerald-50 text-emerald-600 px-2 py-1 rounded-md text-[9px] font-black uppercase border border-emerald-100">
-          {stats.praises} Elogios
+          {stats.praises} {t('operationalForms.praisesCount')}
         </div>
         <div className="bg-red-50 text-red-600 px-2 py-1 rounded-md text-[9px] font-black uppercase border border-red-100">
-          {stats.failures} Falhas
+          {stats.failures} {t('operationalForms.failuresCount')}
         </div>
         {stats.warning && (
           <div className="bg-amber-500 text-white px-2 py-1 rounded-md text-[9px] font-black uppercase animate-pulse">
-            Risco de Advertência
+            {t('operationalForms.warningRisk')}
           </div>
         )}
       </div>
@@ -413,17 +420,17 @@ const OperationalForms: React.FC<OperationalFormsProps> = ({ onAddManualPending,
     <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-500 pb-20">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-slate-500 hover:text-slate-800 font-black uppercase text-[10px] tracking-widest transition-colors"><ArrowLeftIcon size={16} /> Voltar</button>
+          <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-slate-500 hover:text-slate-800 font-black uppercase text-[10px] tracking-widest transition-colors"><ArrowLeftIcon size={16} /> {t('operationalForms.back')}</button>
           <button 
             onClick={() => navigate('/performance-history')} 
             className="flex items-center gap-2 bg-slate-900 text-white px-4 py-2 rounded-xl font-black uppercase text-[9px] tracking-widest hover:bg-slate-800 transition-all shadow-lg"
           >
-            <Award size={14} /> Ver Histórico
+            <Award size={14} /> {t('operationalForms.viewHistory')}
           </button>
         </div>
         <div className="text-right">
-          <h1 className="text-3xl font-black text-slate-900 tracking-tighter uppercase">Formulários Operacionais</h1>
-          <p className="text-slate-400 text-[9px] font-bold uppercase tracking-[0.2em] mt-1">Plataforma Ultrafino Usina 2</p>
+          <h1 className="text-3xl font-black text-slate-900 tracking-tighter uppercase">{t('operationalForms.title')}</h1>
+          <p className="text-slate-400 text-[9px] font-bold uppercase tracking-[0.2em] mt-1">{t('operationalForms.subtitle')}</p>
         </div>
       </div>
 
@@ -433,13 +440,13 @@ const OperationalForms: React.FC<OperationalFormsProps> = ({ onAddManualPending,
           onClick={() => setActiveTab('praise')}
           className={`flex-1 flex items-center justify-center gap-3 py-4 rounded-[1.5rem] font-black uppercase tracking-widest transition-all ${activeTab === 'praise' ? 'bg-white text-emerald-600 shadow-lg' : 'text-slate-500 hover:text-slate-700'}`}
         >
-          <Award size={20} /> Elogio
+          <Award size={20} /> {t('operationalForms.praise')}
         </button>
         <button 
           onClick={() => setActiveTab('failure')}
           className={`flex-1 flex items-center justify-center gap-3 py-4 rounded-[1.5rem] font-black uppercase tracking-widest transition-all ${activeTab === 'failure' ? 'bg-white text-red-600 shadow-lg' : 'text-slate-500 hover:text-slate-700'}`}
         >
-          <Zap size={20} /> Falha
+          <Zap size={20} /> {t('operationalForms.failure')}
         </button>
       </div>
 
@@ -447,9 +454,9 @@ const OperationalForms: React.FC<OperationalFormsProps> = ({ onAddManualPending,
         <form onSubmit={handlePraiseSubmit} className="space-y-8 pb-12">
           {/* Dados do Colaborador Elogiado */}
           <div className="bg-white p-8 rounded-[2.5rem] border-2 border-slate-100 shadow-sm space-y-6">
-            <h2 className="text-[11px] font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2"><UserIcon size={16} className="text-blue-500" /> 1. Dados do Colaborador Elogiado</h2>
+            <h2 className="text-[11px] font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2"><UserIcon size={16} className="text-blue-500" /> {t('operationalForms.praiseForm.section1')}</h2>
             <div className="relative">
-              <input type="text" name="elogioNome" placeholder="Nome" value={praiseData.elogioNome || ''} onChange={handlePraiseChange} className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-black uppercase text-sm focus:border-blue-500 focus:bg-white transition-all shadow-inner" required autoComplete="off" />
+              <input type="text" name="elogioNome" placeholder={t('operationalForms.praiseForm.namePlaceholder')} value={praiseData.elogioNome || ''} onChange={handlePraiseChange} className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-black uppercase text-sm focus:border-blue-500 focus:bg-white transition-all shadow-inner" required autoComplete="off" />
               <StatsBadge matricula={praiseData.elogioMatricula} />
               {showSuggestions.visible && showSuggestions.field === 'elogioNome' && (
                 <div className="absolute z-50 w-full mt-2 bg-white border-2 border-slate-100 rounded-2xl shadow-2xl max-h-60 overflow-y-auto">
@@ -463,7 +470,7 @@ const OperationalForms: React.FC<OperationalFormsProps> = ({ onAddManualPending,
               )}
             </div>
             <div className="relative">
-              <input type="text" name="elogioMatricula" placeholder="Matrícula" value={praiseData.elogioMatricula || ''} onChange={handlePraiseChange} className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-black uppercase text-sm focus:border-blue-500 focus:bg-white transition-all shadow-inner" required autoComplete="off" />
+              <input type="text" name="elogioMatricula" placeholder={t('operationalForms.praiseForm.matriculaPlaceholder')} value={praiseData.elogioMatricula || ''} onChange={handlePraiseChange} className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-black uppercase text-sm focus:border-blue-500 focus:bg-white transition-all shadow-inner" required autoComplete="off" />
               {showSuggestions.visible && showSuggestions.field === 'elogioMatricula' && (
                 <div className="absolute z-50 w-full mt-2 bg-white border-2 border-slate-100 rounded-2xl shadow-2xl max-h-60 overflow-y-auto">
                   {employees.filter(e => e.matricula.includes(searchTerm)).map(emp => (
@@ -475,15 +482,15 @@ const OperationalForms: React.FC<OperationalFormsProps> = ({ onAddManualPending,
                 </div>
               )}
             </div>
-            <input type="text" name="elogioDepartamento" placeholder="Departamento / Equipa" value={praiseData.elogioDepartamento || ''} onChange={handlePraiseChange} className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-black uppercase text-sm focus:border-blue-500 focus:bg-white transition-all shadow-inner" required />
-            <input type="text" name="elogioFuncao" placeholder="Função" value={praiseData.elogioFuncao || ''} onChange={handlePraiseChange} className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-black uppercase text-sm focus:border-blue-500 focus:bg-white transition-all shadow-inner" required />
+            <input type="text" name="elogioDepartamento" placeholder={t('operationalForms.praiseForm.deptPlaceholder')} value={praiseData.elogioDepartamento || ''} onChange={handlePraiseChange} className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-black uppercase text-sm focus:border-blue-500 focus:bg-white transition-all shadow-inner" required />
+            <input type="text" name="elogioFuncao" placeholder={t('operationalForms.praiseForm.rolePlaceholder')} value={praiseData.elogioFuncao || ''} onChange={handlePraiseChange} className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-black uppercase text-sm focus:border-blue-500 focus:bg-white transition-all shadow-inner" required />
           </div>
 
           {/* Dados de Quem Elogia */}
           <div className="bg-white p-8 rounded-[2.5rem] border-2 border-slate-100 shadow-sm space-y-6">
-            <h2 className="text-[11px] font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2"><UserIcon size={16} className="text-blue-500" /> 2. Dados de Quem Elogia</h2>
+            <h2 className="text-[11px] font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2"><UserIcon size={16} className="text-blue-500" /> {t('operationalForms.praiseForm.section2')}</h2>
             <div className="relative">
-              <input type="text" name="quemElogiaNome" placeholder="Nome" value={praiseData.quemElogiaNome || ''} onChange={handlePraiseChange} className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-black uppercase text-sm focus:border-blue-500 focus:bg-white transition-all shadow-inner" required autoComplete="off" />
+              <input type="text" name="quemElogiaNome" placeholder={t('operationalForms.praiseForm.namePlaceholder')} value={praiseData.quemElogiaNome || ''} onChange={handlePraiseChange} className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-black uppercase text-sm focus:border-blue-500 focus:bg-white transition-all shadow-inner" required autoComplete="off" />
               {showSuggestions.visible && showSuggestions.field === 'quemElogiaNome' && (
                 <div className="absolute z-50 w-full mt-2 bg-white border-2 border-slate-100 rounded-2xl shadow-2xl max-h-60 overflow-y-auto">
                   {employees.filter(e => e.nome.toLowerCase().includes(searchTerm.toLowerCase())).map(emp => (
@@ -496,7 +503,7 @@ const OperationalForms: React.FC<OperationalFormsProps> = ({ onAddManualPending,
               )}
             </div>
             <div className="relative">
-              <input type="text" name="quemElogiaMatricula" placeholder="Matrícula" value={praiseData.quemElogiaMatricula || ''} onChange={handlePraiseChange} className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-black uppercase text-sm focus:border-blue-500 focus:bg-white transition-all shadow-inner" required autoComplete="off" />
+              <input type="text" name="quemElogiaMatricula" placeholder={t('operationalForms.praiseForm.matriculaPlaceholder')} value={praiseData.quemElogiaMatricula || ''} onChange={handlePraiseChange} className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-black uppercase text-sm focus:border-blue-500 focus:bg-white transition-all shadow-inner" required autoComplete="off" />
               {showSuggestions.visible && showSuggestions.field === 'quemElogiaMatricula' && (
                 <div className="absolute z-50 w-full mt-2 bg-white border-2 border-slate-100 rounded-2xl shadow-2xl max-h-60 overflow-y-auto">
                   {employees.filter(e => e.matricula.includes(searchTerm)).map(emp => (
@@ -508,37 +515,37 @@ const OperationalForms: React.FC<OperationalFormsProps> = ({ onAddManualPending,
                 </div>
               )}
             </div>
-            <input type="text" name="quemElogiaDepartamento" placeholder="Departamento / Função" value={praiseData.quemElogiaDepartamento || ''} onChange={handlePraiseChange} className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-black uppercase text-sm focus:border-blue-500 focus:bg-white transition-all shadow-inner" required />
-            <input type="text" name="quemElogiaFuncao" placeholder="Função" value={praiseData.quemElogiaFuncao || ''} onChange={handlePraiseChange} className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-black uppercase text-sm focus:border-blue-500 focus:bg-white transition-all shadow-inner" required />
+            <input type="text" name="quemElogiaDepartamento" placeholder={t('operationalForms.praiseForm.deptRolePlaceholder')} value={praiseData.quemElogiaDepartamento || ''} onChange={handlePraiseChange} className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-black uppercase text-sm focus:border-blue-500 focus:bg-white transition-all shadow-inner" required />
+            <input type="text" name="quemElogiaFuncao" placeholder={t('operationalForms.praiseForm.rolePlaceholder')} value={praiseData.quemElogiaFuncao || ''} onChange={handlePraiseChange} className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-black uppercase text-sm focus:border-blue-500 focus:bg-white transition-all shadow-inner" required />
           </div>
 
           {/* Data do Elogio */}
           <div className="bg-white p-8 rounded-[2.5rem] border-2 border-slate-100 shadow-sm space-y-6">
-            <h2 className="text-[11px] font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2"><CalendarIcon size={16} className="text-blue-500" /> 3. Data do Elogio</h2>
+            <h2 className="text-[11px] font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2"><CalendarIcon size={16} className="text-blue-500" /> {t('operationalForms.praiseForm.section3')}</h2>
             <input type="date" name="dataElogio" value={praiseData.dataElogio || ''} onChange={handlePraiseChange} className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-black uppercase text-sm focus:border-blue-500 focus:bg-white transition-all shadow-inner" required />
           </div>
 
           {/* Motivo do Elogio */}
           <div className="bg-white p-8 rounded-[2.5rem] border-2 border-slate-100 shadow-sm space-y-6">
-            <h2 className="text-[11px] font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2"><MessageSquareIcon size={16} className="text-blue-500" /> 4. Motivo do Elogio</h2>
-            <textarea name="motivoElogio" placeholder="Descreva a ação positiva realizada, comportamento exemplar, contribuição, iniciativa, segurança, trabalho em equipa, etc." value={praiseData.motivoElogio || ''} onChange={handlePraiseChange} className="w-full p-6 bg-slate-50 border-2 border-slate-100 rounded-[2rem] text-xs font-black uppercase outline-none focus:border-blue-500 focus:bg-white transition-all shadow-inner" rows={4} required />
+            <h2 className="text-[11px] font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2"><MessageSquareIcon size={16} className="text-blue-500" /> {t('operationalForms.praiseForm.section4')}</h2>
+            <textarea name="motivoElogio" placeholder={t('operationalForms.praiseForm.reasonPlaceholder')} value={praiseData.motivoElogio || ''} onChange={handlePraiseChange} className="w-full p-6 bg-slate-50 border-2 border-slate-100 rounded-[2rem] text-xs font-black uppercase outline-none focus:border-blue-500 focus:bg-white transition-all shadow-inner" rows={4} required />
           </div>
 
           {/* Impacto da Ação Elogiada */}
           <div className="bg-white p-8 rounded-[2.5rem] border-2 border-slate-100 shadow-sm space-y-6">
-            <h2 className="text-[11px] font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2"><CheckCircleIcon size={16} className="text-blue-500" /> 5. Impacto da Ação Elogiada</h2>
-            <textarea name="impactoElogio" placeholder="Como essa atitude contribuiu para a operação, segurança, produtividade ou clima de trabalho?" value={praiseData.impactoElogio || ''} onChange={handlePraiseChange} className="w-full p-6 bg-slate-50 border-2 border-slate-100 rounded-[2rem] text-xs font-black uppercase outline-none focus:border-blue-500 focus:bg-white transition-all shadow-inner" rows={4} required />
+            <h2 className="text-[11px] font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2"><CheckCircleIcon size={16} className="text-blue-500" /> {t('operationalForms.praiseForm.section5')}</h2>
+            <textarea name="impactoElogio" placeholder={t('operationalForms.praiseForm.impactPlaceholder')} value={praiseData.impactoElogio || ''} onChange={handlePraiseChange} className="w-full p-6 bg-slate-50 border-2 border-slate-100 rounded-[2rem] text-xs font-black uppercase outline-none focus:border-blue-500 focus:bg-white transition-all shadow-inner" rows={4} required />
           </div>
 
           {/* Assinaturas */}
           <div className="bg-white p-8 rounded-[2.5rem] border-2 border-slate-100 shadow-sm space-y-6">
-            <h2 className="text-[11px] font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2"><SignatureIcon size={16} className="text-blue-500" /> 6. Assinaturas</h2>
-            <input type="text" name="assinaturaColaborador" placeholder="Colaborador que regista o elogio" value={praiseData.assinaturaColaborador || ''} onChange={handlePraiseChange} className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-black uppercase text-sm focus:border-blue-500 focus:bg-white transition-all shadow-inner" required />
-            <input type="text" name="assinaturaSupervisor" placeholder="Supervisor / Gestor" value={praiseData.assinaturaSupervisor || ''} onChange={handlePraiseChange} className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-black uppercase text-sm focus:border-blue-500 focus:bg-white transition-all shadow-inner" required />
+            <h2 className="text-[11px] font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2"><SignatureIcon size={16} className="text-blue-500" /> {t('operationalForms.praiseForm.section6')}</h2>
+            <input type="text" name="assinaturaColaborador" placeholder={t('operationalForms.praiseForm.signatureRegistrar')} value={praiseData.assinaturaColaborador || ''} onChange={handlePraiseChange} className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-black uppercase text-sm focus:border-blue-500 focus:bg-white transition-all shadow-inner" required />
+            <input type="text" name="assinaturaSupervisor" placeholder={t('operationalForms.praiseForm.signatureSupervisor')} value={praiseData.assinaturaSupervisor || ''} onChange={handlePraiseChange} className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-black uppercase text-sm focus:border-blue-500 focus:bg-white transition-all shadow-inner" required />
           </div>
 
           <button type="submit" className="w-full py-6 rounded-[2rem] bg-emerald-600 text-white font-black uppercase tracking-[0.3em] flex items-center justify-center gap-4 shadow-2xl hover:bg-emerald-700 transition-all active:scale-95 text-sm">
-            <Award size={20} /> ENVIAR ELOGIO
+            <Award size={20} /> {t('operationalForms.praiseForm.submitButton')}
           </button>
         </form>
       )}
@@ -547,9 +554,9 @@ const OperationalForms: React.FC<OperationalFormsProps> = ({ onAddManualPending,
         <form onSubmit={handleFailureSubmit} className="space-y-8 pb-12">
           {/* Dados do Colaborador Envolvido */}
           <div className="bg-white p-8 rounded-[2.5rem] border-2 border-slate-100 shadow-sm space-y-6">
-            <h2 className="text-[11px] font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2"><UserIcon size={16} className="text-red-500" /> 1. Dados do Colaborador Envolvido</h2>
+            <h2 className="text-[11px] font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2"><UserIcon size={16} className="text-red-500" /> {t('operationalForms.failureForm.section1')}</h2>
             <div className="relative">
-              <input type="text" name="colaboradorNome" placeholder="Nome" value={failureData.colaboradorNome || ''} onChange={handleFailureChange} className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-black uppercase text-sm focus:border-red-500 focus:bg-white transition-all shadow-inner" required autoComplete="off" />
+              <input type="text" name="colaboradorNome" placeholder={t('operationalForms.failureForm.namePlaceholder')} value={failureData.colaboradorNome || ''} onChange={handleFailureChange} className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-black uppercase text-sm focus:border-red-500 focus:bg-white transition-all shadow-inner" required autoComplete="off" />
               <StatsBadge matricula={failureData.colaboradorMatricula} />
               {showSuggestions.visible && showSuggestions.field === 'colaboradorNome' && (
                 <div className="absolute z-50 w-full mt-2 bg-white border-2 border-slate-100 rounded-2xl shadow-2xl max-h-60 overflow-y-auto">
@@ -563,7 +570,7 @@ const OperationalForms: React.FC<OperationalFormsProps> = ({ onAddManualPending,
               )}
             </div>
             <div className="relative">
-              <input type="text" name="colaboradorMatricula" placeholder="Matrícula" value={failureData.colaboradorMatricula || ''} onChange={handleFailureChange} className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-black uppercase text-sm focus:border-red-500 focus:bg-white transition-all shadow-inner" required autoComplete="off" />
+              <input type="text" name="colaboradorMatricula" placeholder={t('operationalForms.failureForm.matriculaPlaceholder')} value={failureData.colaboradorMatricula || ''} onChange={handleFailureChange} className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-black uppercase text-sm focus:border-red-500 focus:bg-white transition-all shadow-inner" required autoComplete="off" />
               {showSuggestions.visible && showSuggestions.field === 'colaboradorMatricula' && (
                 <div className="absolute z-50 w-full mt-2 bg-white border-2 border-slate-100 rounded-2xl shadow-2xl max-h-60 overflow-y-auto">
                   {employees.filter(e => e.matricula.includes(searchTerm)).map(emp => (
@@ -575,70 +582,70 @@ const OperationalForms: React.FC<OperationalFormsProps> = ({ onAddManualPending,
                 </div>
               )}
             </div>
-            <input type="text" name="colaboradorDepartamento" placeholder="Departamento / Equipa" value={failureData.colaboradorDepartamento || ''} onChange={handleFailureChange} className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-black uppercase text-sm focus:border-red-500 focus:bg-white transition-all shadow-inner" required />
-            <input type="text" name="colaboradorFuncao" placeholder="Função" value={failureData.colaboradorFuncao || ''} onChange={handleFailureChange} className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-black uppercase text-sm focus:border-red-500 focus:bg-white transition-all shadow-inner" required />
+            <input type="text" name="colaboradorDepartamento" placeholder={t('operationalForms.failureForm.deptPlaceholder')} value={failureData.colaboradorDepartamento || ''} onChange={handleFailureChange} className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-black uppercase text-sm focus:border-red-500 focus:bg-white transition-all shadow-inner" required />
+            <input type="text" name="colaboradorFuncao" placeholder={t('operationalForms.failureForm.rolePlaceholder')} value={failureData.colaboradorFuncao || ''} onChange={handleFailureChange} className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-black uppercase text-sm focus:border-red-500 focus:bg-white transition-all shadow-inner" required />
           </div>
 
           {/* Data e Hora da Ocorrência */}
           <div className="bg-white p-8 rounded-[2.5rem] border-2 border-slate-100 shadow-sm space-y-6">
-            <h2 className="text-[11px] font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2"><CalendarIcon size={16} className="text-red-500" /> 2. Data e Hora da Ocorrência</h2>
+            <h2 className="text-[11px] font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2"><CalendarIcon size={16} className="text-red-500" /> {t('operationalForms.failureForm.section2')}</h2>
             <input type="date" name="dataOcorrencia" value={failureData.dataOcorrencia || ''} onChange={handleFailureChange} className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-black uppercase text-sm focus:border-red-500 focus:bg-white transition-all shadow-inner" required />
             <input type="time" name="horaOcorrencia" value={failureData.horaOcorrencia || ''} onChange={handleFailureChange} className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-black uppercase text-sm focus:border-red-500 focus:bg-white transition-all shadow-inner" required />
           </div>
 
           {/* Local da Ocorrência */}
           <div className="bg-white p-8 rounded-[2.5rem] border-2 border-slate-100 shadow-sm space-y-6">
-            <h2 className="text-[11px] font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2"><MapPinIcon size={16} className="text-red-500" /> 3. Local da Ocorrência</h2>
-            <input type="text" name="localOcorrencia" placeholder="Local da Ocorrência" value={failureData.localOcorrencia || ''} onChange={handleFailureChange} className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-black uppercase text-sm focus:border-red-500 focus:bg-white transition-all shadow-inner" required />
+            <h2 className="text-[11px] font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2"><MapPinIcon size={16} className="text-red-500" /> {t('operationalForms.failureForm.section3')}</h2>
+            <input type="text" name="localOcorrencia" placeholder={t('operationalForms.failureForm.locationPlaceholder')} value={failureData.localOcorrencia || ''} onChange={handleFailureChange} className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-black uppercase text-sm focus:border-red-500 focus:bg-white transition-all shadow-inner" required />
           </div>
 
           {/* Descrição da Falha Operacional */}
           <div className="bg-white p-8 rounded-[2.5rem] border-2 border-slate-100 shadow-sm space-y-6">
-            <h2 className="text-[11px] font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2"><MessageSquareIcon size={16} className="text-red-500" /> 4. Descrição da Falha Operacional</h2>
-            <textarea name="descricaoFalha" placeholder="Explique claramente o que aconteceu." value={failureData.descricaoFalha || ''} onChange={handleFailureChange} className="w-full p-6 bg-slate-50 border-2 border-slate-100 rounded-[2rem] text-xs font-black uppercase outline-none focus:border-red-500 focus:bg-white transition-all shadow-inner" rows={4} required />
+            <h2 className="text-[11px] font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2"><MessageSquareIcon size={16} className="text-red-500" /> {t('operationalForms.failureForm.section4')}</h2>
+            <textarea name="descricaoFalha" placeholder={t('operationalForms.failureForm.descriptionPlaceholder')} value={failureData.descricaoFalha || ''} onChange={handleFailureChange} className="w-full p-6 bg-slate-50 border-2 border-slate-100 rounded-[2rem] text-xs font-black uppercase outline-none focus:border-red-500 focus:bg-white transition-all shadow-inner" rows={4} required />
           </div>
 
           {/* Causas Prováveis */}
           <div className="bg-white p-8 rounded-[2.5rem] border-2 border-slate-100 shadow-sm space-y-6">
-            <h2 className="text-[11px] font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2"><AlertTriangleIcon size={16} className="text-red-500" /> 5. Causas Prováveis</h2>
+            <h2 className="text-[11px] font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2"><AlertTriangleIcon size={16} className="text-red-500" /> {t('operationalForms.failureForm.section5')}</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {causasOptions.map(causa => (
-                <label key={causa} className="flex items-center gap-2 text-sm font-medium text-slate-700">
-                  <input type="checkbox" value={causa} checked={failureData.causasProvaveis.includes(causa)} onChange={handleFailureCheckboxChange} className="form-checkbox h-5 w-5 text-red-600 rounded" />
-                  {causa}
+                <label key={causa.key} className="flex items-center gap-2 text-sm font-medium text-slate-700">
+                  <input type="checkbox" value={causa.label} checked={failureData.causasProvaveis.includes(causa.label)} onChange={handleFailureCheckboxChange} className="form-checkbox h-5 w-5 text-red-600 rounded" />
+                  {causa.label}
                 </label>
               ))}
-              <input type="text" name="outraCausa" placeholder="Outra (especifique)" value={failureData.outraCausa || ''} onChange={handleFailureChange} className="w-full px-4 py-2 bg-slate-50 border-2 border-slate-100 rounded-xl outline-none font-black uppercase text-sm focus:border-red-500 focus:bg-white transition-all shadow-inner" />
+              <input type="text" name="outraCausa" placeholder={t('operationalForms.failureForm.otherCausaPlaceholder')} value={failureData.outraCausa || ''} onChange={handleFailureChange} className="w-full px-4 py-2 bg-slate-50 border-2 border-slate-100 rounded-xl outline-none font-black uppercase text-sm focus:border-red-500 focus:bg-white transition-all shadow-inner" />
             </div>
           </div>
 
           {/* Consequências Observadas */}
           <div className="bg-white p-8 rounded-[2.5rem] border-2 border-slate-100 shadow-sm space-y-6">
-            <h2 className="text-[11px] font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2"><MessageSquareIcon size={16} className="text-red-500" /> 6. Consequências Observadas</h2>
-            <textarea name="consequenciasObservadas" placeholder="Descreva as consequências observadas." value={failureData.consequenciasObservadas || ''} onChange={handleFailureChange} className="w-full p-6 bg-slate-50 border-2 border-slate-100 rounded-[2rem] text-xs font-black uppercase outline-none focus:border-red-500 focus:bg-white transition-all shadow-inner" rows={4} required />
+            <h2 className="text-[11px] font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2"><MessageSquareIcon size={16} className="text-red-500" /> {t('operationalForms.failureForm.section6')}</h2>
+            <textarea name="consequenciasObservadas" placeholder={t('operationalForms.failureForm.consequencesPlaceholder')} value={failureData.consequenciasObservadas || ''} onChange={handleFailureChange} className="w-full p-6 bg-slate-50 border-2 border-slate-100 rounded-[2rem] text-xs font-black uppercase outline-none focus:border-red-500 focus:bg-white transition-all shadow-inner" rows={4} required />
           </div>
 
           {/* Ações Corretivas Imediatas */}
           <div className="bg-white p-8 rounded-[2.5rem] border-2 border-slate-100 shadow-sm space-y-6">
-            <h2 className="text-[11px] font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2"><CheckCircleIcon size={16} className="text-red-500" /> 7. Ações Corretivas Imediatas</h2>
-            <textarea name="acoesCorretivas" placeholder="Descreva as ações corretivas tomadas imediatamente." value={failureData.acoesCorretivas || ''} onChange={handleFailureChange} className="w-full p-6 bg-slate-50 border-2 border-slate-100 rounded-[2rem] text-xs font-black uppercase outline-none focus:border-red-500 focus:bg-white transition-all shadow-inner" rows={4} required />
+            <h2 className="text-[11px] font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2"><CheckCircleIcon size={16} className="text-red-500" /> {t('operationalForms.failureForm.section7')}</h2>
+            <textarea name="acoesCorretivas" placeholder={t('operationalForms.failureForm.correctivePlaceholder')} value={failureData.acoesCorretivas || ''} onChange={handleFailureChange} className="w-full p-6 bg-slate-50 border-2 border-slate-100 rounded-[2rem] text-xs font-black uppercase outline-none focus:border-red-500 focus:bg-white transition-all shadow-inner" rows={4} required />
           </div>
 
           {/* Medidas Preventivas Recomendadas */}
           <div className="bg-white p-8 rounded-[2.5rem] border-2 border-slate-100 shadow-sm space-y-6">
-            <h2 className="text-[11px] font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2"><AlertTriangleIcon size={16} className="text-red-500" /> 8. Medidas Preventivas Recomendadas</h2>
-            <textarea name="medidasPreventivas" placeholder="Descreva as medidas preventivas recomendadas para evitar recorrência." value={failureData.medidasPreventivas || ''} onChange={handleFailureChange} className="w-full p-6 bg-slate-50 border-2 border-slate-100 rounded-[2rem] text-xs font-black uppercase outline-none focus:border-red-500 focus:bg-white transition-all shadow-inner" rows={4} required />
+            <h2 className="text-[11px] font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2"><AlertTriangleIcon size={16} className="text-red-500" /> {t('operationalForms.failureForm.section8')}</h2>
+            <textarea name="medidasPreventivas" placeholder={t('operationalForms.failureForm.preventivePlaceholder')} value={failureData.medidasPreventivas || ''} onChange={handleFailureChange} className="w-full p-6 bg-slate-50 border-2 border-slate-100 rounded-[2rem] text-xs font-black uppercase outline-none focus:border-red-500 focus:bg-white transition-all shadow-inner" rows={4} required />
           </div>
 
           {/* Assinaturas */}
           <div className="bg-white p-8 rounded-[2.5rem] border-2 border-slate-100 shadow-sm space-y-6">
-            <h2 className="text-[11px] font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2"><SignatureIcon size={16} className="text-red-500" /> 9. Assinaturas</h2>
-            <input type="text" name="responsavelRegisto" placeholder="Responsável pelo registo" value={failureData.responsavelRegisto || ''} onChange={handleFailureChange} className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-black uppercase text-sm focus:border-red-500 focus:bg-white transition-all shadow-inner" required />
-            <input type="text" name="supervisorGestor" placeholder="Supervisor / Gestor" value={failureData.supervisorGestor || ''} onChange={handleFailureChange} className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-black uppercase text-sm focus:border-red-500 focus:bg-white transition-all shadow-inner" required />
+            <h2 className="text-[11px] font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2"><SignatureIcon size={16} className="text-red-500" /> {t('operationalForms.failureForm.section9')}</h2>
+            <input type="text" name="responsavelRegisto" placeholder={t('operationalForms.failureForm.signatureRegistrar')} value={failureData.responsavelRegisto || ''} onChange={handleFailureChange} className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-black uppercase text-sm focus:border-red-500 focus:bg-white transition-all shadow-inner" required />
+            <input type="text" name="supervisorGestor" placeholder={t('operationalForms.failureForm.signatureSupervisor')} value={failureData.supervisorGestor || ''} onChange={handleFailureChange} className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-black uppercase text-sm focus:border-red-500 focus:bg-white transition-all shadow-inner" required />
           </div>
 
           <button type="submit" className="w-full py-6 rounded-[2rem] bg-red-600 text-white font-black uppercase tracking-[0.3em] flex items-center justify-center gap-4 shadow-2xl hover:bg-red-700 transition-all active:scale-95 text-sm">
-            <Zap size={20} /> REGISTRAR FALHA
+            <Zap size={20} /> {t('operationalForms.failureForm.submitButton')}
           </button>
         </form>
       )}

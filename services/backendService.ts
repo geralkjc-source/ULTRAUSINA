@@ -110,7 +110,8 @@ export const backendService = {
   async getConfig(): Promise<{ 
     emailRecipients: string, 
     emailCc: string,
-    disciplineEmails?: Record<string, string>
+    disciplineEmails?: Record<string, string>,
+    googleScriptUrl?: string
   }> {
     const response = await fetch(`${API_BASE}/config`);
     if (!response.ok) throw new Error('Failed to fetch config');
@@ -120,7 +121,8 @@ export const backendService = {
   async saveConfig(config: { 
     emailRecipients: string, 
     emailCc: string,
-    disciplineEmails?: Record<string, string>
+    disciplineEmails?: Record<string, string>,
+    googleScriptUrl?: string
   }): Promise<any> {
     const response = await fetch(`${API_BASE}/config`, {
       method: 'POST',

@@ -34,6 +34,7 @@ import { Report, PendingItem, Area, Turma, Discipline } from '../types';
 import { exportAuditPDF } from '../services/pdfExport';
 
 import { syncToGoogleSheets, testScriptConnection, DEFAULT_SCRIPT_URL, MASTER_SHEET_URL, CloudStats } from '../services/googleSync';
+import { useLanguage } from '../LanguageContext';
 
 interface AnalyticsProps {
   reports: Report[];
@@ -53,6 +54,7 @@ const Analytics: React.FC<AnalyticsProps> = ({
   syncSource 
 }) => {
   const navigate = useNavigate();
+  const { t, language } = useLanguage();
   
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const now = new Date();
@@ -135,7 +137,7 @@ const Analytics: React.FC<AnalyticsProps> = ({
         const turma = r.turma || 'N/A';
         turmaMap[turma] = (turmaMap[turma] || 0) + 1;
       });
-      return Object.entries(turmaMap).map(([name, value]) => ({ name: `Turma ${name}`, value }));
+      return Object.entries(turmaMap).map(([name, value]) => ({ name: `${t('team')} ${name}`, value }));
     };
 
     return {
@@ -145,20 +147,20 @@ const Analytics: React.FC<AnalyticsProps> = ({
 
   const turmaPerformance = useMemo(() => {
     const turmas: Turma[] = ['A', 'B', 'C', 'D'];
-    return turmas.map(t => {
-      const resolved = filteredData.pendingItems.filter(p => p.resolvedByTurma === t && p.status === 'resolvido').length;
-      return { turma: t, resolved };
+    return turmas.map(turma => {
+      const resolved = filteredData.pendingItems.filter(p => p.resolvedByTurma === turma && p.status === 'resolvido').length;
+      return { turma: turma, resolved };
     });
   }, [filteredData.pendingItems]);
 
   const debtPerformance = useMemo(() => {
     const turmas: Turma[] = ['A', 'B', 'C', 'D'];
-    return turmas.map(t => {
+    return turmas.map(turma => {
       const openDebt = filteredData.pendingItems.filter(p => 
-        p.turma === t && 
+        p.turma === turma && 
         (p.status === 'aberto' || (p.status === 'resolvido' && p.turma !== p.resolvedByTurma))
       ).length;
-      return { turma: t, openDebt };
+      return { turma: turma, openDebt };
     }).sort((a,b) => b.openDebt - a.openDebt);
   }, [filteredData.pendingItems]);
 
@@ -166,8 +168,8 @@ const Analytics: React.FC<AnalyticsProps> = ({
   const selectedMonthLabel = useMemo(() => {
     const [year, month] = selectedMonth.split('-').map(Number);
     const d = new Date(year, month - 1, 1);
-    return d.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }).toUpperCase();
-  }, [selectedMonth]);
+    return d.toLocaleDateString(language === 'pt' ? 'pt-BR' : 'en-US', { month: 'long', year: 'numeric' }).toUpperCase();
+  }, [selectedMonth, language]);
 
   const handleDownloadDisciplinePDF = (discipline: Discipline) => {
     const disciplineItems = filteredData.pendingItems.filter(p => p.discipline === discipline);
@@ -182,9 +184,9 @@ const Analytics: React.FC<AnalyticsProps> = ({
         <div>
           <h1 className="text-3xl font-black text-slate-900 tracking-tighter uppercase flex items-center gap-3">
             <BarChart className="text-blue-600" size={32} />
-            Fechamento v1.4
+            {t('analyticsTitle')}
           </h1>
-          <p className="text-slate-500 font-bold uppercase text-[10px] tracking-widest mt-1">Auditagem de Volume Mensal Acumulado</p>
+          <p className="text-slate-500 font-bold uppercase text-[10px] tracking-widest mt-1">{t('analyticsSubtitle')}</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm">
@@ -205,7 +207,7 @@ const Analytics: React.FC<AnalyticsProps> = ({
                   for (let month = 11; month >= 0; month--) {
                     const d = new Date(year, month, 1);
                     const val = `${year}-${String(month + 1).padStart(2, '0')}`;
-                    const label = d.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }).toUpperCase();
+                    const label = d.toLocaleDateString(language === 'pt' ? 'pt-BR' : 'en-US', { month: 'long', year: 'numeric' }).toUpperCase();
                     options.push(<option key={val} value={val}>{label}</option>);
                   }
                 }
@@ -215,7 +217,7 @@ const Analytics: React.FC<AnalyticsProps> = ({
           </div>
           <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm">
             <span className={`w-2 h-2 rounded-full ${syncSource === 'cloud' ? 'bg-emerald-500' : 'bg-amber-500'} animate-pulse`}></span>
-            <span className="text-[10px] font-black text-slate-500 uppercase">Carga: {syncSource === 'cloud' ? 'Sincronizada' : 'Local'}</span>
+            <span className="text-[10px] font-black text-slate-500 uppercase">{t('loadLabel')}: {syncSource === 'cloud' ? t('loadingSincronizada') : t('loadingLocal')}</span>
           </div>
         </div>
       </div>
@@ -225,13 +227,13 @@ const Analytics: React.FC<AnalyticsProps> = ({
           <div className="flex justify-between items-center border-b border-white/5 pb-6">
             <div className="space-y-1">
               <h2 className="text-white text-lg font-black uppercase tracking-tight flex items-center gap-2">
-                <BarChart3 size={20} className="text-blue-500" /> Carga Acumulada por Disciplina
+                <BarChart3 size={20} className="text-blue-500" /> {t('disciplineLoad')}
               </h2>
-              <p className="text-slate-500 text-[9px] font-black uppercase tracking-widest">Ocorrências Totais Registradas no Mês</p>
+              <p className="text-slate-500 text-[9px] font-black uppercase tracking-widest">{t('monthlyTotalEvents')}</p>
             </div>
             <div className="text-right">
               <p className="text-3xl font-black text-white">{totalMonthlyVolume}</p>
-              <p className="text-[8px] font-black text-slate-500 uppercase tracking-tighter">Eventos Totais (Mês)</p>
+              <p className="text-[8px] font-black text-slate-500 uppercase tracking-tighter">{t('monthlyTotalEvents')}</p>
             </div>
           </div>
 
@@ -252,15 +254,15 @@ const Analytics: React.FC<AnalyticsProps> = ({
                       <p className="text-white text-[11px] font-black uppercase tracking-wider">{stat.discipline}</p>
                       <div className="flex gap-3 mt-1">
                         <div className="flex flex-col">
-                          <span className="text-slate-500 text-[7px] font-black uppercase tracking-tighter">Aberto</span>
+                          <span className="text-slate-500 text-[7px] font-black uppercase tracking-tighter">{t('statusOpen')}</span>
                           <span className="text-amber-500 text-[10px] font-black">{stat.open}</span>
                         </div>
                         <div className="flex flex-col">
-                          <span className="text-slate-500 text-[7px] font-black uppercase tracking-tighter">Resolvido</span>
+                          <span className="text-slate-500 text-[7px] font-black uppercase tracking-tighter">{t('statusResolved')}</span>
                           <span className="text-emerald-500 text-[10px] font-black">{stat.resolved}</span>
                         </div>
                         <div className="flex flex-col">
-                          <span className="text-slate-500 text-[7px] font-black uppercase tracking-tighter">Total</span>
+                          <span className="text-slate-500 text-[7px] font-black uppercase tracking-tighter">{t('analytics.total')}</span>
                           <span className="text-white text-[10px] font-black">{stat.total}</span>
                         </div>
                       </div>
@@ -273,12 +275,12 @@ const Analytics: React.FC<AnalyticsProps> = ({
                         handleDownloadDisciplinePDF(stat.discipline as Discipline);
                       }}
                       className={`p-2 rounded-lg bg-${stat.color}-500/10 text-${stat.color}-400 hover:bg-${stat.color}-500 hover:text-white transition-all border border-${stat.color}-500/20`}
-                      title="Baixar Relatório Mensal"
+                      title={t('engagementPdf')}
                     >
                       <Download size={14} />
                     </button>
                     <div className="text-right">
-                      <span className="text-[9px] font-black text-slate-600 uppercase block mb-1">Taxa de Resolução</span>
+                      <span className="text-[9px] font-black text-slate-600 uppercase block mb-1">{t('resolutionRate')}</span>
                       <span className={`text-xl font-black text-${stat.color}-400`}>{stat.efficiency}%</span>
                     </div>
                   </div>
@@ -289,7 +291,7 @@ const Analytics: React.FC<AnalyticsProps> = ({
                       className={`h-full bg-${stat.color}-500 rounded-full transition-all duration-1000 flex items-center justify-end px-2`} 
                       style={{ width: `100%` }}
                     >
-                       <span className="text-[8px] font-black text-white/40 uppercase">Mês Atual</span>
+                       <span className="text-[8px] font-black text-white/40 uppercase">{t('currentMonth')}</span>
                     </div>
                   </div>
                 </div>
@@ -300,10 +302,10 @@ const Analytics: React.FC<AnalyticsProps> = ({
           <div className="p-6 bg-blue-600/10 border border-blue-500/20 rounded-3xl">
              <div className="flex items-center gap-3 mb-2">
                <ShieldAlert className="text-blue-500" size={18} />
-               <span className="text-white text-[10px] font-black uppercase tracking-widest">Regra de Fechamento v1.4</span>
+               <span className="text-white text-[10px] font-black uppercase tracking-widest">{t('analyticsTitle')}</span>
              </div>
              <p className="text-slate-400 text-[10px] leading-relaxed uppercase font-bold">
-               A contagem de carga por disciplina é acumulativa. Clique nos cards acima para auditar os registros.
+               {t('analyticsSubtitle')}
              </p>
           </div>
         </div>
@@ -312,16 +314,16 @@ const Analytics: React.FC<AnalyticsProps> = ({
           <div className="bg-white p-8 rounded-[3.5rem] border-2 border-slate-100 shadow-xl space-y-6">
             <div className="space-y-1">
               <h2 className="text-slate-900 text-sm font-black uppercase tracking-widest flex items-center gap-2">
-                <Trophy size={18} className="text-amber-500" /> Ranking Resolutivo
+                <Trophy size={18} className="text-amber-500" /> {t('rankingResolutivo')}
               </h2>
-              <p className="text-slate-400 text-[9px] font-bold uppercase italic">Quem mais entregou no mês</p>
+              <p className="text-slate-400 text-[9px] font-bold uppercase italic">{t('whoDeliveredMost')}</p>
             </div>
 
             <div className="space-y-3">
-              {turmaPerformance.sort((a,b) => b.resolved - a.resolved).map((t, idx) => (
+              {turmaPerformance.sort((a,b) => b.resolved - a.resolved).map((tData, idx) => (
                 <button 
-                  key={t.turma} 
-                  onClick={() => navigate(`/pending?status=resolvido&resolvedByTurma=${t.turma}`)}
+                  key={tData.turma} 
+                  onClick={() => navigate(`/pending?status=resolvido&resolvedByTurma=${tData.turma}`)}
                   className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all active:scale-[0.98] group ${
                   idx === 0 ? 'bg-amber-50 border-amber-200 shadow-md hover:bg-amber-100' : 'bg-slate-50 border-slate-100 hover:bg-slate-100'
                 }`}>
@@ -329,15 +331,15 @@ const Analytics: React.FC<AnalyticsProps> = ({
                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-white shadow-md text-sm ${
                       idx === 0 ? 'bg-amber-500' : 'bg-slate-900'
                     }`}>
-                      {t.turma}
+                      {tData.turma}
                     </div>
                     <div className="text-left">
-                      <p className="text-[11px] font-black text-slate-800 uppercase tracking-tight">TURMA {t.turma}</p>
-                      <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest group-hover:text-blue-600 transition-colors flex items-center gap-1">Auditar Baixas <ChevronRight size={10} /></span>
+                      <p className="text-[11px] font-black text-slate-800 uppercase tracking-tight">{t('team')} {tData.turma}</p>
+                      <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest group-hover:text-blue-600 transition-colors flex items-center gap-1">{t('auditDowns')} <ChevronRight size={10} /></span>
                     </div>
                   </div>
                   <div className="text-right flex items-center gap-2">
-                    <span className="text-2xl font-black text-slate-900">{t.resolved}</span>
+                    <span className="text-2xl font-black text-slate-900">{tData.resolved}</span>
                     <CheckCircle2 size={16} className="text-emerald-500" />
                   </div>
                 </button>
@@ -347,29 +349,29 @@ const Analytics: React.FC<AnalyticsProps> = ({
             <div className="pt-4 border-t border-slate-100">
               <div className="space-y-1 mb-4">
                 <h2 className="text-red-600 text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
-                  <ShieldAlert size={14} /> Pendências Identificadas
+                  <ShieldAlert size={14} /> {t('identifiedPending')}
                 </h2>
-                <p className="text-slate-400 text-[8px] font-bold uppercase italic">Pendências identificadas pela equipe</p>
+                <p className="text-slate-400 text-[8px] font-bold uppercase italic">{t('identifiedByTeam')}</p>
               </div>
 
               <div className="space-y-2">
-                {debtPerformance.map((t, idx) => (
+                {debtPerformance.map((tData, idx) => (
                   <button 
-                    key={t.turma} 
-                    onClick={() => navigate(`/pending?status=aberto&turma=${t.turma}`)}
+                    key={tData.turma} 
+                    onClick={() => navigate(`/pending?status=aberto&turma=${tData.turma}`)}
                     className="w-full flex items-center justify-between p-3 bg-red-50/50 rounded-xl border border-red-100 hover:bg-red-50 transition-colors active:scale-95 group"
                   >
                     <div className="flex items-center gap-2">
                       <span className={`w-7 h-7 rounded-lg flex items-center justify-center font-black text-[10px] ${idx === 0 ? 'bg-red-600 text-white' : 'bg-red-200 text-red-700'}`}>
-                        {t.turma}
+                        {tData.turma}
                       </span>
                       <div className="text-left">
-                        <span className="text-[10px] font-black text-slate-700 uppercase">Equipe {t.turma}</span>
-                        <span className="text-[7px] font-black text-red-400 uppercase tracking-widest block group-hover:text-red-600 transition-colors">Ver Pendentes</span>
+                        <span className="text-[10px] font-black text-slate-700 uppercase">{t('team')} {tData.turma}</span>
+                        <span className="text-[7px] font-black text-red-400 uppercase tracking-widest block group-hover:text-red-600 transition-colors">{t('viewPendingSmall')}</span>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-base font-black text-red-600">{t.openDebt}</span>
+                      <span className="text-base font-black text-red-600">{tData.openDebt}</span>
                       <History size={14} className="text-red-400" />
                     </div>
                   </button>
@@ -382,8 +384,8 @@ const Analytics: React.FC<AnalyticsProps> = ({
 
       <div className="grid grid-cols-2 gap-6">
         {[
-          { label: 'Ocorrências Período', val: totalMonthlyVolume, icon: <BarChart3 className="text-blue-500" /> },
-          { label: 'Falhas Críticas', val: filteredData.pendingItems.filter(p => p.priority === 'alta').length, icon: <AlertTriangle className="text-red-500" /> },
+          { label: t('periodOccurrences'), val: totalMonthlyVolume, icon: <BarChart3 className="text-blue-500" /> },
+          { label: t('criticalFailures'), val: filteredData.pendingItems.filter(p => p.priority === 'alta').length, icon: <AlertTriangle className="text-red-500" /> },
         ].map((kpi, i) => (
           <div key={i} className="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm flex items-center gap-4">
             <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center border border-slate-100">

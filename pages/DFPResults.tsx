@@ -16,6 +16,7 @@ import { Turma, Turno, QualityReport, QualityCategory } from '../types';
 import { getCurrentShiftInfo } from '../services/shiftService';
 import { fetchEmployees, Employee } from '../services/employeeService';
 import { formatQualityReportForWhatsApp, copyToClipboard } from '../services/whatsappShare';
+import { useLanguage } from '../LanguageContext';
 
 interface DFPResultsProps {
   onSaveQualityReport: (report: QualityReport) => void;
@@ -24,6 +25,7 @@ interface DFPResultsProps {
 
 const DFPResults: React.FC<DFPResultsProps> = ({ onSaveQualityReport, qualityReports }) => {
   const navigate = useNavigate();
+  const { t, language } = useLanguage();
   const [detectedScale, setDetectedScale] = useState<{ turma: Turma; turno: Turno }>(getCurrentShiftInfo());
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -70,11 +72,11 @@ const DFPResults: React.FC<DFPResultsProps> = ({ onSaveQualityReport, qualityRep
     const ra = parseFloat(d.rejectAsh || '0');
     const ca = parseFloat(d.concAsh || '0');
 
-    if (yld < 40) alertas.push("🔴 Yield baixo");
-    if (ra < 30) alertas.push("🔴 Perda de carvão no rejeito");
-    if (ca > 10) alertas.push("🔴 Cinza alta no concentrado");
+    if (yld < 40) alertas.push(`🔴 ${t('dfpResults.validation.lowYield')}`);
+    if (ra < 30) alertas.push(`🔴 ${t('dfpResults.validation.coalLoss')}`);
+    if (ca > 10) alertas.push(`🔴 ${t('dfpResults.validation.highAsh')}`);
 
-    return alertas.length ? alertas : ["🟢 DFP2 Normal"];
+    return alertas.length ? alertas : [`🟢 ${t('dfpResults.validation.normalDFP2')}`];
   };
 
   const verificarColunaD = (d: any) => {
@@ -84,11 +86,11 @@ const DFPResults: React.FC<DFPResultsProps> = ({ onSaveQualityReport, qualityRep
     const yld = parseFloat(d.yield || '0');
     const ta = parseFloat(d.tailAsh || '0');
 
-    if (pa > 10) alertas.push("🔴 Produto fora de especificação");
-    if (yld < 40) alertas.push("🔴 Yield baixo");
-    if (ta < 45) alertas.push("🔴 Carvão no tail");
+    if (pa > 10) alertas.push(`🔴 ${t('dfpResults.validation.outOfSpec')}`);
+    if (yld < 40) alertas.push(`🔴 ${t('dfpResults.validation.lowYield')}`);
+    if (ta < 45) alertas.push(`🔴 ${t('dfpResults.validation.coalInTail')}`);
 
-    return alertas.length ? alertas : ["🟢 Coluna D Normal"];
+    return alertas.length ? alertas : [`🟢 ${t('dfpResults.validation.normalColunaD')}`];
   };
 
   const verificarHumidade = (tmStr: string | number) => {
@@ -96,10 +98,10 @@ const DFPResults: React.FC<DFPResultsProps> = ({ onSaveQualityReport, qualityRep
     const TM = parseFloat(tmStr as string || '0');
     if (isNaN(TM)) return [];
 
-    if (TM > 13.0) return ["🔴 Humidade Alta"];
-    if (TM < 12.0) return ["🔵 Produto muito seco"];
+    if (TM > 13.0) return [`🔴 ${t('dfpResults.validation.highHumidity')}`];
+    if (TM < 12.0) return [`🔵 ${t('dfpResults.validation.dryProduct')}`];
 
-    return ["🟢 Humidade Normal"];
+    return [`🟢 ${t('dfpResults.validation.normalHumidity')}`];
   };
 
   const handleInputChange = (field: string, value: string) => {
@@ -192,9 +194,9 @@ const DFPResults: React.FC<DFPResultsProps> = ({ onSaveQualityReport, qualityRep
     
     copyToClipboard(text).then(success => {
       if (success) {
-        alert('Registrado e Texto Copiado para o WhatsApp!');
+        alert(t('dfpResults.successMessage'));
       } else {
-        alert('Registrado, mas falha ao copiar texto.');
+        alert(t('dfpResults.errorMessage'));
       }
     });
 
@@ -209,18 +211,18 @@ const DFPResults: React.FC<DFPResultsProps> = ({ onSaveQualityReport, qualityRep
   }, []);
 
   const categories: { id: QualityCategory; label: string; icon: any; color: string }[] = [
-    { id: 'DFP2', label: 'DFP2 - PLANTAS C/D', icon: Activity, color: 'text-blue-500' },
-    { id: 'COLUNAS_D', label: 'COLUNAS D', icon: Columns, color: 'text-indigo-500' },
-    { id: 'HUMIDADE_PLY', label: 'HUMIDADE E PLY', icon: Droplets, color: 'text-cyan-500' },
+    { id: 'DFP2', label: t('dfpResults.categories.dfp2'), icon: Activity, color: 'text-blue-500' },
+    { id: 'COLUNAS_D', label: t('dfpResults.categories.colunas_d'), icon: Columns, color: 'text-indigo-500' },
+    { id: 'HUMIDADE_PLY', label: t('dfpResults.categories.humidade_ply'), icon: Droplets, color: 'text-cyan-500' },
   ];
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-500 pb-20">
       <div className="flex items-center justify-between">
-        <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-slate-500 hover:text-slate-800 font-black uppercase text-[10px] tracking-widest transition-colors"><ArrowLeftIcon size={16} /> Voltar</button>
+        <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-slate-500 hover:text-slate-800 font-black uppercase text-[10px] tracking-widest transition-colors"><ArrowLeftIcon size={16} /> {t('back')}</button>
         <div className="text-right">
-          <h1 className="text-3xl font-black text-slate-900 tracking-tighter uppercase">Qualidade e Yield</h1>
-          <p className="text-slate-400 text-[9px] font-bold uppercase tracking-[0.2em] mt-1">Plataforma Ultrafino Usina 2</p>
+          <h1 className="text-3xl font-black text-slate-900 tracking-tighter uppercase">{t('dfpResults.title')}</h1>
+          <p className="text-slate-400 text-[9px] font-bold uppercase tracking-[0.2em] mt-1">{t('dfpResults.subtitle')}</p>
         </div>
       </div>
 
@@ -260,7 +262,7 @@ const DFPResults: React.FC<DFPResultsProps> = ({ onSaveQualityReport, qualityRep
           {qualityReports.length > 0 && (
             <div className="bg-white p-8 rounded-[2.5rem] border-2 border-slate-100 shadow-sm space-y-6">
               <h2 className="text-[11px] font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2">
-                <Activity size={16} className="text-slate-400" /> Registros Recentes (Hoje)
+                <Activity size={16} className="text-slate-400" /> {t('dfpResults.recentRecords')}
               </h2>
               <div className="space-y-3">
                 {[...qualityReports]
@@ -282,10 +284,10 @@ const DFPResults: React.FC<DFPResultsProps> = ({ onSaveQualityReport, qualityRep
                           </div>
                           <div>
                             <p className="text-[10px] font-black text-slate-900 uppercase tracking-tight">
-                              {category?.label || 'Categoria Desconhecida'}
+                              {category?.label || t('unknown')}
                             </p>
                             <p className="text-[9px] font-bold text-slate-400 uppercase">
-                              {qr.operator} • {new Date(qr.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                              {qr.operator} • {new Date(qr.timestamp).toLocaleTimeString(language === 'pt' ? 'pt-BR' : 'en-US', { hour: '2-digit', minute: '2-digit' })}
                             </p>
                           </div>
                         </div>
@@ -294,7 +296,7 @@ const DFPResults: React.FC<DFPResultsProps> = ({ onSaveQualityReport, qualityRep
                             onClick={() => {
                               const text = formatQualityReportForWhatsApp(qr);
                               copyToClipboard(text).then(success => {
-                                if (success) alert('Texto copiado para o WhatsApp!');
+                                if (success) alert(t('dfpResults.successMessage'));
                               });
                             }}
                             className="p-2 hover:bg-slate-200 rounded-xl transition-colors text-slate-400 hover:text-slate-600"
@@ -303,9 +305,9 @@ const DFPResults: React.FC<DFPResultsProps> = ({ onSaveQualityReport, qualityRep
                             <Activity size={14} />
                           </button>
                           {qr.synced ? (
-                            <span className="text-[8px] font-black text-emerald-500 uppercase bg-emerald-50 px-2 py-1 rounded-full">Sincronizado</span>
+                            <span className="text-[8px] font-black text-emerald-500 uppercase bg-emerald-50 px-2 py-1 rounded-full">{t('dfpResults.synced')}</span>
                           ) : (
-                            <span className="text-[8px] font-black text-amber-500 uppercase bg-amber-50 px-2 py-1 rounded-full">Pendente Sinc.</span>
+                            <span className="text-[8px] font-black text-amber-500 uppercase bg-amber-50 px-2 py-1 rounded-full">{t('dfpResults.pendingSync')}</span>
                           )}
                         </div>
                       </div>
@@ -322,7 +324,7 @@ const DFPResults: React.FC<DFPResultsProps> = ({ onSaveQualityReport, qualityRep
             onClick={() => setSelectedCategory(null)}
             className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-600 flex items-center gap-2"
           >
-            <ArrowLeftIcon size={12} /> Trocar Área
+            <ArrowLeftIcon size={12} /> {t('dfpResults.changeArea')}
           </button>
 
           {/* DFP2 PLANTS C & D SECTION */}
@@ -446,7 +448,7 @@ const DFPResults: React.FC<DFPResultsProps> = ({ onSaveQualityReport, qualityRep
             <div className="bg-white p-8 rounded-[2.5rem] border-2 border-slate-100 shadow-sm space-y-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-[11px] font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2">
-                  <Droplets size={16} className="text-cyan-500" /> HUMIDADE E PLY
+                  <Droplets size={16} className="text-cyan-500" /> {t('dfpResults.categories.humidade_ply')}
                 </h2>
                 <div className="flex flex-wrap gap-2 justify-end">
                   {verificarHumidade(formData.humidade_fundo).map((a, i) => (
@@ -459,7 +461,7 @@ const DFPResults: React.FC<DFPResultsProps> = ({ onSaveQualityReport, qualityRep
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-[9px] font-black text-slate-400 uppercase ml-2">TM (%)</label>
+                  <label className="text-[9px] font-black text-slate-400 uppercase ml-2">{t('dfpResults.moisture')} (%)</label>
                   <input 
                     type="number" step="0.01" 
                     value={formData.humidade_fundo || ''} 
@@ -486,14 +488,14 @@ const DFPResults: React.FC<DFPResultsProps> = ({ onSaveQualityReport, qualityRep
 
           {/* Identificação */}
           <div className="bg-white p-8 rounded-[2.5rem] border-2 border-slate-100 shadow-sm space-y-6">
-            <h2 className="text-[11px] font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2"><UserCog size={16} className="text-slate-500" /> Identificação</h2>
+            <h2 className="text-[11px] font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2"><UserCog size={16} className="text-slate-500" /> {t('dfpResults.identification')}</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="relative">
                 <input 
                   type="text" 
                   value={formData.operator || ''} 
                   onChange={(e) => handleInputChange('operator', e.target.value)}
-                  placeholder="NOME DO OPERADOR" 
+                  placeholder={t('dfpResults.operatorNamePlaceholder')} 
                   className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-black uppercase text-sm focus:border-blue-500 focus:bg-white transition-all shadow-inner" 
                   required 
                   autoComplete="off"
@@ -524,7 +526,7 @@ const DFPResults: React.FC<DFPResultsProps> = ({ onSaveQualityReport, qualityRep
               type="submit"
               className="w-full max-w-md py-6 rounded-[2rem] bg-emerald-600 text-white font-black uppercase tracking-[0.3em] flex items-center justify-center gap-4 shadow-2xl hover:bg-emerald-700 transition-all active:scale-95 text-sm"
             >
-              <Activity size={20} /> REGISTRAR E COPIAR TEXTO
+              <Activity size={20} /> {t('dfpResults.submitButton')}
             </button>
           </div>
         </form>

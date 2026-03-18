@@ -273,6 +273,7 @@ async function startServer() {
     try {
       const config = readJSON(CONFIG_FILE);
       const defaults = {
+        googleScriptUrl: "",
         disciplineEmails: {
           "MECÂNICA": "bruno.rabelo@vulcaninternational.com, alcar.rafael@vulcaninternational.com, amancio.novela@vulcaninternational.com, rodrigo.silva@vulcaninternational.com",
           "ELÉTRICA": "alex.julai@vulcaninternational.com, booz.hobjane@vulcaninternational.com",

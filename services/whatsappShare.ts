@@ -45,7 +45,7 @@ export const formatQualityReportForWhatsApp = (report: QualityReport): string =>
     message += `🧪 FROTHER: ${report.colunas_d_frother} m³/h \n`;
   } else if (report.category === 'HUMIDADE_PLY') {
     message += `🏷️ PLY: ${report.ply}\n`;
-    message += `💧 HUMIDADE FUNDO: ${report.humidade_fundo}% \n`;
+    message += `💧 HUMIDADE: ${report.humidade_fundo}% \n`;
     if (report.humidade_oversize) message += `💧 HUMIDADE OVERSIZE: ${report.humidade_oversize}% \n`;
     if (report.humidade_concentrado) message += `💧 HUMIDADE CONCENTRADO: ${report.humidade_concentrado}% \n`;
   }

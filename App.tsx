@@ -31,6 +31,7 @@ import SettingsPage from './pages/Settings';
 import { Area, Report, PendingItem, Turma, QualityReport, OperationalEvent } from './types';
 import { syncToGoogleSheets, fetchCloudItems, fetchCloudReports, fetchCloudQualityReports, fetchCloudOperationalEvents, fetchCloudData, CloudStats, DEFAULT_SCRIPT_URL } from './services/googleSync';
 import { backendService } from './services/backendService';
+import { useLanguage } from './LanguageContext';
 
 const VulcanLogo = ({ className = "" }: { className?: string }) => (
   <span className={`font-black tracking-tighter select-none ${className}`}>VULCAN</span>
@@ -56,19 +57,20 @@ const OmniSyncMonitor = ({ onNavigate }: { onNavigate: () => void }) => {
 
 const Sidebar = ({ isOpen, toggle, unsyncedCount }: { isOpen: boolean; toggle: () => void, unsyncedCount: number }) => {
   const location = useLocation();
+  const { t, translateArea } = useLanguage();
   const menuItems = [
-    { path: '/', label: 'Dashboard', icon: <LayoutDashboard size={20} /> },
-    { path: '/charts', label: 'Supervisório', icon: <PieChart size={20} /> },
-    { path: '/pending', label: 'Pendências', icon: <AlertCircle size={20} /> },
-    { path: '/history', label: 'Histórico', icon: <FileSpreadsheet size={20} /> },
+    { path: '/', label: t('sidebar.dashboard'), icon: <LayoutDashboard size={20} /> },
+    { path: '/charts', label: t('sidebar.supervisory'), icon: <PieChart size={20} /> },
+    { path: '/pending', label: t('sidebar.pending'), icon: <AlertCircle size={20} /> },
+    { path: '/history', label: t('sidebar.history'), icon: <FileSpreadsheet size={20} /> },
     { 
       path: '/sync', 
-      label: 'Sincronização', 
+      label: t('sidebar.sync'), 
       icon: <Cloud size={20} />, 
       badge: unsyncedCount > 0 ? unsyncedCount : null 
     },
-    { path: '/forms', label: 'Formulários Operacionais', icon: <FileSpreadsheet size={20} /> },
-    { path: '/performance-history', label: 'Histórico de Performance', icon: <Award size={20} /> },
+    { path: '/forms', label: t('sidebar.operationalForms'), icon: <FileSpreadsheet size={20} /> },
+    { path: '/performance-history', label: t('sidebar.performanceHistory'), icon: <Award size={20} /> },
   ];
 
   return (
@@ -81,13 +83,13 @@ const Sidebar = ({ isOpen, toggle, unsyncedCount }: { isOpen: boolean; toggle: (
                <VulcanLogo className="text-xl text-slate-900" />
             </div>
             <div>
-              <h1 className="font-bold text-lg leading-tight tracking-tight text-white">USINA 2</h1>
-              <p className="text-slate-500 text-[10px] font-bold uppercase tracking-[0.2em]">Gestão Operacional</p>
+              <h1 className="font-bold text-lg leading-tight tracking-tight text-white">{t('plantName')}</h1>
+              <p className="text-slate-500 text-[10px] font-bold uppercase tracking-[0.2em]">{t('sidebar.operationalManagement')}</p>
             </div>
           </div>
           <nav className="flex-1 overflow-y-auto p-4 space-y-6">
             <div>
-              <p className="text-slate-500 text-xs font-bold uppercase mb-4 px-2">Menu Principal</p>
+              <p className="text-slate-500 text-xs font-bold uppercase mb-4 px-2">{t('sidebar.mainMenu')}</p>
               <div className="space-y-1">
                 {menuItems.map(item => (
                   <Link key={item.path} to={item.path} onClick={() => window.innerWidth < 1024 && toggle()} className={`flex items-center justify-between px-3 py-2.5 rounded-lg transition-colors ${location.pathname === item.path ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
@@ -101,12 +103,12 @@ const Sidebar = ({ isOpen, toggle, unsyncedCount }: { isOpen: boolean; toggle: (
               </div>
             </div>
             <div>
-              <p className="text-slate-500 text-xs font-bold uppercase mb-4 px-2">Checklists</p>
+              <p className="text-slate-500 text-xs font-bold uppercase mb-4 px-2">{t('sidebar.checklists')}</p>
               <div className="space-y-1">
                 {Object.values(Area).map(area => (
                   <Link key={area} to={`/checklist/${encodeURIComponent(area)}`} onClick={() => window.innerWidth < 1024 && toggle()} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${location.pathname.includes(encodeURIComponent(area)) ? 'bg-slate-800 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
                     <ClipboardCheck size={20} />
-                    <span className="font-medium text-sm">{area}</span>
+                    <span className="font-medium text-sm">{translateArea(area)}</span>
                   </Link>
                 ))}
               </div>
@@ -118,42 +120,62 @@ const Sidebar = ({ isOpen, toggle, unsyncedCount }: { isOpen: boolean; toggle: (
   );
 };
 
-const Header = ({ onToggleSidebar, unsyncedCount, isSyncing, onSync }: { onToggleSidebar: () => void, unsyncedCount: number, isSyncing: boolean, onSync: () => void }) => (
-  <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-slate-200 px-6 py-4 flex items-center justify-between">
-    <div className="flex items-center gap-4">
-      <button onClick={onToggleSidebar} className="lg:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-md"><Menu size={24} /></button>
-      <div className="flex flex-col">
-        <h2 className="text-slate-800 font-black uppercase text-xs tracking-tight">Plataforma Ultrafino Usina 2</h2>
-        {isSyncing && (
-          <div className="flex items-center gap-1.5 text-blue-600 text-[8px] font-black uppercase animate-pulse">
-            <RefreshCw size={8} className="animate-spin" /> Atualizando Nuvem...
+const Header = ({ onToggleSidebar, unsyncedCount, isSyncing, onSync }: { onToggleSidebar: () => void, unsyncedCount: number, isSyncing: boolean, onSync: () => void }) => {
+  const { t, language, setLanguage } = useLanguage();
+  
+  return (
+    <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-slate-200 px-6 py-4 flex items-center justify-between">
+      <div className="flex items-center gap-4">
+        <button onClick={onToggleSidebar} className="lg:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-md"><Menu size={24} /></button>
+        <div className="flex flex-col">
+          <h2 className="text-slate-800 font-black uppercase text-xs tracking-tight">{t('platformTitle')}</h2>
+          {isSyncing && (
+            <div className="flex items-center gap-1.5 text-blue-600 text-[8px] font-black uppercase animate-pulse">
+              <RefreshCw size={8} className="animate-spin" /> {t('updatingCloud')}
+            </div>
+          )}
+        </div>
+      </div>
+      <div className="flex items-center gap-4">
+        <div className="flex bg-slate-100 p-1 rounded-lg border border-slate-200 mr-2">
+          <button 
+            onClick={() => setLanguage('pt')}
+            className={`px-2 py-1 text-[10px] font-bold rounded-md transition-all ${language === 'pt' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+          >
+            PT
+          </button>
+          <button 
+            onClick={() => setLanguage('en')}
+            className={`px-2 py-1 text-[10px] font-bold rounded-md transition-all ${language === 'en' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+          >
+            EN
+          </button>
+        </div>
+
+        {unsyncedCount > 0 ? (
+          <button 
+            onClick={onSync}
+            disabled={isSyncing}
+            className="flex items-center gap-2 bg-amber-50 text-amber-600 px-3 py-1.5 rounded-full border border-amber-100 text-[9px] font-black uppercase tracking-wider hover:bg-amber-100 transition-all shadow-sm"
+          >
+            {isSyncing ? <RefreshCw size={14} className="animate-spin" /> : <CloudOff size={14} />} 
+            {isSyncing ? t('syncing') : `${unsyncedCount} ${t('pendingItems')}`}
+          </button>
+        ) : (
+          <div className="flex items-center gap-2 bg-emerald-50 text-emerald-600 px-3 py-1.5 rounded-full border border-emerald-100 text-[9px] font-black uppercase tracking-wider">
+            <Cloud size={14} /> {t('synchronized')}
           </div>
         )}
+        <Link to="/settings" className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 hover:bg-slate-200 transition-colors">
+          <Settings size={18} />
+        </Link>
       </div>
-    </div>
-    <div className="flex items-center gap-4">
-      {unsyncedCount > 0 ? (
-        <button 
-          onClick={onSync}
-          disabled={isSyncing}
-          className="flex items-center gap-2 bg-amber-50 text-amber-600 px-3 py-1.5 rounded-full border border-amber-100 text-[9px] font-black uppercase tracking-wider hover:bg-amber-100 transition-all shadow-sm"
-        >
-          {isSyncing ? <RefreshCw size={14} className="animate-spin" /> : <CloudOff size={14} />} 
-          {isSyncing ? 'Sincronizando...' : `${unsyncedCount} Pendentes`}
-        </button>
-      ) : (
-        <div className="flex items-center gap-2 bg-emerald-50 text-emerald-600 px-3 py-1.5 rounded-full border border-emerald-100 text-[9px] font-black uppercase tracking-wider">
-          <Cloud size={14} /> Sincronizado
-        </div>
-      )}
-      <Link to="/settings" className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 hover:bg-slate-200 transition-colors">
-        <Settings size={18} />
-      </Link>
-    </div>
-  </header>
-);
+    </header>
+  );
+};
 
 const App: React.FC = () => {
+  const { t } = useLanguage();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [reports, setReports] = useState<Report[]>([]);
   const [pendingItems, setPendingItems] = useState<PendingItem[]>([]);
@@ -440,9 +462,9 @@ const App: React.FC = () => {
                     <AlertCircle size={24} />
                   </div>
                   <div>
-                    <h3 className="text-red-900 font-black uppercase text-sm tracking-tight">Atenção Crítica: Volume de Pendências DFP</h3>
+                    <h3 className="text-red-900 font-black uppercase text-sm tracking-tight">{t('alerts.criticalDfpTitle')}</h3>
                     <p className="text-red-600 text-[10px] font-bold uppercase tracking-widest mt-1">
-                      Limite atingido: Existem {pendingItems.filter(p => p.area === Area.DFP2 && p.status === 'aberto').length} pendências em aberto na área DFP 2.
+                      {t('alerts.criticalDfpMessage').replace('{count}', pendingItems.filter(p => p.area === Area.DFP2 && p.status === 'aberto').length.toString())}
                     </p>
                   </div>
                 </div>
@@ -450,7 +472,7 @@ const App: React.FC = () => {
                   to="/pending?area=DFP%202&status=aberto" 
                   className="bg-red-600 text-white px-6 py-3 rounded-xl font-black uppercase text-[10px] tracking-widest shadow-md hover:bg-red-700 transition-all active:scale-95"
                 >
-                  Verificar Agora
+                  {t('alerts.checkNow')}
                 </Link>
               </div>
             </div>
