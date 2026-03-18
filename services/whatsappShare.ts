@@ -90,12 +90,15 @@ export const formatShiftSummaryForWhatsApp = (items: PendingItem[], shiftInfo: {
   const shiftRange = getCurrentShiftRange();
   
   // Filtra itens resolvidos neste turno (com base no resolvedAt)
-  const resolvedItems = items.filter(i => 
-    i.status === 'resolvido' && 
-    i.resolvedAt && 
-    i.resolvedAt >= shiftRange.start && 
-    i.resolvedAt <= shiftRange.end
-  );
+  const resolvedItems = items.filter(i => {
+    if (i.status !== 'resolvido' || !i.resolvedAt) return false;
+    const inRange = i.resolvedAt >= shiftRange.start && i.resolvedAt <= shiftRange.end;
+    const inTolerance = i.resolvedAt > shiftRange.end && i.resolvedAt <= shiftRange.end + 60 * 60 * 1000 && i.resolvedByTurma === shiftInfo.turma;
+    if (shiftInfo.turma === 'ADM') {
+      return inRange && i.resolvedByTurma === 'ADM';
+    }
+    return (inRange || inTolerance) && i.resolvedByTurma !== 'ADM';
+  });
   
   const openItems = items.filter(i => i.status === 'aberto');
   const dateStr = new Date().toLocaleDateString('pt-BR');

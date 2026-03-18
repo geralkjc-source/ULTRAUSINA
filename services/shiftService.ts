@@ -195,6 +195,18 @@ export const getPreviousShiftInfo = (): { turma: Turma; turno: Turno; date: Date
 /**
  * Retorna o range de timestamps do turno ANTERIOR.
  */
+export const getADMShiftRange = () => {
+  const now = new Date();
+  const start = new Date(now);
+  const end = new Date(now);
+  start.setHours(0, 0, 0, 0);
+  end.setHours(23, 59, 59, 999);
+  return {
+    start: start.getTime(),
+    end: end.getTime()
+  };
+};
+
 export const getPreviousShiftRange = () => {
   const now = new Date();
   const hour = now.getHours();

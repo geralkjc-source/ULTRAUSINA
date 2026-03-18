@@ -58,7 +58,12 @@ export const exportShiftReportPDF = (items: PendingItem[], meta: PDFMeta, custom
   const resolvidasNoTurno = items.filter(i => {
     if (i.status !== 'resolvido' || !i.resolvedAt) return false;
     const rTime = parseTimestamp(i.resolvedAt);
-    return rTime >= shiftRange.start && rTime <= shiftRange.end;
+    const inRange = rTime >= shiftRange.start && rTime <= shiftRange.end;
+    const inTolerance = rTime > shiftRange.end && rTime <= shiftRange.end + 60 * 60 * 1000 && i.resolvedByTurma === meta.turma;
+    if (meta.turma === 'ADM') {
+      return inRange && i.resolvedByTurma === 'ADM';
+    }
+    return (inRange || inTolerance) && i.resolvedByTurma !== 'ADM';
   });
   
   // Cards de Resumo
@@ -177,7 +182,12 @@ export const generateShiftReportPDFBase64 = (items: PendingItem[], meta: PDFMeta
   const resolvidasNoTurno = items.filter(i => {
     if (i.status !== 'resolvido' || !i.resolvedAt) return false;
     const rTime = parseTimestamp(i.resolvedAt);
-    return rTime >= shiftRange.start && rTime <= shiftRange.end;
+    const inRange = rTime >= shiftRange.start && rTime <= shiftRange.end;
+    const inTolerance = rTime > shiftRange.end && rTime <= shiftRange.end + 60 * 60 * 1000 && i.resolvedByTurma === meta.turma;
+    if (meta.turma === 'ADM') {
+      return inRange && i.resolvedByTurma === 'ADM';
+    }
+    return (inRange || inTolerance) && i.resolvedByTurma !== 'ADM';
   });
   
   // Cards de Resumo

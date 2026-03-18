@@ -29,7 +29,7 @@ import {
 } from 'lucide-react';
 import { PendingItem, Area, Turma, Discipline, Turno } from '../types';
 import { formatShiftSummaryForWhatsApp, copyToClipboard, shareToWhatsApp } from '../services/whatsappShare';
-import { getCurrentShiftInfo, getPreviousShiftInfo, getPreviousShiftRange } from '../services/shiftService';
+import { getCurrentShiftInfo, getPreviousShiftInfo, getPreviousShiftRange, getADMShiftRange } from '../services/shiftService';
 import { exportToExcel } from '../services/excelExport';
 import { exportShiftReportPDF, exportAuditPDF, generateShiftReportPDFBase64, generateAuditPDFBase64, generateDisciplineAuditPDFBase64 } from '../services/pdfExport';
 import { fetchEmployees, Employee } from '../services/employeeService';
@@ -200,15 +200,18 @@ ${t('settings.auditEmailFooter')}`;
 
   const handleCopySummary = async () => {
     const shiftInfo = getCurrentShiftInfo();
+    const shiftRange = getCurrentShiftRange();
     
-    // Trabalho realizado: Itens resolvidos pela turma atual no turno atual (ou hoje)
-    // Para simplificar e ser preciso: Itens resolvidos hoje pela turma logada
-    const today = new Date().setHours(0, 0, 0, 0);
-    const workDone = filteredItems.filter(item => 
-      item.status === 'resolvido' && 
-      item.resolvedAt && item.resolvedAt >= today &&
-      item.resolvedByTurma === shiftInfo.turma
-    );
+    // Trabalho realizado: Itens resolvidos pela turma atual no turno atual
+    const workDone = filteredItems.filter(item => {
+      if (item.status !== 'resolvido' || !item.resolvedAt) return false;
+      const inRange = item.resolvedAt >= shiftRange.start && item.resolvedAt <= shiftRange.end;
+      const inTolerance = item.resolvedAt > shiftRange.end && item.resolvedAt <= shiftRange.end + 60 * 60 * 1000 && item.resolvedByTurma === shiftInfo.turma;
+      if (shiftInfo.turma === 'ADM') {
+        return inRange && item.resolvedByTurma === 'ADM';
+      }
+      return (inRange || inTolerance) && item.resolvedByTurma !== 'ADM';
+    });
 
     // Pendências remanescentes: Todos os itens que continuam abertos
     const remaining = filteredItems.filter(item => item.status === 'aberto');
@@ -346,6 +349,12 @@ ${t('settings.auditEmailFooter')}`;
           exportShiftReportPDF(pendingItems, { teamLeader: 'EQUIPE VULCAN', turma: prev.turma, turno: prev.turno }, range, prev.date.toLocaleDateString(language === 'pt' ? 'pt-BR' : 'en-US'));
         }} className="flex items-center justify-center gap-2 py-4 bg-orange-600 text-white rounded-2xl font-black text-[10px] uppercase shadow-lg border-2 border-transparent hover:bg-orange-700 transition-all active:scale-95">
           <Clock size={18} /> {t('pdfPreviousShift')}
+        </button>
+        <button onClick={() => {
+          const range = getADMShiftRange();
+          exportShiftReportPDF(pendingItems, { teamLeader: 'EQUIPE VULCAN ADM', turma: 'ADM', turno: 'MANHÃ' }, range, new Date().toLocaleDateString(language === 'pt' ? 'pt-BR' : 'en-US'));
+        }} className="flex items-center justify-center gap-2 py-4 bg-indigo-600 text-white rounded-2xl font-black text-[10px] uppercase shadow-lg border-2 border-transparent hover:bg-indigo-700 transition-all active:scale-95">
+          <FileText size={18} /> PDF ADM
         </button>
         <button onClick={() => {
           const period = (areaFilter !== 'all' || statusFilter !== 'all' || disciplineFilter !== 'all') 
