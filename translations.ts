@@ -40,7 +40,7 @@ export const translations = {
     },
     
     // Header
-    platformTitle: 'Plataforma Ultrafino Usina 2',
+    platformTitle: 'SIGO - Sistema Integrado de Gestão Operacional Ultrafino',
     plantName: 'USINA 2',
     updatingCloud: 'Atualizando Nuvem...',
     synchronized: 'Sincronizado',
@@ -167,7 +167,7 @@ export const translations = {
     loadLabel: 'Carga',
     checklistArea: {
       successTitle: 'Relatório Concluído!',
-      successSubtitle: 'Plataforma Ultrafino Usina 2',
+      successSubtitle: 'SIGO - Sistema Integrado de Gestão Operacional Ultrafino',
       shareNow: 'Compartilhar Agora',
       copied: 'Copiado!',
       copyText: 'Copiar Texto',
@@ -247,7 +247,7 @@ export const translations = {
     },
     manualPending: {
       title: 'Registro de Pendência',
-      subtitle: 'Plataforma Ultrafino Usina 2',
+      subtitle: 'SIGO - Sistema Integrado de Gestão Operacional Ultrafino',
       identification: 'Identificação',
       namePlaceholder: 'Seu Nome',
       shiftPanelTitle: 'Escala Vigente (Auto)',
@@ -323,7 +323,7 @@ export const translations = {
     },
     dfpResults: {
       title: 'Qualidade e Yield',
-      subtitle: 'Plataforma Ultrafino Usina 2',
+      subtitle: 'SIGO - Sistema Integrado de Gestão Operacional Ultrafino',
       recentRecords: 'Registros Recentes (Hoje)',
       synced: 'Sincronizado',
       pendingSync: 'Pendente Sinc.',
@@ -393,7 +393,7 @@ export const translations = {
     },
     operationalForms: {
       title: 'Formulários Operacionais',
-      subtitle: 'Plataforma Ultrafino Usina 2',
+      subtitle: 'SIGO - Sistema Integrado de Gestão Operacional Ultrafino',
       viewHistory: 'Ver Histórico',
       praise: 'Elogio',
       failure: 'Falha',
@@ -566,7 +566,7 @@ export const translations = {
     },
     
     // Header
-    platformTitle: 'Ultrafine Platform Plant 2',
+    platformTitle: 'SIGO - Integrated Operational Management System Ultrafino',
     plantName: 'PLANT 2',
     updatingCloud: 'Updating Cloud...',
     synchronized: 'Synchronized',
@@ -693,7 +693,7 @@ export const translations = {
     loadLabel: 'Load',
     checklistArea: {
       successTitle: 'Report Completed!',
-      successSubtitle: 'Ultrafine Platform Plant 2',
+      successSubtitle: 'SIGO - Integrated Operational Management System Ultrafino',
       shareNow: 'Share Now',
       copied: 'Copied!',
       copyText: 'Copy Text',
@@ -773,7 +773,7 @@ export const translations = {
     },
     manualPending: {
       title: 'Pending Registration',
-      subtitle: 'Ultrafine Platform Plant 2',
+      subtitle: 'SIGO - Integrated Operational Management System Ultrafino',
       identification: 'Identification',
       namePlaceholder: 'Your Name',
       shiftPanelTitle: 'Current Shift (Auto)',
@@ -849,7 +849,7 @@ export const translations = {
     },
     dfpResults: {
       title: 'Quality and Yield',
-      subtitle: 'Ultrafine Platform Plant 2',
+      subtitle: 'SIGO - Integrated Operational Management System Ultrafino',
       recentRecords: 'Recent Records (Today)',
       synced: 'Synced',
       pendingSync: 'Pending Sync',
@@ -920,7 +920,7 @@ export const translations = {
     },
     operationalForms: {
       title: 'Operational Forms',
-      subtitle: 'Ultrafine Platform Plant 2',
+      subtitle: 'SIGO - Integrated Operational Management System Ultrafino',
       viewHistory: 'View History',
       praise: 'Praise',
       failure: 'Failure',

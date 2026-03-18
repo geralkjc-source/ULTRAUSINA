@@ -29,7 +29,7 @@ import {
 } from 'lucide-react';
 import { PendingItem, Area, Turma, Discipline, Turno } from '../types';
 import { formatShiftSummaryForWhatsApp, copyToClipboard, shareToWhatsApp } from '../services/whatsappShare';
-import { getCurrentShiftInfo, getPreviousShiftInfo, getPreviousShiftRange, getADMShiftRange } from '../services/shiftService';
+import { getCurrentShiftInfo, getPreviousShiftInfo, getPreviousShiftRange, getADMShiftRange, getCurrentShiftRange } from '../services/shiftService';
 import { exportToExcel } from '../services/excelExport';
 import { exportShiftReportPDF, exportAuditPDF, generateShiftReportPDFBase64, generateAuditPDFBase64, generateDisciplineAuditPDFBase64 } from '../services/pdfExport';
 import { fetchEmployees, Employee } from '../services/employeeService';

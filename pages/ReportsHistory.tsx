@@ -68,7 +68,8 @@ const ReportsHistory: React.FC<ReportsHistoryProps> = ({ reports = [], pendingIt
   const AREAS = Object.values(Area);
   const TURNOS: Turno[] = ['MANHÃ', 'TARDE', 'NOITE'];
   const TURMAS: Turma[] = ['A', 'B', 'C', 'D', 'ADM'];
-  const TARGET_PER_AREA_SHIFT = 3;
+  const TARGET_PER_AREA_SHIFT = 2;
+  const TARGET_PER_SHIFT = 10;
 
   // Ordenação por data (decrescente baseada no timestamp da planilha)
   const sortedReports = useMemo(() => {
@@ -295,8 +296,13 @@ const ReportsHistory: React.FC<ReportsHistoryProps> = ({ reports = [], pendingIt
     const shiftStats = TURNOS.map(turno => {
       const shiftReports = todayReports.filter(r => r.turno === turno);
       const areaStats = AREAS.map(area => {
-        const count = shiftReports.filter(r => r.area === area).length;
-        return { area, count, target: TARGET_PER_AREA_SHIFT };
+        const areaReports = shiftReports.filter(r => r.area === area);
+        const count = areaReports.length;
+        
+        // Target = 2 checklists per area per turn
+        const target = 2;
+        
+        return { area, count, target };
       });
       return { turno, areaStats, total: shiftReports.length };
     });
@@ -344,9 +350,9 @@ const ReportsHistory: React.FC<ReportsHistoryProps> = ({ reports = [], pendingIt
       areaStatsWeek,
       turmaStats,
       monthlyTrend,
-      dayTarget: 45,
-      weekTarget: 315,
-      monthTarget: 1350 // 45 * 30
+      dayTarget: 30,
+      weekTarget: 210,
+      monthTarget: 900
     };
   }, [reports, engagementDate]);
 
@@ -391,7 +397,7 @@ const ReportsHistory: React.FC<ReportsHistoryProps> = ({ reports = [], pendingIt
       head: [[t('engagement').toUpperCase(), t('currentStatus').toUpperCase(), t('target').toUpperCase(), 'STATUS']],
       body: [
         [t('dailyTrend'), engagementStats.today, engagementStats.dayTarget, engagementStats.today >= engagementStats.dayTarget ? t('targetReached').toUpperCase() : t('belowTarget').toUpperCase()],
-        ...engagementStats.shiftStats.map(s => [`${t('engagementByShift')} ${s.turno}`, s.total, 15, s.total >= 15 ? t('targetReached').toUpperCase() : t('belowTarget').toUpperCase()]),
+        ...engagementStats.shiftStats.map(s => [`${t('engagementByShift')} ${s.turno}`, s.total, TARGET_PER_SHIFT, s.total >= TARGET_PER_SHIFT ? t('targetReached').toUpperCase() : t('belowTarget').toUpperCase()]),
         [t('weeklyEngagement'), engagementStats.week, engagementStats.weekTarget, engagementStats.week >= engagementStats.weekTarget ? t('targetReached').toUpperCase() : t('belowTarget').toUpperCase()],
       ],
       theme: 'striped',
@@ -537,7 +543,7 @@ const ReportsHistory: React.FC<ReportsHistoryProps> = ({ reports = [], pendingIt
                 </div>
                 <div className="flex gap-1">
                   {engagementStats.shiftStats.map(s => (
-                    <div key={s.turno} title={`${s.turno}: ${s.total}/15`} className={`w-2 h-2 rounded-full ${s.total >= 15 ? 'bg-emerald-500' : s.total > 0 ? 'bg-amber-500' : 'bg-slate-200'}`} />
+                    <div key={s.turno} title={`${s.turno}: ${s.total}/${TARGET_PER_SHIFT}`} className={`w-2 h-2 rounded-full ${s.total >= TARGET_PER_SHIFT ? 'bg-emerald-500' : s.total > 0 ? 'bg-amber-500' : 'bg-slate-200'}`} />
                   ))}
                 </div>
               </div>
@@ -546,7 +552,7 @@ const ReportsHistory: React.FC<ReportsHistoryProps> = ({ reports = [], pendingIt
                 {engagementStats.shiftStats.map(s => (
                   <div key={s.turno} className="flex justify-between items-center">
                     <span className="text-[9px] font-black text-slate-500 uppercase">{translateShift(s.turno)}</span>
-                    <span className={`text-[10px] font-black ${s.total >= 15 ? 'text-emerald-600' : s.total > 0 ? 'text-amber-600' : 'text-slate-400'}`}>{s.total}/15</span>
+                    <span className={`text-[10px] font-black ${s.total >= TARGET_PER_SHIFT ? 'text-emerald-600' : s.total > 0 ? 'text-amber-600' : 'text-slate-400'}`}>{s.total}/{TARGET_PER_SHIFT}</span>
                   </div>
                 ))}
               </div>
@@ -589,15 +595,15 @@ const ReportsHistory: React.FC<ReportsHistoryProps> = ({ reports = [], pendingIt
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-1.5">
                   <div className="w-3 h-3 bg-emerald-500 rounded-full" />
-                  <span className="text-[9px] font-black text-slate-500 uppercase">{t('target3Plus')}</span>
+                  <span className="text-[9px] font-black text-slate-500 uppercase">Meta (2+)</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <div className="w-3 h-3 bg-amber-500 rounded-full" />
-                  <span className="text-[9px] font-black text-slate-500 uppercase">{t('below1_2')}</span>
+                  <span className="text-[9px] font-black text-slate-500 uppercase">Abaixo (1)</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <div className="w-3 h-3 bg-red-500 rounded-full" />
-                  <span className="text-[9px] font-black text-slate-500 uppercase">{t('noRecord')}</span>
+                  <span className="text-[9px] font-black text-slate-500 uppercase">Sem Registro (0)</span>
                 </div>
               </div>
             </div>
@@ -636,8 +642,8 @@ const ReportsHistory: React.FC<ReportsHistoryProps> = ({ reports = [], pendingIt
                             <div className={`flex flex-col items-center justify-center p-3 rounded-2xl border-2 transition-all ${getEngagementBgColor(count, target)} ${getEngagementBorderColor(count, target)}`}>
                               <span className={`text-lg font-black ${getEngagementTextColor(count, target)}`}>{count}</span>
                               <div className="flex gap-1 mt-1">
-                                {[1, 2, 3].map(i => (
-                                  <div key={i} className={`w-1.5 h-1.5 rounded-full ${i <= count ? getEngagementColor(count, target) : 'bg-slate-200'}`} />
+                                {[...Array(target)].map((_, i) => (
+                                  <div key={i} className={`w-1.5 h-1.5 rounded-full ${i < count ? getEngagementColor(count, target) : 'bg-slate-200'}`} />
                                 ))}
                               </div>
                               {count === 0 && (
