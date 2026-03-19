@@ -146,7 +146,7 @@ const Analytics: React.FC<AnalyticsProps> = ({
   }, [filteredData.reports, selectedMonth]);
 
   const turmaPerformance = useMemo(() => {
-    const turmas: Turma[] = ['A', 'B', 'C', 'D', 'ADM'];
+    const turmas: Turma[] = ['A', 'B', 'C', 'D'];
     return turmas.map(turma => {
       const resolved = filteredData.pendingItems.filter(p => p.resolvedByTurma === turma && p.status === 'resolvido').length;
       return { turma: turma, resolved };
@@ -154,7 +154,7 @@ const Analytics: React.FC<AnalyticsProps> = ({
   }, [filteredData.pendingItems]);
 
   const debtPerformance = useMemo(() => {
-    const turmas: Turma[] = ['A', 'B', 'C', 'D', 'ADM'];
+    const turmas: Turma[] = ['A', 'B', 'C', 'D'];
     return turmas.map(turma => {
       const openDebt = filteredData.pendingItems.filter(p => 
         p.turma === turma && 
@@ -229,7 +229,7 @@ const Analytics: React.FC<AnalyticsProps> = ({
               <h2 className="text-white text-lg font-black uppercase tracking-tight flex items-center gap-2">
                 <BarChart3 size={20} className="text-blue-500" /> {t('disciplineLoad')}
               </h2>
-              <p className="text-slate-500 text-[9px] font-black uppercase tracking-widest">{t('monthlyTotalEvents')}</p>
+              <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest">{t('monthlyTotalEvents')}</p>
             </div>
             <div className="text-right">
               <p className="text-3xl font-black text-white">{totalMonthlyVolume}</p>
@@ -251,19 +251,19 @@ const Analytics: React.FC<AnalyticsProps> = ({
                       {stat.icon}
                     </div>
                     <div>
-                      <p className="text-white text-[11px] font-black uppercase tracking-wider">{translateDiscipline(stat.discipline)}</p>
+                      <p className="text-white text-xs font-black uppercase tracking-wider">{translateDiscipline(stat.discipline)}</p>
                       <div className="flex gap-3 mt-1">
                         <div className="flex flex-col">
-                          <span className="text-slate-500 text-[7px] font-black uppercase tracking-tighter">{t('statusOpen')}</span>
-                          <span className="text-amber-500 text-[10px] font-black">{stat.open}</span>
+                          <span className="text-slate-500 text-[8px] font-black uppercase tracking-tighter">{t('statusOpen')}</span>
+                          <span className="text-amber-500 text-[11px] font-black">{stat.open}</span>
                         </div>
                         <div className="flex flex-col">
-                          <span className="text-slate-500 text-[7px] font-black uppercase tracking-tighter">{t('statusResolved')}</span>
-                          <span className="text-emerald-500 text-[10px] font-black">{stat.resolved}</span>
+                          <span className="text-slate-500 text-[8px] font-black uppercase tracking-tighter">{t('statusResolved')}</span>
+                          <span className="text-emerald-500 text-[11px] font-black">{stat.resolved}</span>
                         </div>
                         <div className="flex flex-col">
-                          <span className="text-slate-500 text-[7px] font-black uppercase tracking-tighter">{t('analytics.total')}</span>
-                          <span className="text-white text-[10px] font-black">{stat.total}</span>
+                          <span className="text-slate-500 text-[8px] font-black uppercase tracking-tighter">{t('analytics.total')}</span>
+                          <span className="text-white text-[11px] font-black">{stat.total}</span>
                         </div>
                       </div>
                     </div>
@@ -280,7 +280,7 @@ const Analytics: React.FC<AnalyticsProps> = ({
                       <Download size={14} />
                     </button>
                     <div className="text-right">
-                      <span className="text-[9px] font-black text-slate-600 uppercase block mb-1">{t('resolutionRate')}</span>
+                      <span className="text-[10px] font-black text-slate-600 uppercase block mb-1">{t('resolutionRate')}</span>
                       <span className={`text-xl font-black text-${stat.color}-400`}>{stat.efficiency}%</span>
                     </div>
                   </div>

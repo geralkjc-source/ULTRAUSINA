@@ -7,7 +7,7 @@ export enum Area {
   HBF_D = 'HBF- COLUNAS D'
 }
 
-export type Turma = 'A' | 'B' | 'C' | 'D' | 'ADM';
+export type Turma = 'A' | 'B' | 'C' | 'D';
 export type Turno = 'MANHÃ' | 'TARDE' | 'NOITE';
 export type Discipline = 'MECÂNICA' | 'ELÉTRICA' | 'INSTRUMENTAÇÃO' | 'OPERAÇÃO';
 export type QualityCategory = 'DFP2' | 'DFP2_C' | 'DFP2_D' | 'COLUNAS_D' | 'HUMIDADE_PLY';
@@ -99,7 +99,7 @@ export interface QualityReport {
 export interface OperationalEvent {
   id: string;
   timestamp: number;
-  type: 'elogio' | 'falha';
+  type: 'elogio' | 'falha' | 'passagem';
   collaboratorName: string;
   collaboratorMatricula: string;
   collaboratorTeam: string;
@@ -108,5 +108,22 @@ export interface OperationalEvent {
   authorMatricula: string;
   description: string;
   details?: any; // Para guardar campos específicos do formulário
+  synced?: boolean;
+}
+
+export interface ShiftHandover {
+  id: string;
+  timestamp: number;
+  authorName: string;
+  authorMatricula: string;
+  turma: Turma;
+  turno: Turno;
+  nextTurma: Turma;
+  statusGeral: 'normal' | 'alerta' | 'critico';
+  pendenciasCriticas: string;
+  observacoesSeguranca: string;
+  observacoesOperacionais: string;
+  producaoEstimada?: string;
+  paradasProgramadas?: string;
   synced?: boolean;
 }

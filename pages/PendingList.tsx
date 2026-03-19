@@ -29,7 +29,7 @@ import {
 } from 'lucide-react';
 import { PendingItem, Area, Turma, Discipline, Turno } from '../types';
 import { formatShiftSummaryForWhatsApp, copyToClipboard, shareToWhatsApp } from '../services/whatsappShare';
-import { getCurrentShiftInfo, getPreviousShiftInfo, getPreviousShiftRange, getADMShiftRange, getCurrentShiftRange } from '../services/shiftService';
+import { getCurrentShiftInfo, getPreviousShiftInfo, getPreviousShiftRange, getCurrentShiftRange } from '../services/shiftService';
 import { exportToExcel } from '../services/excelExport';
 import { exportShiftReportPDF, exportAuditPDF, generateShiftReportPDFBase64, generateAuditPDFBase64, generateDisciplineAuditPDFBase64 } from '../services/pdfExport';
 import { fetchEmployees, Employee } from '../services/employeeService';
@@ -94,7 +94,7 @@ ${t('settings.auditEmailFooter')}`;
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            subject: t('settings.auditEmailSubject').replace('{reason}', 'Ultrafino'),
+            subject: t('settings.auditEmailSubject').replace('{reason}', 'SIGO'),
             text: masterEmailBody,
             attachment: {
               filename: `Audit_${dateStr.replace(/\//g, '-')}.pdf`,
@@ -207,10 +207,7 @@ ${t('settings.auditEmailFooter')}`;
       if (item.status !== 'resolvido' || !item.resolvedAt) return false;
       const inRange = item.resolvedAt >= shiftRange.start && item.resolvedAt <= shiftRange.end;
       const inTolerance = item.resolvedAt > shiftRange.end && item.resolvedAt <= shiftRange.end + 60 * 60 * 1000 && item.resolvedByTurma === shiftInfo.turma;
-      if (shiftInfo.turma === 'ADM') {
-        return inRange && item.resolvedByTurma === 'ADM';
-      }
-      return (inRange || inTolerance) && item.resolvedByTurma !== 'ADM';
+      return (inRange || inTolerance);
     });
 
     // Pendências remanescentes: Todos os itens que continuam abertos
@@ -226,7 +223,7 @@ ${t('settings.auditEmailFooter')}`;
   };
 
   /**
-   * Vulcan Strict-Date Formatter v3.9
+   * SIGO Strict-Date Formatter v3.9
    * Formata Data e Hora para exibir exatamente o que está na planilha.
    */
   const formatDateSafely = (timestamp: number | undefined) => {
@@ -257,7 +254,7 @@ ${t('settings.auditEmailFooter')}`;
             </div>
 
             <div className="flex flex-wrap gap-2 p-2 bg-slate-50 rounded-2xl border-2 border-slate-100">
-              {(['A', 'B', 'C', 'D', 'ADM'] as Turma[]).map(t_val => (
+              {(['A', 'B', 'C', 'D'] as Turma[]).map(t_val => (
                 <button
                   key={t_val}
                   type="button"
@@ -300,7 +297,7 @@ ${t('settings.auditEmailFooter')}`;
                         // Auto-detect team
                         if (emp.equipe) {
                            const teamUpper = emp.equipe.toUpperCase();
-                           if (['A', 'B', 'C', 'D', 'ADM'].includes(teamUpper)) {
+                           if (['A', 'B', 'C', 'D'].includes(teamUpper)) {
                              setDetectedScale(prev => ({ ...prev, turma: teamUpper as Turma }));
                            }
                         }
@@ -339,22 +336,16 @@ ${t('settings.auditEmailFooter')}`;
           <Copy size={18} /> {t('copySummary')}
         </button>
         <button onClick={() => {
-          exportShiftReportPDF(pendingItems, { teamLeader: 'EQUIPE VULCAN', turma: getCurrentShiftInfo().turma, turno: getCurrentShiftInfo().turno });
+          exportShiftReportPDF(pendingItems, { teamLeader: 'EQUIPE SIGO', turma: getCurrentShiftInfo().turma, turno: getCurrentShiftInfo().turno });
         }} className="flex items-center justify-center gap-2 py-4 bg-red-600 text-white rounded-2xl font-black text-[10px] uppercase shadow-lg border-2 border-transparent hover:bg-red-700 transition-all active:scale-95">
           <FileText size={18} /> {t('pdfCurrentShift')}
         </button>
         <button onClick={() => {
           const prev = getPreviousShiftInfo();
           const range = getPreviousShiftRange();
-          exportShiftReportPDF(pendingItems, { teamLeader: 'EQUIPE VULCAN', turma: prev.turma, turno: prev.turno }, range, prev.date.toLocaleDateString(language === 'pt' ? 'pt-BR' : 'en-US'));
+          exportShiftReportPDF(pendingItems, { teamLeader: 'EQUIPE SIGO', turma: prev.turma, turno: prev.turno }, range, prev.date.toLocaleDateString(language === 'pt' ? 'pt-BR' : 'en-US'));
         }} className="flex items-center justify-center gap-2 py-4 bg-orange-600 text-white rounded-2xl font-black text-[10px] uppercase shadow-lg border-2 border-transparent hover:bg-orange-700 transition-all active:scale-95">
           <Clock size={18} /> {t('pdfPreviousShift')}
-        </button>
-        <button onClick={() => {
-          const range = getADMShiftRange();
-          exportShiftReportPDF(pendingItems, { teamLeader: 'EQUIPE VULCAN ADM', turma: 'ADM', turno: 'MANHÃ' }, range, new Date().toLocaleDateString(language === 'pt' ? 'pt-BR' : 'en-US'));
-        }} className="flex items-center justify-center gap-2 py-4 bg-indigo-600 text-white rounded-2xl font-black text-[10px] uppercase shadow-lg border-2 border-transparent hover:bg-indigo-700 transition-all active:scale-95">
-          <FileText size={18} /> PDF ADM
         </button>
         <button onClick={() => {
           const period = (areaFilter !== 'all' || statusFilter !== 'all' || disciplineFilter !== 'all') 

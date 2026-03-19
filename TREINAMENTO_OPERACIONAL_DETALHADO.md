@@ -1,4 +1,4 @@
-# Manual de Treinamento Operacional - Plataforma Vulcan Ultrafino Usina 2
+# Manual de Treinamento Operacional - Plataforma SIGO Usina 2
 
 Este manual detalha o passo a passo de todas as operações dentro do aplicativo.
 

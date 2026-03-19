@@ -187,7 +187,6 @@ const ShiftCalendar: React.FC = () => {
           { label: `${t('shiftCalendar.team')} B`, color: 'bg-orange-500', desc: t('shiftCalendar.orange') },
           { label: `${t('shiftCalendar.team')} C`, color: 'bg-emerald-500', desc: t('shiftCalendar.green') },
           { label: `${t('shiftCalendar.team')} D`, color: 'bg-sky-500', desc: t('shiftCalendar.blue') },
-          { label: `${t('shiftCalendar.team')} ADM`, color: 'bg-slate-900', desc: '08:00 - 16:00' },
         ].map(tData => (
           <div key={tData.label} className="bg-white p-6 rounded-[2rem] border-2 border-slate-100 flex items-center gap-4 shadow-sm">
             <div className={`w-12 h-12 rounded-2xl ${tData.color} flex items-center justify-center font-black text-white border shadow-lg`}>

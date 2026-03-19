@@ -273,7 +273,7 @@ const ChecklistArea: React.FC<ChecklistAreaProps> = ({ onSaveReport }) => {
     setShowSuggestions({ field: '', visible: false });
     
     // Auto-detect team if it matches Turma type
-    if (emp.equipe && (['A', 'B', 'C', 'D', 'ADM'] as string[]).includes(emp.equipe.toUpperCase())) {
+    if (emp.equipe && (['A', 'B', 'C', 'D'] as string[]).includes(emp.equipe.toUpperCase())) {
        setDetectedScale(prev => ({ ...prev, turma: emp.equipe.toUpperCase() as Turma }));
     }
   };
@@ -490,8 +490,8 @@ const ChecklistArea: React.FC<ChecklistAreaProps> = ({ onSaveReport }) => {
                   <div className="absolute z-50 w-full mt-2 bg-white border-2 border-slate-100 rounded-2xl shadow-2xl max-h-60 overflow-y-auto">
                     {employees.filter(e => e.nome.toLowerCase().includes(searchTerm.toLowerCase())).map(emp => (
                       <button key={emp.matricula + emp.nome} type="button" onClick={() => selectEmployee(emp)} className="w-full text-left px-6 py-3 hover:bg-slate-50 border-b border-slate-50 last:border-0 flex flex-col">
-                        <span className="font-black text-slate-900 text-xs uppercase">{emp.nome}</span>
-                        <span className="text-[9px] font-bold text-slate-400 uppercase">{emp.matricula} | {emp.funcao} | {emp.equipe}</span>
+                        <span className="font-black text-slate-900 text-sm uppercase">{emp.nome}</span>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase">{emp.matricula} | {emp.funcao} | {emp.equipe}</span>
                       </button>
                     ))}
                   </div>
@@ -512,8 +512,8 @@ const ChecklistArea: React.FC<ChecklistAreaProps> = ({ onSaveReport }) => {
                   <div className="absolute z-50 w-full mt-2 bg-white border-2 border-slate-100 rounded-2xl shadow-2xl max-h-60 overflow-y-auto">
                     {employees.filter(e => e.matricula.includes(searchTerm)).map(emp => (
                       <button key={emp.matricula + emp.nome} type="button" onClick={() => selectEmployee(emp)} className="w-full text-left px-6 py-3 hover:bg-slate-50 border-b border-slate-50 last:border-0 flex flex-col">
-                        <span className="font-black text-slate-900 text-xs uppercase">{emp.matricula}</span>
-                        <span className="text-[9px] font-bold text-slate-400 uppercase">{emp.nome} | {emp.funcao} | {emp.equipe}</span>
+                        <span className="font-black text-slate-900 text-sm uppercase">{emp.matricula}</span>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase">{emp.nome} | {emp.funcao} | {emp.equipe}</span>
                       </button>
                     ))}
                   </div>
@@ -538,7 +538,7 @@ const ChecklistArea: React.FC<ChecklistAreaProps> = ({ onSaveReport }) => {
                 <button 
                    type="button"
                    onClick={() => {
-                     const turmas: Turma[] = ['A', 'B', 'C', 'D', 'ADM'];
+                     const turmas: Turma[] = ['A', 'B', 'C', 'D'];
                      const currentIndex = turmas.indexOf(detectedScale.turma);
                      const nextIndex = (currentIndex + 1) % turmas.length;
                      setDetectedScale(prev => ({ ...prev, turma: turmas[nextIndex] }));

@@ -49,7 +49,6 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     if (s === 'TARDE' || s === 'AFTERNOON') return t('shifts.afternoon');
     if (s === 'NOITE' || s === 'NIGHT') return t('shifts.night');
     if (s === 'FOLGA' || s === 'OFF') return t('shiftCalendar.off');
-    if (s === 'ADM') return t('shifts.adm') + ' (08:00 - 16:00)';
     return shift;
   };
 

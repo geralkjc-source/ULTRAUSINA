@@ -33,9 +33,27 @@ import { syncToGoogleSheets, fetchCloudItems, fetchCloudReports, fetchCloudQuali
 import { backendService } from './services/backendService';
 import { useLanguage } from './LanguageContext';
 
-const VulcanLogo = ({ className = "" }: { className?: string }) => (
-  <span className={`font-black tracking-tighter select-none ${className}`}>VULCAN</span>
-);
+const SigoLogo = ({ className = "" }: { className?: string }) => {
+  const [logoError, setLogoError] = useState(false);
+  
+  return (
+    <div className={`flex items-center gap-2 ${className}`}>
+      {!logoError ? (
+        <img 
+          src="/logo.png" 
+          alt="SIGO Logo" 
+          className="w-8 h-8 object-contain rounded-full"
+          onError={() => setLogoError(true)}
+        />
+      ) : (
+        <div className="w-8 h-8 bg-slate-900 rounded-full flex items-center justify-center text-white font-black text-[10px] shrink-0">
+          SIGO
+        </div>
+      )}
+      <span className="font-black tracking-tighter select-none">SIGO</span>
+    </div>
+  );
+};
 
 /**
  * Omni-Sync Monitor
@@ -79,8 +97,8 @@ const Sidebar = ({ isOpen, toggle, unsyncedCount }: { isOpen: boolean; toggle: (
       <aside className={`fixed inset-y-0 left-0 z-50 w-72 bg-slate-900 text-white transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}>
         <div className="flex flex-col h-full">
           <div className="p-6 flex items-center gap-3 border-b border-slate-800">
-            <div className="bg-white px-3 py-2 rounded-lg flex items-center justify-center shrink-0 shadow-inner">
-               <VulcanLogo className="text-xl text-slate-900" />
+            <div className="bg-white px-2 py-1 rounded-lg flex items-center justify-center shrink-0 shadow-inner">
+               <SigoLogo className="text-xl text-slate-900" />
             </div>
             <div>
               <h1 className="font-bold text-lg leading-tight tracking-tight text-white">{t('plantName')}</h1>

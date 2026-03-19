@@ -19,7 +19,7 @@ export interface CloudStats {
 }
 
 /**
- * Vulcan Date Parser v4.0 - Spreadsheet Priority
+ * SIGO Date Parser v4.0 - Spreadsheet Priority
  * Captura EXATAMENTE o que está na planilha, seja objeto Date ou String.
  * NÃO utiliza Date.now() se o valor da nuvem for válido.
  */
@@ -128,7 +128,7 @@ export const testScriptConnection = async (url: string): Promise<{success: boole
     const actionsOk = testAction && testAction.ok;
 
     if (isV4 && actionsOk) {
-      return { success: true, message: "Protocolo Vulcan v4.0 Totalmente Ativo!" };
+      return { success: true, message: "Protocolo SIGO v4.0 Totalmente Ativo!" };
     } else if (isV4) {
       return { success: true, message: "Script v4.0 Detectado (Ações Limitadas)." };
     } else {

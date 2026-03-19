@@ -39,10 +39,10 @@ export const exportShiftReportPDF = (items: PendingItem[], meta: PDFMeta, custom
   doc.setTextColor(255, 255, 255);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(22);
-  doc.text('VULCAN', 15, 20);
+  doc.text('SIGO', 15, 20);
   
   doc.setFontSize(16);
-  doc.text('RELATÓRIO EXECUTIVO DE TURNO ULTRAFINO', 15, 30);
+  doc.text('RELATÓRIO EXECUTIVO DE TURNO SIGO', 15, 30);
 
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
@@ -60,10 +60,7 @@ export const exportShiftReportPDF = (items: PendingItem[], meta: PDFMeta, custom
     const rTime = parseTimestamp(i.resolvedAt);
     const inRange = rTime >= shiftRange.start && rTime <= shiftRange.end;
     const inTolerance = rTime > shiftRange.end && rTime <= shiftRange.end + 60 * 60 * 1000 && i.resolvedByTurma === meta.turma;
-    if (meta.turma === 'ADM') {
-      return inRange && i.resolvedByTurma === 'ADM';
-    }
-    return (inRange || inTolerance) && i.resolvedByTurma !== 'ADM';
+    return (inRange || inTolerance);
   });
   
   // Cards de Resumo
@@ -145,7 +142,7 @@ export const exportShiftReportPDF = (items: PendingItem[], meta: PDFMeta, custom
     doc.setPage(i);
     doc.setFontSize(7);
     doc.setTextColor(150);
-    doc.text(`Sistema Vulcan Ultrafino Usina 2 - Relatório de Turno | Página ${i} de ${pageCount}`, 148, 205, { align: 'center' });
+    doc.text(`Sistema SIGO Usina 2 - Relatório de Turno | Página ${i} de ${pageCount}`, 148, 205, { align: 'center' });
   }
 
   doc.save(`Relatorio_Turno_${meta.turno}_Turma_${meta.turma}_${dateStr.replace(/\//g, '-')}.pdf`);
@@ -168,10 +165,10 @@ export const generateShiftReportPDFBase64 = (items: PendingItem[], meta: PDFMeta
   doc.setTextColor(255, 255, 255);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(22);
-  doc.text('VULCAN', 15, 20);
+  doc.text('SIGO', 15, 20);
   
   doc.setFontSize(16);
-  doc.text('RELATÓRIO EXECUTIVO DE TURNO ULTRAFINO', 15, 30);
+  doc.text('RELATÓRIO EXECUTIVO DE TURNO SIGO', 15, 30);
 
   // FILTRAGEM RESTRITA PARA O PDF
   const pendentesAtivas = items.filter(i => 
@@ -184,10 +181,7 @@ export const generateShiftReportPDFBase64 = (items: PendingItem[], meta: PDFMeta
     const rTime = parseTimestamp(i.resolvedAt);
     const inRange = rTime >= shiftRange.start && rTime <= shiftRange.end;
     const inTolerance = rTime > shiftRange.end && rTime <= shiftRange.end + 60 * 60 * 1000 && i.resolvedByTurma === meta.turma;
-    if (meta.turma === 'ADM') {
-      return inRange && i.resolvedByTurma === 'ADM';
-    }
-    return (inRange || inTolerance) && i.resolvedByTurma !== 'ADM';
+    return (inRange || inTolerance);
   });
   
   // Cards de Resumo
@@ -288,9 +282,9 @@ export const exportAuditPDF = (items: PendingItem[], period?: string) => {
     doc.setTextColor(255, 255, 255);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(14);
-    doc.text(`VULCAN - ${title}`, 15, 10);
+    doc.text(`SIGO - ${title}`, 15, 10);
     doc.setFontSize(10);
-    doc.text('Ultrafino RELATÓRIO EXECUTIVO DE TURNO ULTRAFINO', 15, 16);
+    doc.text('SIGO RELATÓRIO EXECUTIVO DE TURNO', 15, 16);
     
     doc.setFontSize(7);
     doc.setFont('helvetica', 'normal');
@@ -363,10 +357,10 @@ export const exportAuditPDF = (items: PendingItem[], period?: string) => {
     doc.setPage(i);
     doc.setFontSize(6);
     doc.setTextColor(100);
-    doc.text(`Sistema Vulcan Ultrafino Usina 2 v1.4 | Auditoria Master | Página ${i} de ${pageCount}`, 148, 205, { align: 'center' });
+    doc.text(`Sistema SIGO Usina 2 v1.4 | Auditoria Master | Página ${i} de ${pageCount}`, 148, 205, { align: 'center' });
   }
 
-  doc.save(`Auditoria_Master_Ultrafino_Usina_2_${dateStr.replace(/\//g, '-')}.pdf`);
+  doc.save(`Auditoria_Master_SIGO_Usina_2_${dateStr.replace(/\//g, '-')}.pdf`);
 };
 
 export const generateAuditPDFBase64 = (items: PendingItem[], period?: string): string => {
@@ -386,9 +380,9 @@ export const generateAuditPDFBase64 = (items: PendingItem[], period?: string): s
     doc.setTextColor(255, 255, 255);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(14);
-    doc.text(`VULCAN - ${title}`, 15, 10);
+    doc.text(`SIGO - ${title}`, 15, 10);
     doc.setFontSize(10);
-    doc.text('Ultrafino RELATÓRIO EXECUTIVO DE TURNO ULTRAFINO', 15, 16);
+    doc.text('RELATÓRIO EXECUTIVO DE TURNO SIGO', 15, 16);
     
     doc.setFontSize(7);
     doc.setFont('helvetica', 'normal');
@@ -461,7 +455,7 @@ export const generateAuditPDFBase64 = (items: PendingItem[], period?: string): s
     doc.setPage(i);
     doc.setFontSize(6);
     doc.setTextColor(100);
-    doc.text(`Sistema Vulcan Ultrafino Usina 2 v1.4 | Auditoria Master | Página ${i} de ${pageCount}`, 148, 205, { align: 'center' });
+    doc.text(`Sistema SIGO Usina 2 v1.4 | Auditoria Master | Página ${i} de ${pageCount}`, 148, 205, { align: 'center' });
   }
 
   return doc.output('datauristring').split(',')[1];
@@ -486,7 +480,7 @@ export const generateDisciplineAuditPDFBase64 = (items: PendingItem[], disciplin
   doc.setTextColor(255, 255, 255);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(14);
-  doc.text(`VULCAN - CARGA ACUMULADA: ${discipline}`, 15, 10);
+  doc.text(`SIGO - CARGA ACUMULADA: ${discipline}`, 15, 10);
   doc.setFontSize(10);
   doc.text('RELATÓRIO DE PENDÊNCIAS POR DISCIPLINA', 15, 16);
   
@@ -523,7 +517,7 @@ export const generateDisciplineAuditPDFBase64 = (items: PendingItem[], disciplin
     doc.setPage(i);
     doc.setFontSize(6);
     doc.setTextColor(100);
-    doc.text(`Sistema Vulcan Ultrafino | Carga Acumulada ${discipline} | Página ${i} de ${pageCount}`, 148, 205, { align: 'center' });
+    doc.text(`Sistema SIGO | Carga Acumulada ${discipline} | Página ${i} de ${pageCount}`, 148, 205, { align: 'center' });
   }
 
   return doc.output('datauristring').split(',')[1];

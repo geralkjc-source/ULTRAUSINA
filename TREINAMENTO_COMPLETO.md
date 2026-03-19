@@ -1,11 +1,11 @@
-# Manual Completo de Treinamento - Plataforma Vulcan Ultrafino Usina 2
+# Manual Completo de Treinamento - Plataforma SIGO Usina 2
 
 Este documento é o guia definitivo para todos os usuários da plataforma. Ele cobre todas as funcionalidades, regras de negócio e fluxos operacionais.
 
 ---
 
 ## 1. Visão Geral da Plataforma
-A **Plataforma Vulcan Ultrafino Usina 2** é um sistema de gestão operacional desenhado para garantir a rastreabilidade, qualidade e eficiência da operação.
+A **Plataforma SIGO Usina 2** é um sistema de gestão operacional desenhado para garantir a rastreabilidade, qualidade e eficiência da operação.
 
 ---
 

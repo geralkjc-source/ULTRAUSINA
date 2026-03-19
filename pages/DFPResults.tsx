@@ -119,7 +119,7 @@ const DFPResults: React.FC<DFPResultsProps> = ({ onSaveQualityReport, qualityRep
     // Auto-detect team if it matches Turma type
     if (emp.equipe) {
        const teamUpper = emp.equipe.toUpperCase();
-       if (['A', 'B', 'C', 'D', 'ADM'].includes(teamUpper)) {
+       if (['A', 'B', 'C', 'D'].includes(teamUpper)) {
          setDetectedScale(prev => ({ ...prev, turma: teamUpper as Turma }));
        }
     }
@@ -499,7 +499,7 @@ const DFPResults: React.FC<DFPResultsProps> = ({ onSaveQualityReport, qualityRep
             <h2 className="text-[11px] font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2"><UserCog size={16} className="text-slate-500" /> {t('dfpResults.identification')}</h2>
             
             <div className="flex flex-wrap gap-2 p-2 bg-slate-50 rounded-2xl border-2 border-slate-100">
-              {(['A', 'B', 'C', 'D', 'ADM'] as Turma[]).map(t_val => (
+              {(['A', 'B', 'C', 'D'] as Turma[]).map(t_val => (
                 <button
                   key={t_val}
                   type="button"

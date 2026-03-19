@@ -61,7 +61,7 @@ export const formatQualityReportForWhatsApp = (report: QualityReport): string =>
  * Formata um resumo de múltiplas pendências no formato solicitado.
  */
 export const formatSummaryForWhatsApp = (items: PendingItem[], note?: string): string => {
-  let message = `*PENDÊNCIAS E PONTOS DE ATENÇÃO NO CIRCUITO DE ULTRAFINOS*\n\n`;
+  let message = `*PENDÊNCIAS E PONTOS DE ATENÇÃO NO CIRCUITO SIGO*\n\n`;
   if (note) message += `*Nota:* ${note.trim()}\n\n`;
 
   const groupedByArea: Record<string, PendingItem[]> = {};
@@ -94,16 +94,13 @@ export const formatShiftSummaryForWhatsApp = (items: PendingItem[], shiftInfo: {
     if (i.status !== 'resolvido' || !i.resolvedAt) return false;
     const inRange = i.resolvedAt >= shiftRange.start && i.resolvedAt <= shiftRange.end;
     const inTolerance = i.resolvedAt > shiftRange.end && i.resolvedAt <= shiftRange.end + 60 * 60 * 1000 && i.resolvedByTurma === shiftInfo.turma;
-    if (shiftInfo.turma === 'ADM') {
-      return inRange && i.resolvedByTurma === 'ADM';
-    }
-    return (inRange || inTolerance) && i.resolvedByTurma !== 'ADM';
+    return (inRange || inTolerance);
   });
   
   const openItems = items.filter(i => i.status === 'aberto');
   const dateStr = new Date().toLocaleDateString('pt-BR');
 
-  let message = `*RESUMO OPERACIONAL - ULTRAFINO USINA 2*\n`;
+  let message = `*RESUMO OPERACIONAL - SIGO USINA 2*\n`;
   message += `📅 DATA: ${dateStr} | 👥 TURMA: ${shiftInfo.turma} | 🕒 TURNO: ${shiftInfo.turno}\n\n`;
 
   message += `✅ *TRABALHO REALIZADO NO TURNO*\n`;

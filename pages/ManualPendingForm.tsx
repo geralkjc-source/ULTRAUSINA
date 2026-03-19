@@ -140,7 +140,7 @@ const ManualPendingForm: React.FC<ManualPendingFormProps> = ({ onAddManualPendin
                       setPendingData(prev => ({ ...prev, operator: emp.nome })); 
                       setShowOperatorSuggestions(false); 
                       // Auto-detect team if it matches Turma type
-                      if (emp.equipe && (['A', 'B', 'C', 'D', 'ADM'] as string[]).includes(emp.equipe.toUpperCase())) {
+                      if (emp.equipe && (['A', 'B', 'C', 'D'] as string[]).includes(emp.equipe.toUpperCase())) {
                          setDetectedScale(prev => ({ ...prev, turma: emp.equipe.toUpperCase() as Turma }));
                       }
                     }} 
@@ -170,7 +170,7 @@ const ManualPendingForm: React.FC<ManualPendingFormProps> = ({ onAddManualPendin
                 <button 
                    type="button"
                    onClick={() => {
-                     const turmas: Turma[] = ['A', 'B', 'C', 'D', 'ADM'];
+                     const turmas: Turma[] = ['A', 'B', 'C', 'D'];
                      const currentIndex = turmas.indexOf(detectedScale.turma);
                      const nextIndex = (currentIndex + 1) % turmas.length;
                      setDetectedScale(prev => ({ ...prev, turma: turmas[nextIndex] }));

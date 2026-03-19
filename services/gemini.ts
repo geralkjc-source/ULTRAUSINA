@@ -16,7 +16,7 @@ export const analyzePendingItems = async (items: PendingItem[]): Promise<string>
     // Upgraded to gemini-3-pro-preview for complex technical analysis as per guidelines
     const response = await ai.models.generateContent({
       model: 'gemini-3-pro-preview',
-      contents: `Você é um Engenheiro de Manutenção e Especialista em Operações Industriais da planta Ultrafino Usina 2. 
+      contents: `Você é um Engenheiro de Manutenção e Especialista em Operações Industriais da planta SIGO Usina 2. 
       Analise as seguintes pendências reportadas e forneça um resumo executivo com:
       1. Principais gargalos detectados por área.
       2. Recomendações de priorização técnica.

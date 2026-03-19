@@ -1,6 +1,6 @@
-# Especificação Técnica e Funcional - Plataforma Vulcan Ultrafino Usina 2
+# Especificação Técnica e Funcional - Plataforma SIGO Usina 2
 
-Este documento detalha todas as funcionalidades, áreas de atuação e serviços disponíveis na Plataforma Vulcan.
+Este documento detalha todas as funcionalidades, áreas de atuação e serviços disponíveis na Plataforma SIGO.
 
 ## 1. Áreas de Atuação (Checklists e Operação)
 O sistema cobre as quatro áreas principais da Usina 2:

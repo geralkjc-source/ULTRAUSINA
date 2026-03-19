@@ -9,7 +9,7 @@ interface DayScale {
 }
 
 /**
- * Escala Oficial Vulcan Ultrafino Usina 2 2026
+ * Escala Oficial SIGO Usina 2 2026
  * Transcrita fielmente do anexo (Jan-Jun) e projetada para Jul-Dez
  */
 export const SHIFT_DATA_2026: Record<string, { morning: string; afternoon: string; night: string; off: string }> = {
@@ -192,21 +192,6 @@ export const getPreviousShiftInfo = (): { turma: Turma; turno: Turno; date: Date
   return { turma: prevTurma, turno: prevTurno, date: prevDate };
 };
 
-/**
- * Retorna o range de timestamps do turno ANTERIOR.
- */
-export const getADMShiftRange = () => {
-  const now = new Date();
-  const start = new Date(now);
-  const end = new Date(now);
-  start.setHours(0, 0, 0, 0);
-  end.setHours(23, 59, 59, 999);
-  return {
-    start: start.getTime(),
-    end: end.getTime()
-  };
-};
-
 export const getPreviousShiftRange = () => {
   const now = new Date();
   const hour = now.getHours();
@@ -239,14 +224,8 @@ export const getPreviousShiftRange = () => {
   };
 };
 
-export const getStatusForTurma = (date: Date, turma: Turma): { turno: Turno | 'ADM' | 'FOLGA'; isWorking: boolean } => {
+export const getStatusForTurma = (date: Date, turma: Turma): { turno: Turno | 'FOLGA'; isWorking: boolean } => {
   const hour = date.getHours();
-
-  // ADM Team Logic: Fixed shift from 08:00 to 16:00
-  if (turma === 'ADM') {
-    const isWorking = hour >= 8 && hour < 16;
-    return { turno: isWorking ? 'ADM' : 'FOLGA', isWorking };
-  }
 
   const operationalDate = new Date(date);
   

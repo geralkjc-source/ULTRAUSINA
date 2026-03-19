@@ -215,7 +215,7 @@ const OperationalForms: React.FC<OperationalFormsProps> = ({ onAddManualPending,
     setShowSuggestions({ field: '', visible: false });
 
     // Auto-detect team if it matches Turma type
-    if (emp.equipe && (['A', 'B', 'C', 'D', 'ADM'] as string[]).includes(emp.equipe.toUpperCase())) {
+    if (emp.equipe && (['A', 'B', 'C', 'D'] as string[]).includes(emp.equipe.toUpperCase())) {
        setDetectedScale(prev => ({ ...prev, turma: emp.equipe.toUpperCase() as Turma }));
     }
   };

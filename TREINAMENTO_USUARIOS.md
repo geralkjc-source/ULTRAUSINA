@@ -1,4 +1,4 @@
-# Roteiro de Treinamento - Plataforma Vulcan Ultrafino Usina 2
+# Roteiro de Treinamento - Plataforma SIGO Usina 2
 
 Este roteiro foi estruturado para auxiliar no treinamento dos usuários da plataforma.
 

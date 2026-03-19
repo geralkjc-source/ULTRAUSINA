@@ -77,7 +77,7 @@ const SyncDashboard: React.FC<SyncDashboardProps> = ({ reports, pendingItems, qu
 
   const handleTestConnection = async () => {
     setTestStatus('loading');
-    addLog(t('sync.testingConnection') || "Iniciando Handshake Vulcan v4.0...");
+    addLog(t('sync.testingConnection') || "Iniciando Handshake SIGO v4.0...");
     
     try {
       // Testa o Backend Express primeiro
@@ -102,7 +102,7 @@ const SyncDashboard: React.FC<SyncDashboardProps> = ({ reports, pendingItems, qu
 
   const handleSync = async () => {
     setIsSyncing(true);
-    addLog(t('sync.startingSync') || "Transmissão Vulcan v4.0 em curso...");
+    addLog(t('sync.startingSync') || "Transmissão SIGO v4.0 em curso...");
     const unsyncedReports = reports.filter(r => !r.synced);
     const unsyncedPending = pendingItems.filter(p => !p.synced);
     const unsyncedQualityReports = qualityReports.filter(qr => !qr.synced);
@@ -128,7 +128,7 @@ const SyncDashboard: React.FC<SyncDashboardProps> = ({ reports, pendingItems, qu
         } else {
           addLog(`${t('sync.backendError') || 'Erro Backend'}: ${backendError.message || 'Falha na conexão'}`);
           // Se for um erro real (não apenas indisponibilidade), podemos optar por parar ou continuar
-          // Para Vulcan v4.0, vamos tentar continuar com Google Sheets se o backend falhar
+          // Para SIGO v4.0, vamos tentar continuar com Google Sheets se o backend falhar
         }
       }
 
@@ -184,7 +184,7 @@ const SyncDashboard: React.FC<SyncDashboardProps> = ({ reports, pendingItems, qu
  * INSTRUÇÕES DE IMPLANTAÇÃO:
  * 1. No Editor de Script, clique em "Implantar" > "Nova implantação".
  * 2. Selecione o tipo "App da Web".
- * 3. Descrição: "Vulcan v4.0".
+ * 3. Descrição: "SIGO v4.0".
  * 4. Quem pode acessar: "Qualquer pessoa" (IMPORTANTE).
  * 5. Clique em "Implantar" e COPIE O NOVO URL.
  */
@@ -285,7 +285,7 @@ function doGet(e) {
     return getStats(ss);
   }
   
-  return ContentService.createTextOutput("Protocolo Vulcan v4.0 Ativo").setMimeType(ContentService.MimeType.TEXT);
+  return ContentService.createTextOutput("Protocolo SIGO v4.0 Ativo").setMimeType(ContentService.MimeType.TEXT);
 }
 
 function getStats(ss) {
@@ -403,7 +403,7 @@ function fetchSheetData(ss, sheetName) {
                     testStatus === 'success' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-slate-50 text-slate-400 border-slate-100'
                   }`}>
                     {testStatus === 'success' ? <Wifi size={14} /> : <WifiOff size={14} />}
-                    VULCAN v4.0 {testStatus === 'success' ? t('sync.online') : t('sync.offline')}
+                    SIGO v4.0 {testStatus === 'success' ? t('sync.online') : t('sync.offline')}
                   </span>
                 </div>
               </div>

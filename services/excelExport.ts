@@ -51,7 +51,7 @@ export const exportShiftReport = (
   const timeStr = new Date().toLocaleTimeString('pt-BR', { hour12: false, hour: '2-digit', minute: '2-digit' });
 
   const headerData = [
-    ["VULCAN - RELATÓRIO EXECUTIVO DE TURNO"],
+    ["SIGO - RELATÓRIO EXECUTIVO DE TURNO"],
     ["ESTADO ATUAL DOS ATIVOS E PRODUTIVIDADE DA EQUIPE"],
     [""],
     ["TEAM LEADER:", meta.teamLeader.toUpperCase(), "", "DATA:", dateStr],

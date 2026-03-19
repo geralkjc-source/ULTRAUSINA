@@ -1,6 +1,6 @@
-# Manual do Usuário - Plataforma Vulcan Ultrafino Usina 2
+# Manual do Usuário - Plataforma SIGO Usina 2
 
-Bem-vindo à Plataforma Vulcan. Este sistema foi desenvolvido para a gestão operacional da Usina 2, permitindo o acompanhamento de pendências, checklists, relatórios de turno e sincronização de dados.
+Bem-vindo à Plataforma SIGO. Este sistema foi desenvolvido para a gestão operacional da Usina 2, permitindo o acompanhamento de pendências, checklists, relatórios de turno e sincronização de dados.
 
 ## 1. Visão Geral
 A plataforma centraliza as informações operacionais, garantindo que a troca de turno seja eficiente e que as pendências sejam rastreáveis.
@@ -49,4 +49,4 @@ A plataforma centraliza as informações operacionais, garantindo que a troca de
 *   **Versão:** 4.0
 *   **Persistência:** Dados salvos localmente (LocalStorage) e sincronizados com Backend/Google Sheets.
 *   **Formato de Relatórios:** PDF (gerado via jsPDF).
-*   **Escala de Turno:** Baseada na escala oficial Vulcan Ultrafino Usina 2 2026.
+*   **Escala de Turno:** Baseada na escala oficial SIGO Usina 2 2026.

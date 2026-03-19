@@ -323,6 +323,58 @@ ${t('settings.auditEmailFooter')}`;
         </div>
       </div>
       
+      <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 space-y-6">
+        <div className="flex items-center gap-3">
+          <div className="p-3 bg-slate-100 text-slate-600 rounded-2xl">
+            <ShieldAlert size={24} />
+          </div>
+          <div>
+            <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight">{t('settings.technicalSheet')}</h2>
+            <p className="text-slate-500 text-sm">{t('settings.technicalSheetSubtitle')}</p>
+          </div>
+        </div>
+
+        <div className="space-y-6">
+          <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+            <h3 className="text-blue-600 font-black text-[10px] uppercase tracking-widest mb-2">{t('settings.techInfo.architecture')}</h3>
+            <div className="grid grid-cols-1 gap-4">
+              <div>
+                <p className="text-slate-400 text-[9px] font-bold uppercase mb-1">{t('settings.techInfo.frontend')}</p>
+                <p className="text-slate-700 text-sm font-medium">React 19, TypeScript, Vite, Tailwind CSS, Framer Motion, Recharts</p>
+              </div>
+              <div>
+                <p className="text-slate-400 text-[9px] font-bold uppercase mb-1">{t('settings.techInfo.backend')}</p>
+                <p className="text-slate-700 text-sm font-medium">Node.js, Express, Nodemailer</p>
+              </div>
+              <div>
+                <p className="text-slate-400 text-[9px] font-bold uppercase mb-1">{t('settings.techInfo.storage')}</p>
+                <p className="text-slate-700 text-sm font-medium">LocalStorage (Offline-First), Google Sheets (Cloud Sync)</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+            <h3 className="text-blue-600 font-black text-[10px] uppercase tracking-widest mb-2">{t('settings.techInfo.features')}</h3>
+            <ul className="text-slate-700 text-sm space-y-1 list-disc list-inside">
+              <li>Dashboards em Tempo Real</li>
+              <li>Sincronização Omni-Sync v4.0</li>
+              <li>Gestão de Pendências e Auditoria</li>
+              <li>Relatórios PDF e Excel</li>
+              <li>Inteligência Artificial (Gemini)</li>
+            </ul>
+          </div>
+
+          <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+            <h3 className="text-blue-600 font-black text-[10px] uppercase tracking-widest mb-2">{t('settings.techInfo.requirements')}</h3>
+            <p className="text-slate-700 text-sm">
+              {language === 'pt' 
+                ? 'Navegadores modernos (Chrome, Edge, Safari). Otimizado para dispositivos móveis e desktop.'
+                : 'Modern browsers (Chrome, Edge, Safari). Optimized for mobile and desktop devices.'}
+            </p>
+          </div>
+        </div>
+      </div>
+
       <div className="bg-slate-50 rounded-3xl p-6 border border-slate-200">
         <h3 className="text-slate-900 font-bold mb-2">{language === 'pt' ? 'Dica' : 'Tip'}</h3>
         <p className="text-slate-600 text-sm leading-relaxed">

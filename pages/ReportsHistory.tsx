@@ -67,7 +67,7 @@ const ReportsHistory: React.FC<ReportsHistoryProps> = ({ reports = [], pendingIt
   // Áreas fixas para o cálculo de engajamento
   const AREAS = Object.values(Area);
   const TURNOS: Turno[] = ['MANHÃ', 'TARDE', 'NOITE'];
-  const TURMAS: Turma[] = ['A', 'B', 'C', 'D', 'ADM'];
+  const TURMAS: Turma[] = ['A', 'B', 'C', 'D'];
   const TARGET_PER_AREA_SHIFT = 2;
   const TARGET_PER_SHIFT = 10;
 
@@ -732,8 +732,7 @@ const ReportsHistory: React.FC<ReportsHistoryProps> = ({ reports = [], pendingIt
                     <Bar dataKey="A" stackId="a" fill="#3b82f6" radius={[0, 0, 0, 0]} />
                     <Bar dataKey="B" stackId="a" fill="#6366f1" radius={[0, 0, 0, 0]} />
                     <Bar dataKey="C" stackId="a" fill="#8b5cf6" radius={[0, 0, 0, 0]} />
-                    <Bar dataKey="D" stackId="a" fill="#ec4899" radius={[0, 0, 0, 0]} />
-                    <Bar dataKey="ADM" stackId="a" fill="#94a3b8" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="D" stackId="a" fill="#ec4899" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -789,9 +788,9 @@ const ReportsHistory: React.FC<ReportsHistoryProps> = ({ reports = [], pendingIt
                     <div>
                       <h4 className="font-black text-slate-900 text-sm uppercase tracking-tight">{translateArea(report.area)}</h4>
                       <div className="flex items-center gap-2 mt-1">
-                        <span className="text-slate-500 text-[9px] font-black uppercase tracking-tighter">{report.operator}</span>
-                        <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
-                        <span className="text-blue-600 text-[9px] font-black uppercase">{t('team')} {report.turma}</span>
+                        <span className="text-slate-500 text-[10px] font-black uppercase tracking-tighter truncate max-w-[150px]">{report.operator}</span>
+                        <span className="w-1 h-1 bg-slate-300 rounded-full shrink-0"></span>
+                        <span className="text-blue-600 text-[10px] font-black uppercase shrink-0">{t('team')} {report.turma}</span>
                       </div>
                     </div>
                   </div>
@@ -839,16 +838,16 @@ const ReportsHistory: React.FC<ReportsHistoryProps> = ({ reports = [], pendingIt
                 <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
                   <div className="grid grid-cols-2 gap-4 bg-slate-50 p-5 rounded-2xl border border-slate-100 shadow-inner">
                     <div className="space-y-1">
-                      <div className="flex items-center gap-1.5 text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                      <div className="flex items-center gap-1.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">
                         <User size={12} /> {t('responsible')}
                       </div>
-                      <p className="text-[11px] font-black text-slate-800 uppercase leading-none">{selectedReport.operator}</p>
+                      <p className="text-xs font-black text-slate-800 uppercase leading-none">{selectedReport.operator}</p>
                     </div>
                     <div className="space-y-1 text-right">
-                      <div className="flex items-center justify-end gap-1.5 text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                      <div className="flex items-center justify-end gap-1.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">
                         <Users size={12} /> {t('team')}
                       </div>
-                      <p className="text-[11px] font-black text-blue-600 uppercase leading-none">{t('team')} {selectedReport.turma}</p>
+                      <p className="text-xs font-black text-blue-600 uppercase leading-none">{t('team')} {selectedReport.turma}</p>
                     </div>
                   </div>
 
