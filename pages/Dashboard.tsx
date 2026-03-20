@@ -56,7 +56,7 @@ const Dashboard: React.FC<DashboardProps> = ({ reports, pendingItems, qualityRep
     };
   };
 
-  const AreaCard = ({ area, icon, description }: { area: Area, icon: React.ReactNode, description: string }) => {
+  const AreaCard = ({ area, icon, description }: { area: Area, icon: React.ReactNode, description: string, key?: any }) => {
     const stats = getAreaStats(area);
     const isCritical = stats.hasFailures;
     const isVeryCritical = area === Area.DFP2 && pendingItems.filter(p => p.area === Area.DFP2 && p.status === 'aberto').length >= 50;
@@ -354,31 +354,22 @@ const Dashboard: React.FC<DashboardProps> = ({ reports, pendingItems, qualityRep
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <AreaCard 
-          area={Area.HBF_C} 
-          icon={<Zap size={28} />} 
-          description={t('dashboard.areaDescriptions.HBF_C')}
-        />
-        <AreaCard 
-          area={Area.HBF_D} 
-          icon={<Zap size={28} />} 
-          description={t('dashboard.areaDescriptions.HBF_D')}
-        />
-        <AreaCard 
-          area={Area.BOMBEAMENTO} 
-          icon={<Droplets size={28} />} 
-          description={t('dashboard.areaDescriptions.BOMBEAMENTO')}
-        />
-        <AreaCard 
-          area={Area.ESPESADORES} 
-          icon={<Settings2 size={28} />} 
-          description={t('dashboard.areaDescriptions.ESPESADORES')}
-        />
-        <AreaCard 
-          area={Area.DFP2} 
-          icon={<Filter size={28} />} 
-          description={t('dashboard.areaDescriptions.DFP2')}
-        />
+        {Object.values(Area).map(area => {
+          let icon = <Zap size={28} />;
+          if (area === Area.BOMBEAMENTO) icon = <Droplets size={28} />;
+          if (area === Area.ESPESADORES || area === Area.CCP) icon = <Settings2 size={28} />;
+          if (area === Area.DFP2) icon = <Filter size={28} />;
+          if (area === Area.ULTRAFINO) icon = <Activity size={28} />;
+
+          return (
+            <AreaCard 
+              key={area}
+              area={area} 
+              icon={icon} 
+              description={t(`dashboard.areaDescriptions.${area}`)}
+            />
+          );
+        })}
         
         <div className={`p-6 rounded-[2.5rem] border-4 transition-all flex flex-col justify-between ${
           unsyncedCount > 0 

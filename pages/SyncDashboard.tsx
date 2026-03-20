@@ -49,6 +49,7 @@ const SyncDashboard: React.FC<SyncDashboardProps> = ({ reports, pendingItems, qu
   const [testStatus, setTestStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [logs, setLogs] = useState<string[]>([]);
   const [fullConfig, setFullConfig] = useState<any>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     const loadConfig = async () => {
@@ -532,7 +533,7 @@ function fetchSheetData(ss, sheetName) {
                 </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
       )}
     </div>

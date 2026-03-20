@@ -9,7 +9,10 @@ export const translations = {
       bombeamento: 'BOMBEAMENTO',
       espesadores: 'ESPESADORES E REAGENTES',
       hbf_c: 'HBF-COLUNAS C',
-      hbf_d: 'HBF- COLUNAS D'
+      hbf_d: 'HBF- COLUNAS D',
+      chp: 'CHP',
+      ccp: 'CCP',
+      ultrafino: 'ULTRAFINO'
     },
     alerts: {
       criticalDfpTitle: 'Atenção Crítica: Volume de Pendências DFP',
@@ -41,7 +44,7 @@ export const translations = {
     
     // Header
     platformTitle: 'SIGO',
-    plantName: 'USINA 2',
+    plantName: 'SISTEMA VULCAN',
     updatingCloud: 'Atualizando Nuvem...',
     synchronized: 'Sincronizado',
     syncing: 'Sincronizando...',
@@ -327,7 +330,10 @@ export const translations = {
         HBF_D: 'Filtros de Esteira Planta D. Inspeção de sprays e panos.',
         BOMBEAMENTO: 'Bombas de vácuo e filtrado. Motores e selagem.',
         ESPESADORES: 'Torque, rake e reagentes. Densidade do underflow.',
-        DFP2: 'Filtros de lona DFP 2. Sopragem e hidráulica.'
+        DFP2: 'Filtros de lona DFP 2. Sopragem e hidráulica.',
+        CHP: 'Central de Britagem e Peneiramento. Operação de britagem primária e secundária.',
+        CCP: 'Central de Controle de Processos. Monitoramento e controle remoto da planta.',
+        ULTRAFINO: 'Planta de Ultrafinos. Processamento de partículas finas e recuperação de minério.'
       }
     },
     dfpResults: {
@@ -544,7 +550,10 @@ export const translations = {
       bombeamento: 'PUMPING',
       espesadores: 'THICKENERS AND REAGENTS',
       hbf_c: 'HBF-COLUMNS C',
-      hbf_d: 'HBF- COLUMNS D'
+      hbf_d: 'HBF- COLUMNS D',
+      chp: 'CHP',
+      ccp: 'CCP',
+      ultrafino: 'ULTRAFINO'
     },
     alerts: {
       criticalDfpTitle: 'Critical Attention: DFP Pending Volume',
@@ -576,7 +585,7 @@ export const translations = {
     
     // Header
     platformTitle: 'SIGO',
-    plantName: 'PLANT 2',
+    plantName: 'VULCAN SYSTEM',
     updatingCloud: 'Updating Cloud...',
     synchronized: 'Synchronized',
     syncing: 'Syncing...',
@@ -862,7 +871,10 @@ export const translations = {
         HBF_D: 'Belt Filters Plant D. Inspection of sprays and cloths.',
         BOMBEAMENTO: 'Vacuum and filtrate pumps. Motors and sealing.',
         ESPESADORES: 'Torque, rake and reagents. Underflow density.',
-        DFP2: 'DFP 2 canvas filters. Blowing and hydraulics.'
+        DFP2: 'DFP 2 canvas filters. Blowing and hydraulics.',
+        CHP: 'Crushing and Screening Plant. Primary and secondary crushing operation.',
+        CCP: 'Process Control Center. Plant monitoring and remote control.',
+        ULTRAFINO: 'Ultrafine Plant. Processing of fine particles and ore recovery.'
       }
     },
     dfpResults: {
