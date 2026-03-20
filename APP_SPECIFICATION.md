@@ -46,6 +46,12 @@ O sistema cobre as quatro áreas principais da Usina 2:
 ### Calendário de Turno (ShiftCalendar)
 *   **Escala:** Visualização da escala oficial de turmas (A, B, C, D) para todo o ano de 2026.
 
+### Peças de Desgaste (WearPartsManagement)
+*   **Gestão de Ativos:** Cadastro, edição de nome/quantidade e controle de estoque.
+*   **Monitoramento:** Cálculo de vida útil restante e status (Bom, Alerta, Crítico, Trocado).
+*   **Histórico:** Registro imutável de movimentações (adição, uso, substituição) com timestamp.
+*   **Interface:** Modais para adição, edição e visualização de histórico de movimentação.
+
 ## 3. Serviços Disponíveis (Backend & Integrações)
 
 ### Sincronização e Dados
@@ -65,7 +71,8 @@ O sistema cobre as quatro áreas principais da Usina 2:
 *   **`gemini.ts`:** Integração com IA para suporte a tarefas complexas.
 
 ## 4. Especificações Técnicas
+*   **Linguagem Principal:** TypeScript (v5+).
 *   **Arquitetura:** Full-stack (Express + Vite + React).
-*   **Persistência:** LocalStorage (offline-first) + Sincronização em Nuvem.
-*   **Segurança:** Controle de acesso por turma e rastreabilidade de ações.
+*   **Persistência:** LocalStorage (offline-first) + Sincronização em Nuvem (Firestore/Google Sheets).
+*   **Segurança:** Controle de acesso por turma, rastreabilidade de ações e validação rigorosa de dados (Server-side/Firestore Rules).
 *   **Escalabilidade:** Estrutura modular permitindo adição de novas áreas e formulários.

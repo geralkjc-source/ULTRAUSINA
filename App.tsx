@@ -13,7 +13,8 @@ import {
   PieChart,
   Settings,
   Calendar,
-  Award
+  Award,
+  Wrench
 } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import ChecklistArea from './pages/ChecklistArea';
@@ -27,6 +28,7 @@ import PerformanceHistory from './pages/PerformanceHistory';
 import DFPResults from './pages/DFPResults';
 import ManualPendingForm from './pages/ManualPendingForm';
 import SettingsPage from './pages/Settings';
+import WearPartsManagement from './pages/WearPartsManagement';
 import { Area, Report, PendingItem, Turma, QualityReport, OperationalEvent, User } from './types';
 import { syncToGoogleSheets, fetchCloudItems, fetchCloudReports, fetchCloudQualityReports, fetchCloudOperationalEvents, fetchCloudData, CloudStats, DEFAULT_SCRIPT_URL } from './services/googleSync';
 import { backendService } from './services/backendService';
@@ -70,6 +72,7 @@ const Sidebar = ({ isOpen, toggle, unsyncedCount }: { isOpen: boolean; toggle: (
     },
     { path: '/forms', label: t('sidebar.operationalForms'), icon: <FileSpreadsheet size={20} /> },
     { path: '/performance-history', label: t('sidebar.performanceHistory'), icon: <Award size={20} /> },
+    { path: '/wear-parts', label: t('sidebar.wearParts'), icon: <Settings size={20} /> },
   ];
 
   return (
@@ -554,6 +557,7 @@ const App: React.FC = () => {
               <Route path="/dfp" element={<DFPResults onSaveQualityReport={addQualityReport} qualityReports={qualityReports} />} />
               <Route path="/forms" element={<OperationalForms onAddManualPending={addManualPending} onSaveOperationalEvent={addOperationalEvent} operationalEvents={operationalEvents} />} />
               <Route path="/performance-history" element={<PerformanceHistory operationalEvents={operationalEvents} />} />
+              <Route path="/wear-parts" element={<WearPartsManagement />} />
               <Route path="/manual-pending" element={<ManualPendingForm onAddManualPending={addManualPending} />} />
               <Route path="/settings" element={<SettingsPage />} />
             </Routes>

@@ -135,3 +135,29 @@ export interface ShiftHandover {
   paradasProgramadas?: string;
   synced?: boolean;
 }
+
+export type WearPartStatus = 'good' | 'warning' | 'critical' | 'replaced';
+
+export interface PartHistoryEntry {
+  timestamp: number;
+  action: 'use' | 'replace' | 'add';
+}
+
+export interface WearPart {
+  id: string;
+  code: string;
+  name: string;
+  equipment: string;
+  installationDate: number;
+  expectedLifespanDays: number;
+  status: WearPartStatus;
+  lastInspectionDate?: number;
+  observations?: string;
+  synced?: boolean;
+  location?: string;
+  requiredQuantity?: number;
+  currentQuantity?: number;
+  usedQuantity?: number;
+  category?: string;
+  history: PartHistoryEntry[];
+}

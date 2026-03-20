@@ -8,8 +8,11 @@
 
 ## 2. Arquitetura e Tecnologias
 
+### Linguagem Principal
+*   **Linguagem:** TypeScript (v5+)
+
 ### Frontend (Interface do Usuário)
-*   **Framework:** React 19 (TypeScript)
+*   **Framework:** React 19
 *   **Build Tool:** Vite
 *   **Estilização:** Tailwind CSS (Design System moderno e responsivo)
 *   **Animações:** Framer Motion
@@ -41,6 +44,7 @@
 *   **Histórico de Relatórios:** Acesso a registros passados com filtros avançados.
 *   **Calendário de Turnos:** Visualização e planejamento de escalas operacionais.
 *   **Resultados DFP:** Módulo específico para controle de qualidade e resultados técnicos.
+*   **Gestão de Peças de Desgaste:** Cadastro, monitoramento de vida útil, histórico imutável de movimentações e controle de estoque.
 
 ### Utilitários e Exportação
 *   **Exportação de Dados:** Geração de relatórios em PDF (jsPDF) e planilhas Excel (XLSX).
