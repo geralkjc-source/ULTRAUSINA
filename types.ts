@@ -14,8 +14,7 @@ export enum Area {
   HBF_C = 'HBF-COLUNAS C',
   HBF_D = 'HBF- COLUNAS D',
   CHP = 'CHP',
-  CCP = 'CCP',
-  ULTRAFINO = 'ULTRAFINO'
+  CCP = 'CCP'
 }
 
 export type Turma = 'A' | 'B' | 'C' | 'D';

@@ -464,7 +464,9 @@ const ChecklistArea: React.FC<ChecklistAreaProps> = ({ onSaveReport }) => {
                currentArea === Area.BOMBEAMENTO ? t('areas.bombeamento') :
                currentArea === Area.ESPESADORES ? t('areas.espesadores') :
                currentArea === Area.HBF_C ? t('areas.hbf_c') :
-               currentArea === Area.HBF_D ? t('areas.hbf_d') : currentArea}
+               currentArea === Area.HBF_D ? t('areas.hbf_d') : 
+               currentArea === Area.CHP ? t('areas.chp') :
+               currentArea === Area.CCP ? t('areas.ccp') : currentArea}
             </h1>
             <p className="text-slate-400 text-[9px] font-bold uppercase tracking-[0.2em] mt-1">{t('checklistArea.successSubtitle')}</p>
           </div>

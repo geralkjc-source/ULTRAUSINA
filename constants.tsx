@@ -109,6 +109,8 @@ export const CHECKLIST_TEMPLATES: Record<Area, string[]> = {
     '7C PP 130 (Spillage pp)',
     'Nota Geral',
   ],
+  [Area.CHP]: [],
+  [Area.CCP]: [],
   [Area.BOMBEAMENTO]: [
     'SECTION:VACUUM PUMPS – PLANTA C',
     '06C-VP-101',
@@ -400,44 +402,5 @@ export const CHECKLIST_TEMPLATES: Record<Area, string[]> = {
     '- Ar (Kpa)',
     '- Nível (%)',
     '- Setpoint (%)'
-  ],
-  [Area.CHP]: [
-    'SECTION:PARÂMETROS OPERACIONAIS',
-    'Taxa de Alimentação (tph)',
-    'Nível do Silo (%)',
-    'SECTION:EQUIPAMENTOS BRITAGEM',
-    'Britador Primário',
-    'Britador Secundário',
-    'Peneira Vibratória 1',
-    'Peneira Vibratória 2',
-    'SECTION:CORREIAS TRANSPORTADORAS',
-    'Correia 01',
-    'Correia 02',
-    'Correia 03',
-    'Nota Geral'
-  ],
-  [Area.CCP]: [
-    'SECTION:MONITORAMENTO DE PROCESSO',
-    'Status Geral da Planta',
-    'Comunicação com PLC',
-    'SECTION:ALARMES CRÍTICOS',
-    'Alarmes de Segurança',
-    'Alarmes de Processo',
-    'SECTION:CONTROLE REMOTO',
-    'Operação Remota Britagem',
-    'Operação Remota Moagem',
-    'Nota Geral'
-  ],
-  [Area.ULTRAFINO]: [
-    'SECTION:PARÂMETROS ULTRAFINO',
-    'Densidade de Alimentação (t/m³)',
-    'Vazão de Alimentação (m³/h)',
-    'SECTION:EQUIPAMENTOS ULTRAFINO',
-    'Ciclone 1',
-    'Ciclone 2',
-    'Filtro Prensa',
-    'SECTION:PRODUTO FINAL',
-    'Humidade do Concentrado (%)',
-    'Nota Geral'
   ]
 };

@@ -11,8 +11,7 @@ export const translations = {
       hbf_c: 'HBF-COLUNAS C',
       hbf_d: 'HBF- COLUNAS D',
       chp: 'CHP',
-      ccp: 'CCP',
-      ultrafino: 'ULTRAFINO'
+      ccp: 'CCP'
     },
     alerts: {
       criticalDfpTitle: 'Atenção Crítica: Volume de Pendências DFP',
@@ -44,7 +43,7 @@ export const translations = {
     
     // Header
     platformTitle: 'SIGO',
-    plantName: 'SISTEMA VULCAN',
+    plantName: 'USINA 2',
     updatingCloud: 'Atualizando Nuvem...',
     synchronized: 'Sincronizado',
     syncing: 'Sincronizando...',
@@ -331,9 +330,8 @@ export const translations = {
         BOMBEAMENTO: 'Bombas de vácuo e filtrado. Motores e selagem.',
         ESPESADORES: 'Torque, rake e reagentes. Densidade do underflow.',
         DFP2: 'Filtros de lona DFP 2. Sopragem e hidráulica.',
-        CHP: 'Central de Britagem e Peneiramento. Operação de britagem primária e secundária.',
-        CCP: 'Central de Controle de Processos. Monitoramento e controle remoto da planta.',
-        ULTRAFINO: 'Planta de Ultrafinos. Processamento de partículas finas e recuperação de minério.'
+        CHP: 'CHP',
+        CCP: 'CCP'
       }
     },
     dfpResults: {
@@ -552,8 +550,7 @@ export const translations = {
       hbf_c: 'HBF-COLUMNS C',
       hbf_d: 'HBF- COLUMNS D',
       chp: 'CHP',
-      ccp: 'CCP',
-      ultrafino: 'ULTRAFINO'
+      ccp: 'CCP'
     },
     alerts: {
       criticalDfpTitle: 'Critical Attention: DFP Pending Volume',
@@ -585,7 +582,7 @@ export const translations = {
     
     // Header
     platformTitle: 'SIGO',
-    plantName: 'VULCAN SYSTEM',
+    plantName: 'PLANT 2',
     updatingCloud: 'Updating Cloud...',
     synchronized: 'Synchronized',
     syncing: 'Syncing...',
@@ -872,9 +869,8 @@ export const translations = {
         BOMBEAMENTO: 'Vacuum and filtrate pumps. Motors and sealing.',
         ESPESADORES: 'Torque, rake and reagents. Underflow density.',
         DFP2: 'DFP 2 canvas filters. Blowing and hydraulics.',
-        CHP: 'Crushing and Screening Plant. Primary and secondary crushing operation.',
-        CCP: 'Process Control Center. Plant monitoring and remote control.',
-        ULTRAFINO: 'Ultrafine Plant. Processing of fine particles and ore recovery.'
+        CHP: 'CHP',
+        CCP: 'CCP'
       }
     },
     dfpResults: {
