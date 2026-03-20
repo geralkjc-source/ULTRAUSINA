@@ -1,8 +1,27 @@
-import { Report, QualityReport, PendingItem, OperationalEvent } from '../types';
+import { Report, QualityReport, PendingItem, OperationalEvent, User } from '../types';
 
 const API_BASE = '/api';
 
 export const backendService = {
+  // Auth
+  async getAuthMe(): Promise<{ authenticated: boolean; user?: User }> {
+    const response = await fetch(`${API_BASE}/auth/me`);
+    if (!response.ok) return { authenticated: false };
+    return response.json();
+  },
+
+  async getMicrosoftAuthUrl(): Promise<{ url: string }> {
+    const response = await fetch(`${API_BASE}/auth/microsoft/url`);
+    if (!response.ok) throw new Error('Failed to get auth URL');
+    return response.json();
+  },
+
+  async logout(): Promise<{ success: boolean }> {
+    const response = await fetch(`${API_BASE}/auth/logout`, { method: 'POST' });
+    if (!response.ok) throw new Error('Failed to logout');
+    return response.json();
+  },
+
   // Reports
   async getReports(): Promise<Report[]> {
     const response = await fetch(`${API_BASE}/reports`);

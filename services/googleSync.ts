@@ -299,7 +299,27 @@ export const fetchCloudItems = async (scriptUrl: string): Promise<PendingItem[]>
           }
       }
 
-      const sheetResolvedAt = parseDateFromCloud(getCloudValue(item, 'data_resolucao', 'resolvido_em'));
+      let sheetResolvedAt = parseDateFromCloud(getCloudValue(item, 'data_resolucao', 'resolvido_em'));
+      
+      if (sheetResolvedAt) {
+        const dRes = new Date(sheetResolvedAt);
+        // Se a resolução foi feita pela turma da NOITE (ou se o turno original era NOITE e não temos a turma de resolução explícita, mas assumimos NOITE)
+        // O ideal é verificar se a hora é < 6, pois o formatForSheet subtrai 1 dia nesse caso.
+        // Como formatForSheet usa p.resolvedByTurma ? 'NOITE' : undefined, se foi resolvido de madrugada,
+        // a data na planilha está 1 dia atrasada.
+        if (dRes.getHours() < 6) {
+          // Precisamos saber se foi resolvido no turno da NOITE.
+          // Se a hora é < 6 e a data está atrasada, somamos 1 dia.
+          // Como saber se foi formatado como NOITE?
+          // formatForSheet faz: if (turno === 'NOITE' && h < 6) opDate.setDate(opDate.getDate() - 1);
+          // O turno passado para resolvedAt é: p.resolvedByTurma ? 'NOITE' : undefined.
+          // Então, se houver turma de resolução, foi passado 'NOITE'.
+          const resolvedByTurma = getCloudValue(item, 'turma_resolucao') !== '-' ? getCloudValue(item, 'turma_resolucao') : undefined;
+          if (resolvedByTurma) {
+             sheetResolvedAt += 24 * 3600 * 1000;
+          }
+        }
+      }
 
       return {
         id: id || `cl-${Date.now()}`,

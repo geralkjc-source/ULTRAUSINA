@@ -86,8 +86,8 @@ export const formatSummaryForWhatsApp = (items: PendingItem[], note?: string): s
 /**
  * Formata um resumo de turno com trabalhos realizados e pendências remanescentes.
  */
-export const formatShiftSummaryForWhatsApp = (items: PendingItem[], shiftInfo: { turma: string, turno: string }): string => {
-  const shiftRange = getCurrentShiftRange();
+export const formatShiftSummaryForWhatsApp = (items: PendingItem[], shiftInfo: { turma: string, turno: string }, customRange?: { start: number, end: number }, customDate?: string): string => {
+  const shiftRange = customRange || getCurrentShiftRange();
   
   // Filtra itens resolvidos neste turno (com base no resolvedAt)
   const resolvedItems = items.filter(i => {
@@ -98,7 +98,7 @@ export const formatShiftSummaryForWhatsApp = (items: PendingItem[], shiftInfo: {
   });
   
   const openItems = items.filter(i => i.status === 'aberto');
-  const dateStr = new Date().toLocaleDateString('pt-BR');
+  const dateStr = customDate || new Date().toLocaleDateString('pt-BR');
 
   let message = `*RESUMO OPERACIONAL - SIGO USINA 2*\n`;
   message += `📅 DATA: ${dateStr} | 👥 TURMA: ${shiftInfo.turma} | 🕒 TURNO: ${shiftInfo.turno}\n\n`;

@@ -28,32 +28,14 @@ import PerformanceHistory from './pages/PerformanceHistory';
 import DFPResults from './pages/DFPResults';
 import ManualPendingForm from './pages/ManualPendingForm';
 import SettingsPage from './pages/Settings';
-import { Area, Report, PendingItem, Turma, QualityReport, OperationalEvent } from './types';
+import { Area, Report, PendingItem, Turma, QualityReport, OperationalEvent, User } from './types';
 import { syncToGoogleSheets, fetchCloudItems, fetchCloudReports, fetchCloudQualityReports, fetchCloudOperationalEvents, fetchCloudData, CloudStats, DEFAULT_SCRIPT_URL } from './services/googleSync';
 import { backendService } from './services/backendService';
 import { useLanguage } from './LanguageContext';
 
-const SigoLogo = ({ className = "" }: { className?: string }) => {
-  const [logoError, setLogoError] = useState(false);
-  
-  return (
-    <div className={`flex items-center gap-2 ${className}`}>
-      {!logoError ? (
-        <img 
-          src="/logo.png" 
-          alt="SIGO Logo" 
-          className="w-8 h-8 object-contain rounded-full"
-          onError={() => setLogoError(true)}
-        />
-      ) : (
-        <div className="w-8 h-8 bg-slate-900 rounded-full flex items-center justify-center text-white font-black text-[10px] shrink-0">
-          SIGO
-        </div>
-      )}
-      <span className="font-black tracking-tighter select-none">SIGO</span>
-    </div>
-  );
-};
+const VulcanLogo = ({ className = "" }: { className?: string }) => (
+  <span className={`font-black tracking-tighter select-none ${className}`}>VULCAN</span>
+);
 
 /**
  * Omni-Sync Monitor
@@ -97,8 +79,8 @@ const Sidebar = ({ isOpen, toggle, unsyncedCount }: { isOpen: boolean; toggle: (
       <aside className={`fixed inset-y-0 left-0 z-50 w-72 bg-slate-900 text-white transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}>
         <div className="flex flex-col h-full">
           <div className="p-6 flex items-center gap-3 border-b border-slate-800">
-            <div className="bg-white px-2 py-1 rounded-lg flex items-center justify-center shrink-0 shadow-inner">
-               <SigoLogo className="text-xl text-slate-900" />
+            <div className="bg-white px-3 py-2 rounded-lg flex items-center justify-center shrink-0 shadow-inner">
+               <VulcanLogo className="text-xl text-slate-900" />
             </div>
             <div>
               <h1 className="font-bold text-lg leading-tight tracking-tight text-white">{t('plantName')}</h1>
@@ -138,7 +120,15 @@ const Sidebar = ({ isOpen, toggle, unsyncedCount }: { isOpen: boolean; toggle: (
   );
 };
 
-const Header = ({ onToggleSidebar, unsyncedCount, isSyncing, onSync }: { onToggleSidebar: () => void, unsyncedCount: number, isSyncing: boolean, onSync: () => void }) => {
+const Header = ({ onToggleSidebar, unsyncedCount, isSyncing, onSync, user, onLogin, onLogout }: { 
+  onToggleSidebar: () => void, 
+  unsyncedCount: number, 
+  isSyncing: boolean, 
+  onSync: () => void,
+  user: User | null,
+  onLogin: () => void,
+  onLogout: () => void
+}) => {
   const { t, language, setLanguage } = useLanguage();
   
   return (
@@ -169,6 +159,29 @@ const Header = ({ onToggleSidebar, unsyncedCount, isSyncing, onSync }: { onToggl
             EN
           </button>
         </div>
+
+        {user ? (
+          <div className="flex items-center gap-3">
+            <div className="text-right hidden sm:block">
+              <p className="text-[10px] font-black text-slate-900 leading-none">{user.name}</p>
+              <p className="text-[8px] font-bold text-slate-500 uppercase tracking-tighter">{user.jobTitle || user.email}</p>
+            </div>
+            <button 
+              onClick={onLogout}
+              className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 hover:bg-red-50 hover:text-red-600 transition-colors"
+              title="Sair"
+            >
+              <CloudOff size={16} />
+            </button>
+          </div>
+        ) : (
+          <button 
+            onClick={onLogin}
+            className="flex items-center gap-2 bg-blue-600 text-white px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-wider hover:bg-blue-700 transition-all shadow-sm"
+          >
+            <Zap size={14} /> Entrar com AD
+          </button>
+        )}
 
         {unsyncedCount > 0 ? (
           <button 
@@ -202,9 +215,73 @@ const App: React.FC = () => {
   const [isGlobalSyncing, setIsGlobalSyncing] = useState(false);
   const [cloudStats, setCloudStats] = useState<CloudStats | null>(null);
   const [lastSyncSource, setLastSyncSource] = useState<'local' | 'cloud'>('local');
+  const [user, setUser] = useState<User | null>(null);
+
+  // Auth Logic
+  const checkAuth = useCallback(async () => {
+    try {
+      const { authenticated, user } = await backendService.getAuthMe();
+      if (authenticated && user) {
+        setUser(user);
+      } else {
+        setUser(null);
+      }
+    } catch (e) {
+      console.error("Auth Check Error", e);
+    }
+  }, []);
+
+  const handleMicrosoftLogin = async () => {
+    try {
+      const { url } = await backendService.getMicrosoftAuthUrl();
+      const width = 600;
+      const height = 700;
+      const left = window.screenX + (window.outerWidth - width) / 2;
+      const top = window.screenY + (window.outerHeight - height) / 2;
+      
+      const authWindow = window.open(
+        url,
+        'microsoft_auth',
+        `width=${width},height=${height},left=${left},top=${top}`
+      );
+
+      if (!authWindow) {
+        alert('Por favor, permita popups para este site para entrar com sua conta Microsoft.');
+        return;
+      }
+    } catch (e) {
+      console.error("Login Error", e);
+      alert("Erro ao iniciar autenticação com Microsoft.");
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await backendService.logout();
+      setUser(null);
+    } catch (e) {
+      console.error("Logout Error", e);
+    }
+  };
+
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      const origin = event.origin;
+      if (!origin.endsWith('.run.app') && !origin.includes('localhost')) return;
+      
+      if (event.data?.type === 'OAUTH_AUTH_SUCCESS') {
+        checkAuth();
+      } else if (event.data?.type === 'OAUTH_AUTH_ERROR') {
+        alert(`Erro na autenticação: ${event.data.error}`);
+      }
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [checkAuth]);
 
   // Carregamento Inicial
   useEffect(() => {
+    checkAuth();
     const loadInitialData = async () => {
       try {
         // Tenta carregar do backend primeiro
@@ -470,6 +547,9 @@ const App: React.FC = () => {
             unsyncedCount={unsyncedCount} 
             isSyncing={isGlobalSyncing} 
             onSync={() => refreshDataFromCloud()}
+            user={user}
+            onLogin={handleMicrosoftLogin}
+            onLogout={handleLogout}
           />
           
           {pendingItems.filter(p => p.area === Area.DFP2 && p.status === 'aberto').length >= 50 && (

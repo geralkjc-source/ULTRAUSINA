@@ -1,4 +1,12 @@
 
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  jobTitle?: string;
+  provider: 'microsoft' | 'local';
+}
+
 export enum Area {
   DFP2 = 'DFP 2',
   BOMBEAMENTO = 'BOMBEAMENTO',

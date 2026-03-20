@@ -331,9 +331,29 @@ ${t('settings.auditEmailFooter')}`;
         </button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
         <button onClick={handleCopySummary} className={`flex items-center justify-center gap-2 py-4 rounded-2xl font-black text-[10px] uppercase shadow-lg border-2 transition-all active:scale-95 ${copyFeedback ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-white text-slate-900 border-slate-100 hover:border-blue-500'}`}>
           <Copy size={18} /> {t('copySummary')}
+        </button>
+        <button onClick={async () => {
+          const prev = getPreviousShiftInfo();
+          const range = getPreviousShiftRange();
+          const workDone = filteredItems.filter(item => {
+            if (item.status !== 'resolvido' || !item.resolvedAt) return false;
+            const inRange = item.resolvedAt >= range.start && item.resolvedAt <= range.end;
+            const inTolerance = item.resolvedAt > range.end && item.resolvedAt <= range.end + 60 * 60 * 1000 && item.resolvedByTurma === prev.turma;
+            return (inRange || inTolerance);
+          });
+          const remaining = filteredItems.filter(item => item.status === 'aberto');
+          const text = formatShiftSummaryForWhatsApp([...workDone, ...remaining], { turma: prev.turma, turno: prev.turno }, range, prev.date.toLocaleDateString(language === 'pt' ? 'pt-BR' : 'en-US'));
+          const success = await copyToClipboard(text);
+          if (success) {
+            setCopyFeedback(true);
+            setTimeout(() => setCopyFeedback(false), 2000);
+            shareToWhatsApp(text);
+          }
+        }} className={`flex items-center justify-center gap-2 py-4 rounded-2xl font-black text-[10px] uppercase shadow-lg border-2 transition-all active:scale-95 ${copyFeedback ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-slate-100 text-slate-600 border-slate-200 hover:border-slate-300'}`}>
+          <Copy size={18} /> Resumo Ant.
         </button>
         <button onClick={() => {
           exportShiftReportPDF(pendingItems, { teamLeader: 'EQUIPE SIGO', turma: getCurrentShiftInfo().turma, turno: getCurrentShiftInfo().turno });
