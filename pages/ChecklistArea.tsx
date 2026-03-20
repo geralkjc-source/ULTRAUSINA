@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Area, Turma, Turno, ChecklistItem, Report, Discipline } from '../types';
 import { CHECKLIST_TEMPLATES } from '../constants';
@@ -80,6 +80,13 @@ const ChecklistArea: React.FC<ChecklistAreaProps> = ({ onSaveReport }) => {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [showSuggestions, setShowSuggestions] = useState<{ field: string; visible: boolean }>({ field: '', visible: false });
+  const operatorInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (operatorInputRef.current) {
+      operatorInputRef.current.focus();
+    }
+  }, []);
 
   useEffect(() => {
     const loadEmployees = async () => {
@@ -478,6 +485,7 @@ const ChecklistArea: React.FC<ChecklistAreaProps> = ({ onSaveReport }) => {
             <div className="space-y-4">
               <div className="relative">
                 <input 
+                  ref={operatorInputRef}
                   type="text" 
                   required 
                   placeholder={t('checklistArea.operatorPlaceholder')}
