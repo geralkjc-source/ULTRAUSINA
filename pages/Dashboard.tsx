@@ -381,16 +381,6 @@ const Dashboard: React.FC<DashboardProps> = ({ reports, pendingItems, qualityRep
           icon={<Filter size={28} />} 
           description={t('dashboard.areaDescriptions.DFP2')}
         />
-        <AreaCard 
-          area={Area.CHP} 
-          icon={<Cpu size={28} />} 
-          description={t('dashboard.areaDescriptions.CHP')}
-        />
-        <AreaCard 
-          area={Area.CCP} 
-          icon={<Wrench size={28} />} 
-          description={t('dashboard.areaDescriptions.CCP')}
-        />
         
         <div className={`p-6 rounded-[2.5rem] border-4 transition-all flex flex-col justify-between ${
           unsyncedCount > 0 

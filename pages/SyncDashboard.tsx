@@ -163,10 +163,10 @@ const SyncDashboard: React.FC<SyncDashboardProps> = ({ reports, pendingItems, qu
     addLog(t('sync.forcingRefresh') || "Iniciando Limpeza de Cache e Refresh Total...");
     
     try {
-      localStorage.removeItem('ultrafino_reports');
-      localStorage.removeItem('ultrafino_pending');
-      localStorage.removeItem('ultrafino_quality');
-      localStorage.removeItem('ultrafino_operational');
+      localStorage.removeItem('app_reports');
+      localStorage.removeItem('app_pending');
+      localStorage.removeItem('app_quality');
+      localStorage.removeItem('app_operational');
       addLog(t('sync.cacheCleared') || "Cache Local Limpo.");
       
       if (onRefreshCloud) await onRefreshCloud();
@@ -179,7 +179,7 @@ const SyncDashboard: React.FC<SyncDashboardProps> = ({ reports, pendingItems, qu
   };
 
   const appsScriptCode = `/**
- * PLATAFORMA ULTRAFINO USINA 2 - SCRIPT DE SINCRONIZAÇÃO v4.0 (ESTÁVEL)
+ * PLATAFORMA OPERACIONAL USINA 2 - SCRIPT DE SINCRONIZAÇÃO v4.0 (ESTÁVEL)
  * 
  * INSTRUÇÕES DE IMPLANTAÇÃO:
  * 1. No Editor de Script, clique em "Implantar" > "Nova implantação".

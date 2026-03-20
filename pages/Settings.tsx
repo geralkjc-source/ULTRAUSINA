@@ -101,7 +101,7 @@ ${t('settings.auditEmailFooter')}`;
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            subject: `Auditoria Geral Ultrafino`,
+            subject: `Auditoria Geral`,
             text: masterEmailBody,
             attachment: {
               filename: `Auditoria_${dateStr.replace(/\//g, '-')}.pdf`,
@@ -134,7 +134,7 @@ ${t('settings.auditEmailFooter')}`;
                     body: JSON.stringify({
                       to: email,
                       cc: "",
-                      subject: `Carga Acumulada Ultrafino - ${discipline.toUpperCase()} - ${dateStr}`,
+                      subject: `Carga Acumulada - ${discipline.toUpperCase()} - ${dateStr}`,
                       text: emailBody,
                       attachment: {
                         filename: `Carga_Acumulada_${discipline}_${dateStr.replace(/\//g, '-')}.pdf`,

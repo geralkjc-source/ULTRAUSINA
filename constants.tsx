@@ -109,8 +109,6 @@ export const CHECKLIST_TEMPLATES: Record<Area, string[]> = {
     '7C PP 130 (Spillage pp)',
     'Nota Geral',
   ],
-  [Area.CHP]: [],
-  [Area.CCP]: [],
   [Area.BOMBEAMENTO]: [
     'SECTION:VACUUM PUMPS – PLANTA C',
     '06C-VP-101',

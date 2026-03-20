@@ -9,9 +9,7 @@ export const translations = {
       bombeamento: 'BOMBEAMENTO',
       espesadores: 'ESPESADORES E REAGENTES',
       hbf_c: 'HBF-COLUNAS C',
-      hbf_d: 'HBF- COLUNAS D',
-      chp: 'CHP',
-      ccp: 'CCP'
+      hbf_d: 'HBF- COLUNAS D'
     },
     alerts: {
       criticalDfpTitle: 'Atenção Crítica: Volume de Pendências DFP',
@@ -329,9 +327,7 @@ export const translations = {
         HBF_D: 'Filtros de Esteira Planta D. Inspeção de sprays e panos.',
         BOMBEAMENTO: 'Bombas de vácuo e filtrado. Motores e selagem.',
         ESPESADORES: 'Torque, rake e reagentes. Densidade do underflow.',
-        DFP2: 'Filtros de lona DFP 2. Sopragem e hidráulica.',
-        CHP: 'CHP',
-        CCP: 'CCP'
+        DFP2: 'Filtros de lona DFP 2. Sopragem e hidráulica.'
       }
     },
     dfpResults: {
@@ -548,9 +544,7 @@ export const translations = {
       bombeamento: 'PUMPING',
       espesadores: 'THICKENERS AND REAGENTS',
       hbf_c: 'HBF-COLUMNS C',
-      hbf_d: 'HBF- COLUMNS D',
-      chp: 'CHP',
-      ccp: 'CCP'
+      hbf_d: 'HBF- COLUMNS D'
     },
     alerts: {
       criticalDfpTitle: 'Critical Attention: DFP Pending Volume',
@@ -868,9 +862,7 @@ export const translations = {
         HBF_D: 'Belt Filters Plant D. Inspection of sprays and cloths.',
         BOMBEAMENTO: 'Vacuum and filtrate pumps. Motors and sealing.',
         ESPESADORES: 'Torque, rake and reagents. Underflow density.',
-        DFP2: 'DFP 2 canvas filters. Blowing and hydraulics.',
-        CHP: 'CHP',
-        CCP: 'CCP'
+        DFP2: 'DFP 2 canvas filters. Blowing and hydraulics.'
       }
     },
     dfpResults: {

@@ -31,8 +31,6 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     if (a === 'ESPESADORES E REAGENTES' || a === 'THICKENERS AND REAGENTS') return t('areas.espesadores');
     if (a === 'HBF-COLUNAS C' || a === 'HBF-COLUMNS C') return t('areas.hbf_c');
     if (a === 'HBF- COLUNAS D' || a === 'HBF- COLUMNS D') return t('areas.hbf_d');
-    if (a === 'CHP') return t('areas.chp');
-    if (a === 'CCP') return t('areas.ccp');
     return area;
   };
 

@@ -12,9 +12,7 @@ export enum Area {
   BOMBEAMENTO = 'BOMBEAMENTO',
   ESPESADORES = 'ESPESADORES E REAGENTES',
   HBF_C = 'HBF-COLUNAS C',
-  HBF_D = 'HBF- COLUNAS D',
-  CHP = 'CHP',
-  CCP = 'CCP'
+  HBF_D = 'HBF- COLUNAS D'
 }
 
 export type Turma = 'A' | 'B' | 'C' | 'D';

@@ -261,35 +261,35 @@ const App: React.FC = () => {
 
         if (bReports.length > 0) setReports(bReports.sort((a, b) => b.timestamp - a.timestamp));
         else {
-          const savedReports = localStorage.getItem('ultrafino_reports');
+          const savedReports = localStorage.getItem('app_reports');
           if (savedReports) setReports(JSON.parse(savedReports).sort((a: any, b: any) => b.timestamp - a.timestamp));
         }
 
         if (bPending.length > 0) setPendingItems(bPending.sort((a, b) => b.timestamp - a.timestamp));
         else {
-          const savedPending = localStorage.getItem('ultrafino_pending');
+          const savedPending = localStorage.getItem('app_pending');
           if (savedPending) setPendingItems(JSON.parse(savedPending).sort((a: any, b: any) => b.timestamp - a.timestamp));
         }
 
         if (bQuality.length > 0) setQualityReports(bQuality.sort((a, b) => b.timestamp - a.timestamp));
         else {
-          const savedQuality = localStorage.getItem('ultrafino_quality');
+          const savedQuality = localStorage.getItem('app_quality');
           if (savedQuality) setQualityReports(JSON.parse(savedQuality).sort((a: any, b: any) => b.timestamp - a.timestamp));
         }
 
         if (bOperational.length > 0) setOperationalEvents(bOperational.sort((a, b) => b.timestamp - a.timestamp));
         else {
-          const savedOperational = localStorage.getItem('ultrafino_operational');
+          const savedOperational = localStorage.getItem('app_operational');
           if (savedOperational) setOperationalEvents(JSON.parse(savedOperational).sort((a: any, b: any) => b.timestamp - a.timestamp));
         }
       } catch (e) {
         console.error("Initial Load Error", e);
         // Fallback para localStorage
         try {
-          const savedReports = localStorage.getItem('ultrafino_reports');
-          const savedPending = localStorage.getItem('ultrafino_pending');
-          const savedQuality = localStorage.getItem('ultrafino_quality');
-          const savedOperational = localStorage.getItem('ultrafino_operational');
+          const savedReports = localStorage.getItem('app_reports');
+          const savedPending = localStorage.getItem('app_pending');
+          const savedQuality = localStorage.getItem('app_quality');
+          const savedOperational = localStorage.getItem('app_operational');
           if (savedReports) setReports(JSON.parse(savedReports));
           if (savedPending) setPendingItems(JSON.parse(savedPending));
           if (savedQuality) setQualityReports(JSON.parse(savedQuality));
@@ -404,10 +404,10 @@ const App: React.FC = () => {
       if (finalOperational.length > 0) setOperationalEvents(finalOperational);
       
       try {
-        if (finalReports.length > 0) localStorage.setItem('ultrafino_reports', JSON.stringify(finalReports));
-        if (finalPending.length > 0) localStorage.setItem('ultrafino_pending', JSON.stringify(finalPending));
-        if (finalQuality.length > 0) localStorage.setItem('ultrafino_quality', JSON.stringify(finalQuality));
-        if (finalOperational.length > 0) localStorage.setItem('ultrafino_operational', JSON.stringify(finalOperational));
+        if (finalReports.length > 0) localStorage.setItem('app_reports', JSON.stringify(finalReports));
+        if (finalPending.length > 0) localStorage.setItem('app_pending', JSON.stringify(finalPending));
+        if (finalQuality.length > 0) localStorage.setItem('app_quality', JSON.stringify(finalQuality));
+        if (finalOperational.length > 0) localStorage.setItem('app_operational', JSON.stringify(finalOperational));
       } catch (lsError) {
         console.warn("LocalStorage Quota Exceeded", lsError);
       }
@@ -438,7 +438,7 @@ const App: React.FC = () => {
     const newReport = { ...report, synced: false };
     const updatedReports = [newReport, ...reports];
     setReports(updatedReports);
-    localStorage.setItem('ultrafino_reports', JSON.stringify(updatedReports));
+    localStorage.setItem('app_reports', JSON.stringify(updatedReports));
     
     // Sync imediato após envio
     refreshDataFromCloud(updatedReports, pendingItems);
@@ -457,7 +457,7 @@ const App: React.FC = () => {
       } : p
     );
     setPendingItems(updated);
-    localStorage.setItem('ultrafino_pending', JSON.stringify(updated));
+    localStorage.setItem('app_pending', JSON.stringify(updated));
     
     // Sync imediato após resolução
     refreshDataFromCloud(reports, updated);
@@ -466,7 +466,7 @@ const App: React.FC = () => {
   const addManualPending = (pending: PendingItem) => {
     const updated = [...pendingItems, { ...pending, synced: false }];
     setPendingItems(updated);
-    localStorage.setItem('ultrafino_pending', JSON.stringify(updated));
+    localStorage.setItem('app_pending', JSON.stringify(updated));
     refreshDataFromCloud(reports, updated);
   };
 
@@ -474,7 +474,7 @@ const App: React.FC = () => {
     const newReport = { ...report, synced: false };
     const updated = [newReport, ...qualityReports];
     setQualityReports(updated);
-    localStorage.setItem('ultrafino_quality', JSON.stringify(updated));
+    localStorage.setItem('app_quality', JSON.stringify(updated));
     refreshDataFromCloud(reports, pendingItems, updated);
   };
 
@@ -482,7 +482,7 @@ const App: React.FC = () => {
     const newEvent = { ...event, synced: false };
     const updated = [newEvent, ...operationalEvents];
     setOperationalEvents(updated);
-    localStorage.setItem('ultrafino_operational', JSON.stringify(updated));
+    localStorage.setItem('app_operational', JSON.stringify(updated));
     refreshDataFromCloud(reports, pendingItems, qualityReports, updated);
   };
 
@@ -497,10 +497,10 @@ const App: React.FC = () => {
     setQualityReports(updatedQualityReports);
     setOperationalEvents(updatedOperational);
     
-    localStorage.setItem('ultrafino_reports', JSON.stringify(updatedReports));
-    localStorage.setItem('ultrafino_pending', JSON.stringify(updatedPending));
-    localStorage.setItem('ultrafino_quality', JSON.stringify(updatedQualityReports));
-    localStorage.setItem('ultrafino_operational', JSON.stringify(updatedOperational));
+    localStorage.setItem('app_reports', JSON.stringify(updatedReports));
+    localStorage.setItem('app_pending', JSON.stringify(updatedPending));
+    localStorage.setItem('app_quality', JSON.stringify(updatedQualityReports));
+    localStorage.setItem('app_operational', JSON.stringify(updatedOperational));
   };
 
   return (
