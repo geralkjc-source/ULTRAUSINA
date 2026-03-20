@@ -36,9 +36,6 @@ const OperationalForms: React.FC<OperationalFormsProps> = ({ onAddManualPending,
   const { t, language } = useLanguage();
   const [activeTab, setActiveTab] = useState<'praise' | 'failure'>('praise');
   const [detectedScale, setDetectedScale] = useState<{ turma: Turma; turno: Turno }>(getCurrentShiftInfo());
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [showSuggestions, setShowSuggestions] = useState<{ field: string; visible: boolean }>({ field: '', visible: false });
@@ -331,49 +328,7 @@ const OperationalForms: React.FC<OperationalFormsProps> = ({ onAddManualPending,
 
 
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (password === 'ULTRAADMIN') {
-      setIsAuthenticated(true);
-      setError('');
-    } else {
-      setError(t('operationalForms.wrongPassword'));
-    }
-  };
 
-  if (!isAuthenticated) {
-    return (
-      <div className="max-w-md mx-auto mt-20 p-8 bg-white rounded-[2.5rem] border-2 border-slate-100 shadow-xl animate-in fade-in zoom-in duration-300">
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-slate-900 text-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-            <ShieldAlert size={32} />
-          </div>
-          <h1 className="text-2xl font-black text-slate-900 uppercase tracking-tighter">{t('operationalForms.restrictedAccess')}</h1>
-          <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-1">{t('operationalForms.adminPasswordDescription')}</p>
-        </div>
-
-        <form onSubmit={handleLogin} className="space-y-6">
-          <div className="space-y-2">
-            <input 
-              type="password" 
-              value={password} 
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder={t('operationalForms.passwordPlaceholder')}
-              className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-black uppercase text-center tracking-[0.5em] focus:border-blue-500 focus:bg-white transition-all shadow-inner"
-              autoFocus
-            />
-            {error && <p className="text-red-500 text-[10px] font-black uppercase text-center animate-bounce">{error}</p>}
-          </div>
-          <button type="submit" className="w-full py-4 rounded-2xl bg-slate-900 text-white font-black uppercase tracking-widest hover:bg-slate-800 transition-all active:scale-95 shadow-lg">
-            {t('operationalForms.enterButton')}
-          </button>
-          <button type="button" onClick={() => navigate('/')} className="w-full py-4 text-slate-400 font-black uppercase text-[10px] tracking-widest hover:text-slate-600 transition-colors">
-            {t('operationalForms.backToHome')}
-          </button>
-        </form>
-      </div>
-    );
-  }
 
   // Manual Pending State
   // const [pendingData, setPendingData] = useState({

@@ -111,116 +111,7 @@ async function startServer() {
     res.json({ status: "ok", version: "4.0" });
   });
 
-  // --- Microsoft (Azure AD) OAuth2 Integration ---
-  
-  const getRedirectUri = (req: any) => {
-    // Use APP_URL if available, fallback to host header (less reliable)
-    const baseUrl = process.env.APP_URL || `${req.protocol}://${req.get('host')}`;
-    return `${baseUrl}/auth/callback`;
-  };
-
-  app.get('/api/auth/microsoft/url', (req, res) => {
-    const tenantId = process.env.MICROSOFT_TENANT_ID || 'common';
-    const clientId = process.env.MICROSOFT_CLIENT_ID;
-    
-    if (!clientId) {
-      return res.status(500).json({ error: "MICROSOFT_CLIENT_ID não configurado." });
-    }
-
-    const params = new URLSearchParams({
-      client_id: clientId,
-      response_type: 'code',
-      redirect_uri: getRedirectUri(req),
-      response_mode: 'query',
-      scope: 'openid profile email User.Read',
-      state: Math.random().toString(36).substring(7)
-    });
-
-    const authUrl = `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/authorize?${params}`;
-    res.json({ url: authUrl });
-  });
-
-  app.get(['/auth/callback', '/auth/callback/'], async (req: any, res) => {
-    const { code, error, error_description } = req.query;
-
-    if (error) {
-      return res.send(`
-        <html>
-          <body>
-            <script>
-              if (window.opener) {
-                window.opener.postMessage({ type: 'OAUTH_AUTH_ERROR', error: '${error_description || error}' }, '*');
-                window.close();
-              } else {
-                window.location.href = '/#/settings?error=${encodeURIComponent(error_description || error)}';
-              }
-            </script>
-          </body>
-        </html>
-      `);
-    }
-
-    if (!code) {
-      return res.status(400).send("Código de autorização ausente.");
-    }
-
-    try {
-      const tenantId = process.env.MICROSOFT_TENANT_ID || 'common';
-      const clientId = process.env.MICROSOFT_CLIENT_ID;
-      const clientSecret = process.env.MICROSOFT_CLIENT_SECRET;
-
-      const tokenResponse = await axios.post(
-        `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`,
-        new URLSearchParams({
-          client_id: clientId!,
-          client_secret: clientSecret!,
-          code: code as string,
-          grant_type: 'authorization_code',
-          redirect_uri: getRedirectUri(req),
-          scope: 'openid profile email User.Read'
-        }).toString(),
-        { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
-      );
-
-      const { access_token } = tokenResponse.data;
-
-      // Fetch user profile from Microsoft Graph
-      const userResponse = await axios.get('https://graph.microsoft.com/v1.0/me', {
-        headers: { Authorization: `Bearer ${access_token}` }
-      });
-
-      const userData = userResponse.data;
-      
-      // Store user in session
-      req.session.user = {
-        id: userData.id,
-        name: userData.displayName,
-        email: userData.mail || userData.userPrincipalName,
-        jobTitle: userData.jobTitle,
-        provider: 'microsoft'
-      };
-
-      res.send(`
-        <html>
-          <body>
-            <script>
-              if (window.opener) {
-                window.opener.postMessage({ type: 'OAUTH_AUTH_SUCCESS' }, '*');
-                window.close();
-              } else {
-                window.location.href = '/';
-              }
-            </script>
-            <p>Autenticação bem-sucedida. Esta janela fechará automaticamente.</p>
-          </body>
-        </html>
-      `);
-    } catch (err: any) {
-      console.error("Erro no callback do Microsoft Auth:", err.response?.data || err.message);
-      res.status(500).send("Erro ao processar autenticação.");
-    }
-  });
-
+  // Auth Endpoints
   app.get('/api/auth/me', (req: any, res) => {
     if (req.session.user) {
       res.json({ authenticated: true, user: req.session.user });
@@ -236,8 +127,6 @@ async function startServer() {
       res.json({ success: true });
     });
   });
-
-  // --- End of Microsoft Auth ---
 
   // Email Endpoint
   app.post("/api/send-email", async (req, res) => {

@@ -13,8 +13,7 @@ import {
   PieChart,
   Settings,
   Calendar,
-  Award,
-  Zap
+  Award
 } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import ChecklistArea from './pages/ChecklistArea';
@@ -120,13 +119,12 @@ const Sidebar = ({ isOpen, toggle, unsyncedCount }: { isOpen: boolean; toggle: (
   );
 };
 
-const Header = ({ onToggleSidebar, unsyncedCount, isSyncing, onSync, user, onLogin, onLogout }: { 
+const Header = ({ onToggleSidebar, unsyncedCount, isSyncing, onSync, user, onLogout }: { 
   onToggleSidebar: () => void, 
   unsyncedCount: number, 
   isSyncing: boolean, 
   onSync: () => void,
   user: User | null,
-  onLogin: () => void,
   onLogout: () => void
 }) => {
   const { t, language, setLanguage } = useLanguage();
@@ -160,7 +158,7 @@ const Header = ({ onToggleSidebar, unsyncedCount, isSyncing, onSync, user, onLog
           </button>
         </div>
 
-        {user ? (
+        {user && (
           <div className="flex items-center gap-3">
             <div className="text-right hidden sm:block">
               <p className="text-[10px] font-black text-slate-900 leading-none">{user.name}</p>
@@ -174,13 +172,6 @@ const Header = ({ onToggleSidebar, unsyncedCount, isSyncing, onSync, user, onLog
               <CloudOff size={16} />
             </button>
           </div>
-        ) : (
-          <button 
-            onClick={onLogin}
-            className="flex items-center gap-2 bg-blue-600 text-white px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-wider hover:bg-blue-700 transition-all shadow-sm"
-          >
-            <Zap size={14} /> Entrar com AD
-          </button>
         )}
 
         {unsyncedCount > 0 ? (
@@ -230,30 +221,6 @@ const App: React.FC = () => {
       console.error("Auth Check Error", e);
     }
   }, []);
-
-  const handleMicrosoftLogin = async () => {
-    try {
-      const { url } = await backendService.getMicrosoftAuthUrl();
-      const width = 600;
-      const height = 700;
-      const left = window.screenX + (window.outerWidth - width) / 2;
-      const top = window.screenY + (window.outerHeight - height) / 2;
-      
-      const authWindow = window.open(
-        url,
-        'microsoft_auth',
-        `width=${width},height=${height},left=${left},top=${top}`
-      );
-
-      if (!authWindow) {
-        alert('Por favor, permita popups para este site para entrar com sua conta Microsoft.');
-        return;
-      }
-    } catch (e) {
-      console.error("Login Error", e);
-      alert("Erro ao iniciar autenticação com Microsoft.");
-    }
-  };
 
   const handleLogout = async () => {
     try {
@@ -548,7 +515,6 @@ const App: React.FC = () => {
             isSyncing={isGlobalSyncing} 
             onSync={() => refreshDataFromCloud()}
             user={user}
-            onLogin={handleMicrosoftLogin}
             onLogout={handleLogout}
           />
           

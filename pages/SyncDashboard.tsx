@@ -44,7 +44,6 @@ const SyncDashboard: React.FC<SyncDashboardProps> = ({ reports, pendingItems, qu
   const [isSyncing, setIsSyncing] = useState(false);
   const [scriptUrl, setScriptUrl] = useState(localStorage.getItem('google_apps_script_url') || DEFAULT_SCRIPT_URL);
   const [showConfig, setshowConfig] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
   const [password, setPassword] = useState('');
   const [copySuccess, setCopySuccess] = useState(false);
   const [testStatus, setTestStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
@@ -369,11 +368,9 @@ function fetchSheetData(ss, sheetName) {
           <p className="text-slate-500 font-bold uppercase text-[10px] tracking-widest mt-1">{t('sync.subtitle')}</p>
         </div>
         <div className="flex gap-2">
-          {!isAdmin && (
-            <button onClick={() => setshowConfig(!showConfig)} className="flex items-center gap-2 px-6 py-3 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase shadow-xl hover:scale-105 transition-all">
-              <Settings2 size={16} /> {showConfig ? t('sync.closePanel') : t('sync.configScript')}
-            </button>
-          )}
+          <button onClick={() => setshowConfig(!showConfig)} className="flex items-center gap-2 px-6 py-3 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase shadow-xl hover:scale-105 transition-all">
+            <Settings2 size={16} /> {showConfig ? t('sync.closePanel') : t('sync.configScript')}
+          </button>
           <button 
             onClick={handleForceCloudRefresh}
             disabled={isSyncing}
@@ -535,7 +532,7 @@ function fetchSheetData(ss, sheetName) {
                 </div>
               </div>
             </div>
-          )}
+          </div>
         </div>
       )}
     </div>
