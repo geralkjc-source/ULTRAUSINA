@@ -404,27 +404,29 @@ ${t('settings.auditEmailFooter')}`;
           const config = disciplineConfig[item.discipline] || disciplineConfig['OPERAÇÃO'];
           return (
             <div key={item.id} className={`bg-white rounded-[2rem] border-2 transition-all flex flex-col h-full overflow-hidden ${item.status === 'resolvido' ? 'border-emerald-500 bg-emerald-50/10' : 'border-slate-100 shadow-sm'}`}>
-              <div className="p-5 border-b border-slate-50 flex justify-between items-center bg-slate-50/30">
-                <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border ${config.bg} ${config.color} text-[9px] font-black uppercase tracking-tight`}>
-                  {config.icon} {translateDiscipline(item.discipline)}
-                </div>
-                <div className="flex flex-col items-end">
-                  <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">{translateShift(item.turno)}</span>
-                  {item.status === 'resolvido' ? <CheckCircle2 size={14} className="text-emerald-600 mt-1" /> : <Clock size={14} className="text-amber-500 animate-pulse mt-1" />}
-                </div>
-              </div>
-              
-              <div className="p-6 space-y-4 flex-grow">
-                <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-tight overflow-x-auto no-scrollbar pb-1">
-                  <span className="bg-slate-900 text-white px-3 py-1.5 rounded-lg text-[12px] font-black uppercase tracking-widest shadow-md border border-slate-700 flex items-center gap-1.5 shrink-0">
+              <div className="p-5 border-b border-slate-50 space-y-3 bg-slate-50/30">
+                <div className="flex flex-col items-start gap-2 text-[10px] font-black uppercase tracking-tight">
+                  <span className="bg-slate-900 text-white px-3 py-1.5 rounded-lg text-[12px] font-black uppercase tracking-widest shadow-md border border-slate-700 flex items-center gap-1.5">
                     <Activity size={14} className="text-slate-400" />
                     {translateArea(item.area)}
                   </span>
-                  <span className="bg-blue-700 text-white px-3 py-1.5 rounded-lg text-[13px] font-black uppercase tracking-widest shadow-md border border-blue-400 flex items-center gap-1.5 shrink-0">
+                  <span className="bg-blue-700 text-white px-3 py-1.5 rounded-lg text-[13px] font-black uppercase tracking-widest shadow-md border border-blue-400 flex items-center gap-1.5">
                     <Tag size={16} className="text-blue-200" />
                     {item.tag || t('noTag')}
                   </span>
                 </div>
+                <div className="flex justify-between items-center">
+                  <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border ${config.bg} ${config.color} text-[9px] font-black uppercase tracking-tight`}>
+                    {config.icon} {translateDiscipline(item.discipline)}
+                  </div>
+                  <div className="flex flex-col items-end">
+                    <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">{translateShift(item.turno)}</span>
+                    {item.status === 'resolvido' ? <CheckCircle2 size={14} className="text-emerald-600 mt-1" /> : <Clock size={14} className="text-amber-500 animate-pulse mt-1" />}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="p-6 space-y-4 flex-grow">
                 <p className={`text-sm font-black uppercase leading-relaxed ${item.status === 'resolvido' ? 'text-emerald-900' : 'text-slate-800'}`}>{item.description}</p>
                 
                 <div className="p-4 bg-white/50 rounded-2xl border border-slate-100 space-y-4 shadow-inner">
