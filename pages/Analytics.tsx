@@ -153,15 +153,14 @@ const Analytics: React.FC<AnalyticsProps> = ({
     });
   }, [filteredData.pendingItems]);
 
-  const debtPerformance = useMemo(() => {
+  const identifiedPerformance = useMemo(() => {
     const turmas: Turma[] = ['A', 'B', 'C', 'D'];
     return turmas.map(turma => {
-      const openDebt = filteredData.pendingItems.filter(p => 
-        p.turma === turma && 
-        (p.status === 'aberto' || (p.status === 'resolvido' && p.turma !== p.resolvedByTurma))
+      const identifiedCount = filteredData.pendingItems.filter(p => 
+        p.turma === turma
       ).length;
-      return { turma: turma, openDebt };
-    }).sort((a,b) => b.openDebt - a.openDebt);
+      return { turma: turma, identifiedCount };
+    }).sort((a,b) => b.identifiedCount - a.identifiedCount);
   }, [filteredData.pendingItems]);
 
 
@@ -355,10 +354,10 @@ const Analytics: React.FC<AnalyticsProps> = ({
               </div>
 
               <div className="space-y-2">
-                {debtPerformance.map((tData, idx) => (
+                {identifiedPerformance.map((tData, idx) => (
                   <button 
                     key={tData.turma} 
-                    onClick={() => navigate(`/pending?status=aberto&turma=${tData.turma}`)}
+                    onClick={() => navigate(`/pending?status=all&turma=${tData.turma}`)}
                     className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all active:scale-95 group ${
                       idx === 0 
                         ? 'bg-emerald-50 border-emerald-200 hover:bg-emerald-100 shadow-sm' 
@@ -381,7 +380,7 @@ const Analytics: React.FC<AnalyticsProps> = ({
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className={`text-base font-black text-emerald-600`}>{tData.openDebt}</span>
+                      <span className={`text-base font-black text-emerald-600`}>{tData.identifiedCount}</span>
                       {idx === 0 ? (
                         <Trophy size={14} className="text-emerald-500 animate-bounce" />
                       ) : (
