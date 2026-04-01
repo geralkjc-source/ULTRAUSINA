@@ -209,13 +209,13 @@ const MaintenancePage = () => (
       </div>
       <h1 className="text-4xl font-black text-white mb-4 tracking-tighter uppercase">PLATAFORMA DESCONTINUADO</h1>
       <p className="text-slate-400 text-xl font-medium mb-8 italic uppercase">ACESSE A NOVA PLATAFORMA SIGO</p>
-      <div className="bg-blue-600/10 border border-blue-500/20 p-8 rounded-3xl">
-        <p className="text-blue-400 font-bold uppercase tracking-widest text-[10px] mb-4">Nova Versão</p>
+      <div className="bg-red-600/10 border border-red-500/20 p-8 rounded-3xl">
+        <p className="text-red-500 font-bold uppercase tracking-widest text-[10px] mb-4">Nova Versão</p>
         <a 
           href="https://sigousina.vercel.app" 
           target="_blank" 
           rel="noopener noreferrer"
-          className="text-white text-2xl font-black hover:text-blue-400 transition-all hover:scale-105 inline-block break-all"
+          className="text-white text-2xl font-black hover:text-red-400 transition-all hover:scale-105 inline-block break-all"
         >
           sigousina.vercel.app
         </a>
