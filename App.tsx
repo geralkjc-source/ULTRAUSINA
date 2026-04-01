@@ -207,10 +207,10 @@ const MaintenancePage = () => (
       <div className="w-24 h-24 bg-amber-500 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-lg animate-bounce">
         <Settings size={48} className="text-white" />
       </div>
-      <h1 className="text-4xl font-black text-white mb-4 tracking-tighter uppercase">Em manutenção ⚙️</h1>
-      <p className="text-slate-400 text-xl font-medium mb-8 italic">Voltamos em breve...</p>
+      <h1 className="text-4xl font-black text-white mb-4 tracking-tighter uppercase">PLATAFORMA DESCONTINUADO</h1>
+      <p className="text-slate-400 text-xl font-medium mb-8 italic uppercase">ACESSE A NOVA PLATAFORMA SIGO</p>
       <div className="bg-blue-600/10 border border-blue-500/20 p-8 rounded-3xl">
-        <p className="text-blue-400 font-bold uppercase tracking-widest text-[10px] mb-4">Acesse a Nova Versão</p>
+        <p className="text-blue-400 font-bold uppercase tracking-widest text-[10px] mb-4">Nova Versão</p>
         <a 
           href="https://sigousina.vercel.app" 
           target="_blank" 
