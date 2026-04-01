@@ -199,6 +199,31 @@ const Header = ({ onToggleSidebar, unsyncedCount, isSyncing, onSync, user, onLog
   );
 };
 
+const MAINTENANCE_MODE = true;
+
+const MaintenancePage = () => (
+  <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-6 text-center font-sans">
+    <div className="bg-white/5 backdrop-blur-xl border border-white/10 p-12 rounded-[3rem] shadow-2xl max-w-2xl w-full">
+      <div className="w-24 h-24 bg-amber-500 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-lg animate-bounce">
+        <Settings size={48} className="text-white" />
+      </div>
+      <h1 className="text-4xl font-black text-white mb-4 tracking-tighter uppercase">Em manutenção ⚙️</h1>
+      <p className="text-slate-400 text-xl font-medium mb-8 italic">Voltamos em breve...</p>
+      <div className="bg-blue-600/10 border border-blue-500/20 p-8 rounded-3xl">
+        <p className="text-blue-400 font-bold uppercase tracking-widest text-[10px] mb-4">Acesse a Nova Versão</p>
+        <a 
+          href="https://sigousina.vercel.app" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="text-white text-2xl font-black hover:text-blue-400 transition-all hover:scale-105 inline-block break-all"
+        >
+          sigousina.vercel.app
+        </a>
+      </div>
+    </div>
+  </div>
+);
+
 const App: React.FC = () => {
   const { t } = useLanguage();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -505,6 +530,10 @@ const App: React.FC = () => {
     localStorage.setItem('app_quality', JSON.stringify(updatedQualityReports));
     localStorage.setItem('app_operational', JSON.stringify(updatedOperational));
   };
+
+  if (MAINTENANCE_MODE) {
+    return <MaintenancePage />;
+  }
 
   return (
     <HashRouter>
